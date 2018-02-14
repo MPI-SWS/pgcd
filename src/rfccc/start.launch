@@ -1,0 +1,25 @@
+<launch>
+    <node pkg="turtlesim" type="turtlesim_node" name="sim"/>
+    <node pkg="turtlesim" type="turtle_teleop_key" name="teleop" output="screen"/>
+
+    <group ns="turtle1">
+        <param name="turtle" type="string" value="turtle1"/>
+    </group>
+
+    <group ns="arm_fix">
+        <param name="parent" type="string" value="turtle1"/>
+        <param name="comp" type="string" value="arm"/>
+        <param name="x" type="double" value="0" />
+        <param name="y" type="double" value="0" />
+        <param name="z" type="double" value="0.3" />
+    </group>
+
+    <group ns="tool_fix">
+        <param name="parent" type="string" value="arm"/>
+        <param name="comp" type="string" value="tool"/>
+        <param name="x" type="double" value="0" />
+        <param name="y" type="double" value="0" />
+        <param name="z" type="double" value="0.3" />
+    </group>
+
+</launch>
