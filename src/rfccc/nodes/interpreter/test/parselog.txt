@@ -1,0 +1,36 @@
+    lex.py: 925:lex: tokens   = ('SKIP', 'SEND', 'RECEIVE', 'IF', 'THEN', 'ELSE', 'WHILE', 'DO', 'SIN', 'TAN', 'COS', 'ABS', 'SQRT', 'PRINT', 'ID', 'MOTION', 'COMPONENT', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'DOT')
+    lex.py: 926:lex: literals = ''
+    lex.py: 927:lex: states   = {'INITIAL': 'inclusive'}
+    lex.py: 956:lex: Adding rule t_NEWLINE -> '\n+' (state 'INITIAL')
+    lex.py: 956:lex: Adding rule t_ID -> '[A-Za-z_][\w_]*' (state 'INITIAL')
+    lex.py: 956:lex: Adding rule t_DCONST -> '\d+\.\d+' (state 'INITIAL')
+    lex.py: 956:lex: Adding rule t_ICONST -> '\d+' (state 'INITIAL')
+    lex.py: 956:lex: Adding rule t_SCONST -> '\"([^\\\n]|(\\.))*?\"' (state 'INITIAL')
+    lex.py: 956:lex: Adding rule t_comment -> '\#.*\n' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_OR -> '\|\|' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_LE -> '<=' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_LPAREN -> '\(' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_NE -> '!=' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_PLUS -> '\+' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_DOT -> '\.' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_AND -> '&&' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_LBRACE -> '\{' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_TIMES -> '\*' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_GE -> '>=' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_RPAREN -> '\)' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_EQ -> '==' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_RBRACE -> '\}' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_LT -> '<' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_COMMA -> ',' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_DIVIDE -> '/' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_COLON -> ':' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_NOT -> '!' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_MOD -> '%' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_SEMI -> ';' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_MINUS -> '-' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_EQUALS -> '=' (state 'INITIAL')
+    lex.py: 962:lex: Adding rule t_GT -> '>' (state 'INITIAL')
+    lex.py: 969:lex: ==== MASTER REGEXS FOLLOW ====
+    lex.py: 978:lex: state 'INITIAL' : regex[0] = '(?P<t_NEWLINE>\n+)|(?P<t_ID>[A-Za-z_][\w_]*)|(?P<t_DCONST>\d+\.\d+)|(?P<t_ICONST>\d+)|(?P<t_SCONST>\"([^\\\n]|(\\.))*?\")|(?P<t_comment>\#.*\n)|(?P<t_OR>\|\|)|(?P<t_LE><=)|(?P<t_LPAREN>\()|(?P<t_NE>!=)|(?P<t_PLUS>\+)|(?P<t_DOT>\.)|(?P<t_AND>&&)|(?P<t_LBRACE>\{)|(?P<t_TIMES>\*)|(?P<t_GE>>=)|(?P<t_RPAREN>\))|(?P<t_EQ>==)|(?P<t_RBRACE>\})|(?P<t_LT><)|(?P<t_COMMA>,)|(?P<t_DIVIDE>/)|(?P<t_COLON>:)|(?P<t_NOT>!)|(?P<t_MOD>%)|(?P<t_SEMI>;)|(?P<t_MINUS>-)|(?P<t_EQUALS>=)|(?P<t_GT>>)'
+ topics.py:1190:tm._add: /arm, rfccc/Rotate, pub
+   core.py: 454:signal_shutdown [atexit]

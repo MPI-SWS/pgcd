@@ -76,14 +76,14 @@ class Skip(Node):
 
 class Send(Node):
 
-    def __init__(self, comp, label, message):
+    def __init__(self, comp, msg_type, value):
         Node.__init__(self, Type.send)
         self.comp = comp
-        self.label = label
-        self.message = message
+        self.msg_type = msg_type
+        self.value = value
 
     def __str__(self):
-        return 'Send(' + str(self.comp) + ',' + str(self.label) + ',' + str(self.message) + ')'
+        return 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + str(self.value) + ')'
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -105,14 +105,14 @@ class Receive(Node):
 
 class Action(Node):
 
-    def __init__(self, message, id_name, stmt):
+    def __init__(self, str_msg_type, data_name, program):
         Node.__init__(self, Type.action)
-        self.message = message
-        self.id_name = id_name
-        self.stmt = stmt
+        self.str_msg_type = str_msg_type
+        self.data_name = data_name
+        self.program = program
 
     def __str__(self):
-        return '(' + str(self.message) + ',' + str(self.id_name) + ',' + str(self.stmt) + ')'
+        return '(' + str(self.str_msg_type) + ',' + str(self.data_name) + ',' + str(self.program) + ')'
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -149,23 +149,23 @@ class While(Node):
 
 class Assign(Node):
 
-    def __init__(self, id, value, id_prop=None):
+    def __init__(self, id, value, property=None):
         Node.__init__(self, Type.assign)
         self.id = id
         self.value = value
-        self.id_Prop = id_prop
+        self.property = property
 
     def __str__(self):
-        if self.id_Prop is None:
+        if self.property is None:
             return str(self.id) + ' := ' + str(self.value)
         else:
-            return str(self.id) + '.' + str(self.id_Prop) + ' := ' + str(self.value)
+            return str(self.id) + '.' + str(self.property) + ' := ' + str(self.value)
 
     def accept(self, visitor):
         visitor.visit(self)
 
 
-class Tuple(Node):
+class Dict(Node):
 
     def __init__(self, tup):
         Node.__init__(self, Type._tuple)

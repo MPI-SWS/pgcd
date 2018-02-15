@@ -48,16 +48,16 @@ class RoboParser:
         if p[4] == u'{':
             p[0] = Assign(id=p[1], value=p[5])
         elif p[2] == u'.':
-            p[0] = Assign(id=p[1], value=p[6], id_prop=p[3])
+            p[0] = Assign(id=p[1], value=p[6], property=p[3])
         else:
             p[0] = Assign(id=p[1], value=p[4])
 
     def p_keyval_assign(self, p):
         '''keyval : keyval COMMA keyval
-                  | expression COLON expression'''
+                  | SCONST COLON expression'''
         if p[2] == u':':
             x = {p[1]: p[3]}
-            p[0] = Tuple(tup=x)
+            p[0] = Dict(x)
         else:
             p[1].merge(p[3])
             p[0] = p[1]
@@ -72,7 +72,7 @@ class RoboParser:
 
     def p_actions_tuples(self, p):
         '''actions : actions COMMA actions
-                   | LPAREN LABEL COMMA ID COMMA LBRACE statement RBRACE RPAREN'''
+                   | LPAREN MSGTYPE COMMA ID COMMA LBRACE statement RBRACE RPAREN'''
         if p[1] == u'(':
             p[0] = [Action(p[2], p[4], p[7])]
         else:
@@ -107,7 +107,7 @@ class RoboParser:
             p[0] = (p[1],)
 
     def p_statement_send(self, p):
-        'statement : SEND LPAREN COMPONENT COMMA LABEL COMMA expression RPAREN'
+        'statement : SEND LPAREN COMPONENT COMMA MSGTYPE COMMA expression RPAREN'
         p[0] = Send(p[3], p[5], p[7])
 
     def p_expression_binop(self, p):
@@ -191,7 +191,7 @@ class RoboParser:
         if len(p) > 2:
             p[0] = BinOp(Type.dot, '.', p[1], p[3])
         else:
-            p[0] = UnOp(Type.id, 'get', p[1])
+            p[0] = UnOp(Type.id, '', p[1])
 
     def p_error(self, p):
         if p:

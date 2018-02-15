@@ -13,7 +13,7 @@ class RoboLexer:
 
     tokens = reserved + (
         # LITERALS (identifier, integer, double, string and bool constant)
-        'ID', 'MOTION', 'COMPONENT', 'LABEL', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
+        'ID', 'MOTION', 'COMPONENT', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
 
         # OPERATORS
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
@@ -85,7 +85,7 @@ class RoboLexer:
             t.type = 'COMPONENT'
         elif re.match(r'msg_.*', str(t.value)):
             t.value = str(t.value)[4:]
-            t.type = 'LABEL'
+            t.type = 'MSGTYPE'
         elif re.match(r'(true|false)', str(t.value)):
             t.value = (t.value == 'true')
             t.type = 'BCONST'
