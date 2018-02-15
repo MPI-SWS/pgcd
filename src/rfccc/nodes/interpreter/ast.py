@@ -115,7 +115,7 @@ class Action(Node):
         return '(' + str(self.str_msg_type) + ',' + str(self.data_name) + ',' + str(self.program) + ')'
 
     def accept(self, visitor):
-        visitor.visit(self)
+        return visitor.visit(self)
 
 
 class If(Node):
@@ -242,6 +242,8 @@ class Motion(Node):
 
     def __init__(self, value, exps=None):
         Node.__init__(self, Type.motion)
+        if exps is None:
+            exps = []
         self.value = value
         self.exps = exps
 

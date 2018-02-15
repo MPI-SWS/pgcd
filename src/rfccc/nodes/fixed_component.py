@@ -34,10 +34,10 @@ class FixedComponent(Executor):
             self.z = rospy.get_param('~z')
         except:
             self.parent = "world"
-        self.timer = rospy.Timer(rospy.Duration(nsecs=1), self.set_up_broadcaster)
         self.yaw = 0
         self.pitch = 0
         self.roll = 0
+        self.timer = rospy.Timer(rospy.Duration(nsecs=1), self.set_up_broadcaster)
 
     def set_up_broadcaster(self, event):
         t = geometry_msgs.msg.TransformStamped()

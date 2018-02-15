@@ -50,7 +50,7 @@ class Executor:
         self.waiting_msg = True
         for action in actions:
             self.subs["/" + self.id + '/' + action['msg_type'].__name__] = \
-                rospy.Subscriber("/" + getattr(self, 'id'), action['msg_type'],
+                rospy.Subscriber("/" + self.id, action['msg_type'],
                                  self.process_msg,
                                  callback_args=action,
                                  queue_size=100)
@@ -60,8 +60,8 @@ class Executor:
     def process_msg(self, msg, args):
         with self.lock:
             if self.waiting_msg:
-                for sub in self.subs:
-                    sub.unregister()
+                for key in self.subs.keys():
+                    self.subs[key].unregister()
                 data = {}
                 for name in msg.__slots__:
                     data[name] = getattr(msg, name)
@@ -137,6 +137,9 @@ class Executor:
             pass
 
         value = node.value
+        if len(node.exps) == 0:
+            pass
+
         exps = [x.accept(self) for x in node.exps]
         if value == 'MoveToPosition':
             a = Msg()
@@ -145,9 +148,9 @@ class Executor:
             self.move_to_pos(a)
         elif value == 'Rotate':
             for i in range(0, 10):
-                self.yaw += exps[0].yaw / 10
-                self.pitch += exps[0].pitch / 10
-                self.roll += exps[0].roll / 10
+                self.yaw += exps[0]['yaw'] / 10
+                self.pitch += exps[0]['pitch'] / 10
+                self.roll += exps[0]['roll']/ 10
                 rospy.sleep(0.5)
 
 

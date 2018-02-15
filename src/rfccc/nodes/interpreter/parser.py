@@ -100,11 +100,11 @@ class RoboParser:
 
     def p_args_expressions(self, p):
         '''args : args COMMA args
-                 | expression'''
+                | expression'''
         if len(p) > 2:
             p[0] = p[1] + p[3]
         else:
-            p[0] = (p[1],)
+            p[0] = [p[1]]
 
     def p_statement_send(self, p):
         'statement : SEND LPAREN COMPONENT COMMA MSGTYPE COMMA expression RPAREN'

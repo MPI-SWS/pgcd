@@ -27,8 +27,7 @@ class DynamicComponent(Executor):
         self.velocity_publisher = rospy.Publisher('/%s/cmd_vel' % self.id, Twist, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/%s/pose' % self.id, Pose, self.update_position)
         self.pose = Pose()
-        self.wait = True
-        self.rate = rospy.Rate(10)
+        self.rate = rospy.Rate(20)
         self.set_up_broadcaster()
 
     def update_position(self, data):

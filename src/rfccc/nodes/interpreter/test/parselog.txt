@@ -32,5 +32,5 @@
     lex.py: 962:lex: Adding rule t_GT -> '>' (state 'INITIAL')
     lex.py: 969:lex: ==== MASTER REGEXS FOLLOW ====
     lex.py: 978:lex: state 'INITIAL' : regex[0] = '(?P<t_NEWLINE>\n+)|(?P<t_ID>[A-Za-z_][\w_]*)|(?P<t_DCONST>\d+\.\d+)|(?P<t_ICONST>\d+)|(?P<t_SCONST>\"([^\\\n]|(\\.))*?\")|(?P<t_comment>\#.*\n)|(?P<t_OR>\|\|)|(?P<t_LE><=)|(?P<t_LPAREN>\()|(?P<t_NE>!=)|(?P<t_PLUS>\+)|(?P<t_DOT>\.)|(?P<t_AND>&&)|(?P<t_LBRACE>\{)|(?P<t_TIMES>\*)|(?P<t_GE>>=)|(?P<t_RPAREN>\))|(?P<t_EQ>==)|(?P<t_RBRACE>\})|(?P<t_LT><)|(?P<t_COMMA>,)|(?P<t_DIVIDE>/)|(?P<t_COLON>:)|(?P<t_NOT>!)|(?P<t_MOD>%)|(?P<t_SEMI>;)|(?P<t_MINUS>-)|(?P<t_EQUALS>=)|(?P<t_GT>>)'
- topics.py:1190:tm._add: /arm, rfccc/Rotate, pub
+ topics.py:1190:tm._add: /comp1, rfccc/MoveToPosition, sub
    core.py: 454:signal_shutdown [atexit]
