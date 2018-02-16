@@ -23,7 +23,8 @@ $ . path-to-project-devel/devel/setup.bash
 ```
 
 ### To run the project we reccomend PyCharm.
-* install python 2.7.9 and packages:
+
+Install python 2.7.9 and packages:
 * PyYAML
 * enum34
 * genpy
