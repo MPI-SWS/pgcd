@@ -43,10 +43,13 @@ To run the example you need to:
 
 * Run main.py file
 * Run terminal command for starting roscore
+
 ```
 $ roslaunch rfccc start.launch
 ```
+
 * Run terminal command for vizualisation
+
 ```
 $ rosrun rviz rviz -d `rospack find turtle_tf2`/rviz/turtle_rviz.rviz
 ```
