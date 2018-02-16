@@ -17,6 +17,7 @@ To run ROSL you need to:
 * install tf2 library with turtlesim example (http://wiki.ros.org/tf2/Tutorials/Introduction%20to%20tf2)
 * download this project
 * To add the project workspace to your ROS environment you need to source the generated setup file: 
+
 ```
 $ . path-to-project-devel/devel/setup.bash
 ```
