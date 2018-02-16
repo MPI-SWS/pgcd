@@ -19,8 +19,11 @@ To run ROSL you need to:
 * To add the project workspace to your ROS environment you need to source the generated setup file: 
 
 ```
-$ . path-to-project-devel/devel/setup.bash
+$ source path-to-project-devel/devel/setup.bash
 ```
+
+If you want your computer to store permanently your workspace you need to add the
+listed command into your .bashrc file in "home/user/" directory.
 
 ### To run the project we reccomend PyCharm.
 
