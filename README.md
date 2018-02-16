@@ -2,7 +2,7 @@
 
 ROSL is a programming language for ROS nodes.
 
-## Project description
+## Features
 
 Currently the main functionalities of ROSL are:
 * Communication between ROS nodes (ROS message & ROS topics)
