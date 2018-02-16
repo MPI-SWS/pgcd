@@ -6,7 +6,7 @@ import lexer as rlex
 from ast import *
 
 
-class RoboParser:
+class Parser:
     precedence = (
         ('left', 'AND', 'OR', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
         ('right', 'NOT'),
@@ -14,9 +14,6 @@ class RoboParser:
         ('left', 'TIMES', 'DIVIDE', 'MOD'),
         ('right', 'UMINUS', 'SIN', 'TAN', 'COS', 'ABS')
     )
-
-    # dictionary of variable names
-    names = {}
 
     def __init__(self, **kw):
         logging.basicConfig(
@@ -26,35 +23,86 @@ class RoboParser:
             format="%(filename)10s:%(lineno)4d:%(message)s"
         )
         log = logging.getLogger()
-        self.lexer = rlex.RoboLexer(debuglog=log, debug=True)
+        self.lexer = rlex.Lexer(debuglog=log, debug=True)
         self.tokens = self.lexer.tokens
         self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
 
     def parse(self, text):
         return self.parser.parse(text, self.lexer.lexer)
 
-    def p_statement_skip(self, p):
-        'statement : SKIP'
-        p[0] = Skip()
+    # ------------------------------------- STATEMENT --------------------------------------
 
-    def p_statement_print(self, p):
-        'statement : PRINT LPAREN args RPAREN'
+    def p_statement_program(self, p):
+        ''' statement : statement SEMI statement
+                      | receive
+                      | send
+                      | if
+                      | while
+                      | assign
+                      | motion
+                      | print
+                      | skip '''
+        if len(p) > 2:
+            p[0] = Statement([p[1], p[3]])
+        else:
+            p[0] = p[1]
+
+    def p_receive_msg(self, p):
+        'receive   : RECEIVE LPAREN motion RPAREN  LBRACE actions RBRACE'
+        p[0] = Receive(p[3], p[6])
+
+    def p_send_msg(self, p):
+        'send : SEND LPAREN COMPONENT_ID COMMA MSGTYPE COMMA expression RPAREN'
+        p[0] = Send(p[3], p[5], p[7])
+
+    def p_if_code(self, p):
+        'if : IF LPAREN expression RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE'
+        p[0] = If(p[3], p[6], p[10])
+
+    def p_while_code(self, p):
+        'while : WHILE LPAREN expression RPAREN LBRACE statement RBRACE'
+        p[0] = While(p[3], p[6])
+
+    def p_assign_code(self, p):
+        ''' assign : ID EQUALS LBRACE keyvalue RBRACE
+                   | ID DOT ID EQUALS expression
+                   | ID EQUALS expression '''
+        if p[3] == u'{':
+            p[0] = Assign(id=p[1], value=p[4])
+        elif p[2] == u'.':
+            p[0] = Assign(id=p[1], value=p[5], property=p[3])
+        else:
+            p[0] = Assign(id=p[1], value=p[3])
+
+    def p_motion_exec(self, p):
+        ''' motion : MOTION LPAREN args RPAREN
+                   | MOTION '''
+        if len(p) > 2:
+            p[0] = Motion(p[1], p[3])
+        else:
+            p[0] = Motion(p[1])
+
+    def p_print_function(self, p):
+        'print : PRINT LPAREN args RPAREN'
         p[0] = UnOp(Type._print, 'print', p[3])
 
-    def p_statement_assign(self, p):
-        '''statement : ID COLON EQUALS LBRACE keyval RBRACE
-                     | ID DOT ID COLON EQUALS expression
-                     | ID COLON EQUALS expression'''
-        if p[4] == u'{':
-            p[0] = Assign(id=p[1], value=p[5])
-        elif p[2] == u'.':
-            p[0] = Assign(id=p[1], value=p[6], property=p[3])
-        else:
-            p[0] = Assign(id=p[1], value=p[4])
+    def p_skip_function(self, p):
+        'skip : SKIP'
+        p[0] = Skip()
 
-    def p_keyval_assign(self, p):
-        '''keyval : keyval COMMA keyval
-                  | SCONST COLON expression'''
+    # ------------------------- ACTIONS, KEY-VALUES AND ARGUMENTS---------------------------
+
+    def p_actions_tuple(self, p):
+        ''' actions : actions COMMA actions
+                    | LPAREN MSGTYPE COMMA ID COMMA LBRACE statement RBRACE RPAREN '''
+        if p[1] == u'(':
+            p[0] = [Action(p[2], p[4], p[7])]
+        else:
+            p[0] = p[1] + p[3]
+
+    def p_keyvalue_dictionary(self, p):
+        ''' keyvalue : keyvalue COMMA keyvalue
+                     | SCONST COLON expression '''
         if p[2] == u':':
             x = {p[1]: p[3]}
             p[0] = Dict(x)
@@ -62,43 +110,7 @@ class RoboParser:
             p[1].merge(p[3])
             p[0] = p[1]
 
-    def p_statement_receive(self, p):
-        '''statement : RECEIVE LPAREN MOTION LPAREN args RPAREN RPAREN LBRACE actions RBRACE
-                     | RECEIVE LPAREN MOTION RPAREN LBRACE actions RBRACE'''
-        if p[4] == u'(':
-            p[0] = Receive(Motion(p[3], p[5]), p[9])
-        else:
-            p[0] = Receive(Motion(p[3]), p[6])
-
-    def p_actions_tuples(self, p):
-        '''actions : actions COMMA actions
-                   | LPAREN MSGTYPE COMMA ID COMMA LBRACE statement RBRACE RPAREN'''
-        if p[1] == u'(':
-            p[0] = [Action(p[2], p[4], p[7])]
-        else:
-            p[0] = p[1] + p[3]
-
-    def p_statement_sequent(self, p):
-        'statement : statement SEMI statement'
-        p[0] = Statement([p[1], p[3]])
-
-    def p_statement_ifelse(self, p):
-        'statement : IF expression THEN LBRACE statement RBRACE ELSE LBRACE statement RBRACE'
-        p[0] = If(p[2], p[5], p[9])
-
-    def p_statement_while(self, p):
-        'statement : WHILE expression DO LBRACE statement RBRACE'
-        p[0] = While(p[2], p[5])
-
-    def p_statement_motion(self, p):
-        '''statement : MOTION LPAREN args RPAREN
-                     | MOTION'''
-        if len(p) > 2:
-            p[0] = Motion(p[1], p[3])
-        else:
-            p[0] = Motion(p[1])
-
-    def p_args_expressions(self, p):
+    def p_args_tuple(self, p):
         '''args : args COMMA args
                 | expression'''
         if len(p) > 2:
@@ -106,9 +118,7 @@ class RoboParser:
         else:
             p[0] = [p[1]]
 
-    def p_statement_send(self, p):
-        'statement : SEND LPAREN COMPONENT COMMA MSGTYPE COMMA expression RPAREN'
-        p[0] = Send(p[3], p[5], p[7])
+    # ------------------------------------EXPRESSIONS--------------------------------------
 
     def p_expression_binop(self, p):
         '''expression : expression PLUS expression
@@ -151,7 +161,7 @@ class RoboParser:
         elif p[2] == u'!=':
             p[0] = BinOp(Type.ne, '!=', p[1], p[3])
 
-    def p_expression_uop(self, p):
+    def p_expression_unop(self, p):
         '''expression : MINUS expression %prec UMINUS
                       | SIN LPAREN expression RPAREN
                       | COS LPAREN expression RPAREN
@@ -195,6 +205,6 @@ class RoboParser:
 
     def p_error(self, p):
         if p:
-            print("Line ", self.lexer.lexer.lineno, ". Syntax error at {0}".format(p.value))
+            print("Line " + str(self.lexer.lexer.lineno) + ". : syntax error at: '{0}'...".format(p.value))
         else:
             print("Syntax error at EOF")

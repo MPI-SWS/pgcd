@@ -2,32 +2,30 @@ import ply.lex as lex
 import re
 
 
-class RoboLexer:
+class Lexer:
+    '''
+    Class represents tokenizer, lexer or scanner, converting sequence of characters into sequence of tokens.
+    If you are not familiar with generating lexer and parser with python PLY package, go through this tutorial:
+    http://www.dabeaz.com/ply/ply.html
+    '''
+
+    functions = ('SIN', 'TAN', 'COS', 'ABS', 'SQRT')
+
     # RESERVED WORDS
     reserved = (
         'SKIP', 'SEND', 'RECEIVE', 'IF',
-        'THEN', 'ELSE', 'WHILE', 'DO',
-        'SIN', 'TAN', 'COS', 'ABS', 'SQRT',
-        'PRINT'
-    )
+        'ELSE', 'WHILE', 'PRINT'
+    ) + functions
 
     tokens = reserved + (
-        # LITERALS (identifier, integer, double, string and bool constant)
-        'ID', 'MOTION', 'COMPONENT', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
+        # LITERALS (identifier; motion; component; message type; integer, double, string and bool constant)
+        'ID', 'MOTION', 'COMPONENT_ID', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
 
         # OPERATORS
-        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD',
-        'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE',
-        'EQ', 'NE',
+        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
-        # ASSIGNMENTS
-        'EQUALS',
-
-        # DELIMITERS
-        'LPAREN', 'RPAREN',
-        'LBRACE', 'RBRACE',
-        'COMMA', 'SEMI',
-        'COLON', 'DOT'
+        # OTHER
+        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'DOT'
     )
 
     # Operators
@@ -45,11 +43,7 @@ class RoboLexer:
     t_GE = r'>='
     t_EQ = r'=='
     t_NE = r'!='
-
-    # Assignment operators
     t_EQUALS = r'='
-
-    # Delimeters
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
     t_LBRACE = r'\{'
@@ -61,6 +55,7 @@ class RoboLexer:
 
     # Completely ignored characters
     t_ignore = ' \t'
+
 
     def __init__(self, **kwargs):
         self.lexer = lex.lex(module=self, **kwargs)
@@ -82,7 +77,7 @@ class RoboLexer:
             t.type = 'MOTION'
         elif re.match(r'id_.*', str(t.value)):
             t.value = str(t.value)[3:]
-            t.type = 'COMPONENT'
+            t.type = 'COMPONENT_ID'
         elif re.match(r'msg_.*', str(t.value)):
             t.value = str(t.value)[4:]
             t.type = 'MSGTYPE'

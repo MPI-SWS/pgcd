@@ -6,6 +6,8 @@ import threading
 import rfccc.msg
 import rospy
 
+import math
+
 from parser import *
 
 
@@ -13,7 +15,7 @@ class Executor:
 
     def __init__(self, component_id):
         self.id = component_id
-        self.parser = RoboParser()
+        self.parser = Parser()
         self.waiting_msg = False
         self.variables = {}
         self.msg_types = {}
@@ -56,6 +58,7 @@ class Executor:
                                  queue_size=100)
         while self.waiting_msg:
             self.visit_motion(node.motion)
+            rospy.sleep(0.05)
 
     def process_msg(self, msg, args):
         with self.lock:
@@ -120,11 +123,13 @@ class Executor:
             if node.exp in self.variables.keys():
                 return self.variables[node.exp]
             else:
+                print(node.exp1)
                 return getattr(self, node.exp1)
         if node.tip == Type._print:
             for item in node.exp:
                 var1 = item.accept(self)
-                print(var1)
+                print(var1, end='')
+            print()
             return None
         var1 = node.exp.accept(self)
         if isinstance(var1, str):
@@ -150,9 +155,8 @@ class Executor:
             for i in range(0, 10):
                 self.yaw += exps[0]['yaw'] / 10
                 self.pitch += exps[0]['pitch'] / 10
-                self.roll += exps[0]['roll']/ 10
+                self.roll += exps[0]['roll'] / 10
                 rospy.sleep(0.5)
-
 
     def visit(self, node):
 

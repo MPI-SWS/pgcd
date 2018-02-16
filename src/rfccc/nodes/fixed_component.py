@@ -1,23 +1,13 @@
 #!/usr/bin/env python
-import random
 
 import geometry_msgs.msg
 import geometry_msgs.msg
 import rospy
-import tf2_msgs.msg
-import turtlesim.srv
-import math
-import math
-import turtlesim.srv
-import random
-from ast_executor import Executor
-from rfccc.msg import MoveToPosition, Rotate
-from geometry_msgs.msg import Twist
-from geometry_msgs.msg import Twist
-from turtlesim.msg import Pose
-from math import pow, atan2, sqrt
-from ast_executor import Executor
 import tf
+import tf2_msgs.msg
+from rfccc.msg import MoveToPosition, Rotate
+
+from executor import Executor
 
 
 class FixedComponent(Executor):
@@ -25,7 +15,8 @@ class FixedComponent(Executor):
 
     def __init__(self):
         Executor.__init__(self, rospy.get_param('~comp'))
-        self.fix_name = rospy.get_param('~comp')
+        self.id = rospy.get_param('~comp')
+        self.prog_path = rospy.get_param('~program_location') + self.id + '.rosl'
         self.pub_tf = rospy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=1)
         try:
             self.parent = rospy.get_param('~parent')
@@ -37,18 +28,23 @@ class FixedComponent(Executor):
         self.yaw = 0
         self.pitch = 0
         self.roll = 0
-        self.timer = rospy.Timer(rospy.Duration(nsecs=1), self.set_up_broadcaster)
+        self.timer = rospy.Timer(rospy.Duration(nsecs=10), self.set_up_broadcaster)
+        with open(self.prog_path, 'r') as content_file:
+            program = content_file.read()
+        self.execute(program)
 
-    def set_up_broadcaster(self, event):
+    def parse_in_thread(self, code):
+        pass
+
+    def set_up_broadcaster(self, _):
         t = geometry_msgs.msg.TransformStamped()
         t.header.frame_id = self.parent
         t.header.stamp = rospy.Time.now()
-        t.child_frame_id = self.fix_name
+        t.child_frame_id = self.id
         t.transform.translation.x = self.x
         t.transform.translation.y = self.y
         t.transform.translation.z = self.z
-        # q = tf.transformations.quaternion_from_euler(yaw, pitch, roll, 'rzyx')
-        # RADIANS
+        # q = tf.transformations.quaternion_from_euler(yaw, pitch, roll, 'rzyx') RADIANS
         q = tf.transformations.quaternion_from_euler(self.yaw, self.pitch, self.roll, 'rzyx')
         t.transform.rotation.x = q[0]
         t.transform.rotation.y = q[1]
@@ -62,18 +58,4 @@ class FixedComponent(Executor):
 if __name__ == '__main__':
     rospy.init_node('fixed_tf2_broadcaster')
     tfb = FixedComponent()
-    if tfb.fix_name == 'arm':
-        program = '''
-            receive(m_Idle){(msg_Rotate, angles, { m_Rotate(angles) })}; 
-            angles := {"yaw": 3.14159, "pitch":0, "roll":0};  
-            send(id_tool, msg_Rotate, angles)         
-        '''
-    else:
-        program = '''
-            receive(m_Idle){ (msg_Rotate, angles, { m_Rotate(angles) }) };
-            position := {"x": 10, "y":7, "z":0 };  
-            send(id_turtle1, msg_MoveToPosition, position)            
-        '''
-    tfb.execute(program)
     rospy.spin()
-    # tfb.timer.shutdown()

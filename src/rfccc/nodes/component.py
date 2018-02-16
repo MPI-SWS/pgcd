@@ -3,7 +3,6 @@ from math import pow, atan2, sqrt
 
 import geometry_msgs.msg
 import rospy
-# Because of transformations
 import tf
 import tf2_ros
 import turtlesim.msg
@@ -11,10 +10,11 @@ import turtlesim.srv
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 
-from ast_executor import Executor
+from executor import Executor
 
 '''
-Every node has to broadcast its position in the 
+Class currently represents ROS turtle1 in turtlesim. 
+Every node has to broadcast its position in the tf2 library.
 '''
 
 
@@ -23,12 +23,17 @@ class DynamicComponent(Executor):
     def __init__(self):
         Executor.__init__(self, rospy.get_param('~turtle'))
         self.id = rospy.get_param('~turtle')
+        self.prog_path = rospy.get_param('~program_location') + self.id + '.rosl'
         self.parent = "world"
         self.velocity_publisher = rospy.Publisher('/%s/cmd_vel' % self.id, Twist, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/%s/pose' % self.id, Pose, self.update_position)
         self.pose = Pose()
         self.rate = rospy.Rate(20)
         self.set_up_broadcaster()
+        rospy.sleep(1)
+        with open(self.prog_path, 'r') as content_file:
+            program = content_file.read()
+        self.execute(program)
 
     def update_position(self, data):
         self.pose = data
@@ -38,7 +43,7 @@ class DynamicComponent(Executor):
     def move_to_pos(self, pos):
         if hasattr(self, 'sub'):
             self.sub.unregister()
-        self.wait = False
+        self.waiting_msg = False
         goal_pose = Pose()
         goal_pose.x = pos.x
         goal_pose.y = pos.y
@@ -83,21 +88,4 @@ class DynamicComponent(Executor):
 if __name__ == '__main__':
     rospy.init_node('tf2_turtle_broadcaster')
     tfb = DynamicComponent()
-    rospy.sleep(2)
-    program = '''
-        position := {"x": 1, "y": 2};
-        m_MoveToPosition(position);
-        if pose.x - position.x > 0.01 || pose.y - position.y > 0.01 then
-        {
-            skip
-        } 
-        else 
-        {
-            skip
-        };
-        angles := {"yaw": 0, "pitch":3.14159/4, "roll":0};
-        send(id_arm, msg_Rotate, angles);
-        receive(m_Idle){(msg_MoveToPosition, position, { m_MoveToPosition(position) })}            
-    '''
-    tfb.execute(program)
     rospy.spin()
