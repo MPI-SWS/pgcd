@@ -20,7 +20,7 @@ To run ROSL you need to:
 sudo apt-get install ros-$ROS_DISTRO-turtle-tf2 ros-$ROS_DISTRO-tf2-tools ros-$ROS_DISTRO-tf
 ```
 
-* create a catkin workspace having in mind python3 (compile geometry(tf2) package with python3):
+* create a catkin workspace having in mind python3 (compile geometry package with python3):
 
 ```
 $ mkdir catkin_ws
