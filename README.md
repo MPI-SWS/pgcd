@@ -45,7 +45,7 @@ $ sudo apt-get install libbullet-dev
 
 or follow: https://answers.ros.org/question/220676/how-to-install-bullet-on-indigo-in-ubuntu/
 
-* also make sure you installed python header files (or python2 will be used and you won't find the bug easily):
+* also make sure you installed python3 header files (or python2 will be used and you won't find the bug easily):
  
 ```
 $ sudo apt-get install python3-dev
