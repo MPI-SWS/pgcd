@@ -11,7 +11,7 @@ Currently the main functionalities of ROSL are:
 
 ## Project setup 
 
-### Ubuntu16.04 LTS and Debian GNU/Linux 8 (jessie)
+### Ubuntu16.04 LTS or Debian GNU/Linux 8 (jessie)
 
 To run ROSL you need to:
 
