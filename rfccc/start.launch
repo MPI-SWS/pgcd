@@ -1,0 +1,30 @@
+<launch>
+    <!--<node pkg="turtlesim" type="turtlesim_node" name="sim"/>-->
+    <!--<node pkg="turtlesim" type="turtle_teleop_key" name="teleop" output="screen"/>-->
+
+    <!--&lt;!&ndash;PROGRAM AND GROUP MUST HAVE THE SAME NAME! e.g. ns="turtle1" => turtle1.rosl &ndash;&gt;-->
+    <!--<group ns="turtle1">-->
+        <!--<param name="turtle" type="string" value="turtle1"/>-->
+        <!--<param name="program_location" type="string" value="/home/gbbanusic/catkin_ws/src/rfccc/nodes/programs/"/>-->
+    <!--</group>-->
+
+    <group ns="arm_fix">
+        <param name="comp" type="string" value="arm"/>
+        <!--<param name="x" type="double" value="0"/>-->
+        <!--<param name="y" type="double" value="0"/>-->
+        <!--<param name="z" type="double" value="0.3"/>-->
+        <param name="program_location" type="string"
+               value="/home/gbbanusic/catkin_ws/src/rfccc/nodes/programs/"/>
+    </group>
+
+    <group ns="tool_fix">
+        <param name="comp" type="string" value="tool"/>
+        <param name="parent" type="string" value="arm"/>
+        <!--<param name="x" type="double" value="0"/>-->
+        <!--<param name="y" type="double" value="0"/>-->
+        <!--<param name="z" type="double" value="0.3"/>-->
+        <param name="program_location" type="string"
+               value="/home/gbbanusic/catkin_ws/src/rfccc/nodes/programs/"/>
+    </group>
+
+</launch>

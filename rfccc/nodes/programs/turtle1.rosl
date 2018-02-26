@@ -1,7 +1,7 @@
 
-
 position = {"x": 1, "y": 0.5};
 m_MoveToPosition(position);
+
 if (pose.x - position.x > 0.01 || pose.y - position.y > 0.01)
 {
     print("Arrived at: (", pose.x, ", ", pose.y, ")")
@@ -12,6 +12,8 @@ else
 };
 angles = {"yaw": 0, "pitch":3.14159/4, "roll":0};
 send(id_arm, msg_Rotate, angles);
+
 receive(m_Idle){(msg_MoveToPosition, position, { m_MoveToPosition(position) })};
+
 position.y = 2 * 2 + sin(30);
 m_MoveToPosition(position)

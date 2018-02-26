@@ -28,6 +28,47 @@ class Executor:
     def execute(self, code):
         self.parser.parse(code).accept(self)
 
+    def visit(self, node):
+
+        if node.tip == Type.statement:
+            self.visit_statement(node)
+
+        elif node.tip == Type.skip:
+            pass
+
+        elif node.tip == Type.send:
+            self.visit_send(node)
+
+        elif node.tip == Type.receive:
+            self.visit_receive(node)
+
+        elif node.tip == Type.action:
+            return self.visit_action(node)
+
+        elif node.tip == Type._if:
+            self.visit_if(node)
+
+        elif node.tip == Type._while:
+            self.visit_while(node)
+
+        elif node.tip == Type.assign:
+            self.visit_assign(node)
+
+        elif node.tip == Type._tuple:
+            return self.visit_tuple(node)
+
+        elif isinstance(node, BinOp):
+            return self.visit_bin_op(node)
+
+        elif isinstance(node, UnOp):
+            return self.visit_un_op(node)
+
+        elif isinstance(node, Constant):
+            return node.value
+
+        elif isinstance(node, Motion):
+            self.visit_motion(node)
+
     def visit_statement(self, node):
         for stmt in node.children:
             stmt.accept(self)
@@ -42,7 +83,7 @@ class Executor:
         print(self.id + ' ', end='')
         while self.pub.get_num_connections() == 0:
             print('-', end='')
-            rospy.sleep(0.1)
+            rospy.sleep(0.2)
         print('> ' + component)
         self.pub.publish(message)
         self.pub.unregister()
@@ -146,55 +187,14 @@ class Executor:
             pass
 
         exps = [x.accept(self) for x in node.exps]
-        if value == 'MoveToPosition':
-            a = Msg()
-            a.x = exps[0]['x']
-            a.y = exps[0]['y']
-            self.move_to_pos(a)
-        elif value == 'Rotate':
-            for i in range(0, 10):
-                self.yaw += exps[0]['yaw'] / 10
-                self.pitch += exps[0]['pitch'] / 10
-                self.roll += exps[0]['roll'] / 10
-                rospy.sleep(0.5)
-
-    def visit(self, node):
-
-        if node.tip == Type.statement:
-            self.visit_statement(node)
-
-        elif node.tip == Type.skip:
-            pass
-
-        elif node.tip == Type.send:
-            self.visit_send(node)
-
-        elif node.tip == Type.receive:
-            self.visit_receive(node)
-
-        elif node.tip == Type.action:
-            return self.visit_action(node)
-
-        elif node.tip == Type._if:
-            self.visit_if(node)
-
-        elif node.tip == Type._while:
-            self.visit_while(node)
-
-        elif node.tip == Type.assign:
-            self.visit_assign(node)
-
-        elif node.tip == Type._tuple:
-            return self.visit_tuple(node)
-
-        elif isinstance(node, BinOp):
-            return self.visit_bin_op(node)
-
-        elif isinstance(node, UnOp):
-            return self.visit_un_op(node)
-
-        elif isinstance(node, Constant):
-            return node.value
-
-        elif isinstance(node, Motion):
-            self.visit_motion(node)
+        # if value == 'MoveToPosition':
+        #     a = Msg()
+        #     a.x = exps[0]['x']
+        #     a.y = exps[0]['y']
+        #     self.move_to_pos(a)
+        # elif value == 'Rotate':
+        #     for i in range(0, 10):
+        #         self.yaw += exps[0]['yaw'] / 10
+        #         self.pitch += exps[0]['pitch'] / 10
+        #         self.roll += exps[0]['roll'] / 10
+        #         rospy.sleep(0.5)

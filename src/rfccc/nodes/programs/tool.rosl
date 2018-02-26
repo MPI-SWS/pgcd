@@ -1,5 +1,0 @@
-
-
-receive(m_Idle){ (msg_Rotate, angles, { m_Rotate(angles) }) };
-position = {"x": 3, "y":1, "z":0 };
-send(id_turtle1, msg_MoveToPosition, position)

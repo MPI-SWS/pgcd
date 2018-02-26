@@ -1,7 +1,7 @@
-/build
-/devel
 /log
 **/cnf.json
-/src/rfccc/venv
-/src/rfccc/include
-/src/rfccc/.idea
+/geometry
+/geometry2
+**/.idea
+*.pyc
+**/pycache

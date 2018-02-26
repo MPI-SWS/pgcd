@@ -1,5 +1,0 @@
-
-
-receive(m_Idle){(msg_Rotate, angles, { m_Rotate(angles) })};
-angles = {"yaw": 3.14159, "pitch":0, "roll":0};
-send(id_tool, msg_Rotate, angles)
