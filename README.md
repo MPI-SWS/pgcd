@@ -9,7 +9,9 @@ Currently the main functionalities of ROSL are:
 * Execute motion primitive (CableRobot project by Marcus Pirron)
 * Tracking frames (TF2 library)
 
-## Project setup (tried on Ubuntu16.04 LTS and Debian GNU/Linux 8 (jessie))
+## Project setup 
+
+### Ubuntu16.04 LTS and Debian GNU/Linux 8 (jessie)
 
 To run ROSL you need to:
 
