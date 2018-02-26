@@ -70,10 +70,7 @@ listed command into your .bashrc file in "home/user/" directory.
 
 If you have PyCharm you can open the rfccc directory as project:
 * set rfccc/nodes and rfccc/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
-* go to Settings -> Project: rfccc -> Project interpreter 
-
-![See here](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png)
-[[https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png|alt=set_venv]]
+* go to Settings -> Project: rfccc -> Project interpreter ![Picture](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png)
 
 
 To run the example you need to:
