@@ -22,7 +22,7 @@ sudo apt-get install ros-$ROS_DISTRO-turtle-tf2 ros-$ROS_DISTRO-tf2-tools ros-$R
 
 * PyCharm IDE (or another one)
 * create a catkin workspace having in mind python3 (compile geometry(tf2) package with python3):
-* 
+
 ```
 $ mkdir catkin_ws
 $ cd catkin_ws
