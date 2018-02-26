@@ -71,7 +71,7 @@ listed command into your .bashrc file in "home/user/" directory.
 
 ## RUN Example
 
-###With PyCharm IDE
+### With PyCharm IDE
 
 If you have PyCharm you can open the rfccc directory as project:
 * set rfccc/nodes and rfccc/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
