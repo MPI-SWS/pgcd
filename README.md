@@ -9,19 +9,17 @@ Currently the main functionalities of ROSL are:
 * Execute motion primitive (CableRobot project by Marcus Pirron)
 * Tracking frames (TF2 library)
 
-## Project setup
+## Project setup (tried on Ubuntu16.04 LTS and Debian GNU/Linux 8 (jessie))
 
 To run ROSL you need to:
 
 * install ROS ( reccomended ROS Kinetic: http://wiki.ros.org/kinetic/Installation)
 * install tf2 library with turtlesim 
 
-
 ```
 sudo apt-get install ros-$ROS_DISTRO-turtle-tf2 ros-$ROS_DISTRO-tf2-tools ros-$ROS_DISTRO-tf
 ```
 
-* PyCharm IDE (or another one)
 * create a catkin workspace having in mind python3 (compile geometry(tf2) package with python3):
 
 ```
@@ -59,7 +57,7 @@ $ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-c
 $ cp -a rfccc/. ~/catkin_ws/src/
 ```
 
-* compile (with the --force-cmake or it won't work...) and source:
+* compile and source:
 
 ```
 $ cd ~/catkin_ws
@@ -73,11 +71,13 @@ listed command into your .bashrc file in "home/user/" directory.
 
 ## RUN Example
 
+###With PyCharm IDE
+
 If you have PyCharm you can open the rfccc directory as project:
 * set rfccc/nodes and rfccc/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
 * go to Settings -> Project: rfccc -> Project interpreter -> add python3 venv ([Picture](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png))
+* import CableRobot project or modify the project to remove dependencies (will be done in future)
 
-#You guys need Python header files: https://github.com/giampaolo/psutil/issues/1143
 
 To run the example you need to:
 
