@@ -47,13 +47,15 @@ or follow: https://answers.ros.org/question/220676/how-to-install-bullet-on-indi
 * download this project in your catkin workspace
 
 ```
-$ cd src 
-$ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code.git
+$ cd ~/Dowloads
+$ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code.git rfccc
+$ cp -a rfccc/src/. ~/catkin_ws/src/
 ```
 
 * compile and source:
 * 
 ```
+$ cd ~/catkin_ws
 $ catkin_make
 $ source devel/setup.bash
 ```
