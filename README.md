@@ -50,7 +50,7 @@ or follow: https://answers.ros.org/question/220676/how-to-install-bullet-on-indi
 ```
 $ cd ~/Dowloads
 $ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code.git rfccc
-$ cp -a rfccc/src/. ~/catkin_ws/src/
+$ cp -a rfccc/. ~/catkin_ws/src/
 ```
 
 * compile and source:
@@ -67,6 +67,10 @@ listed command into your .bashrc file in "home/user/" directory.
 
 
 ## RUN Example
+
+If you have PyCharm you can open the rfccc directory as project:
+* set rfccc/nodes and rfccc/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
+* go to Settings -> Project: rfccc -> Project interpreter 
 
 To run the example you need to:
 
