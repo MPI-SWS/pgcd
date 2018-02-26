@@ -15,7 +15,8 @@ To run ROSL you need to:
 
 * install ROS ( reccomended ROS Kinetic: http://wiki.ros.org/kinetic/Installation)
 * install tf2 library with turtlesim 
-* 
+
+
 ```
 sudo apt-get install ros-$ROS_DISTRO-turtle-tf2 ros-$ROS_DISTRO-tf2-tools ros-$ROS_DISTRO-tf
 ```
@@ -37,7 +38,7 @@ $ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 arpeggio
 ```
 
 * make sure you have installed bullet library:
-* 
+
 ```
 $ sudo apt-get install libbullet-dev
 ```
@@ -53,7 +54,7 @@ $ cp -a rfccc/src/. ~/catkin_ws/src/
 ```
 
 * compile and source:
-* 
+
 ```
 $ cd ~/catkin_ws
 $ catkin_make
@@ -64,21 +65,6 @@ For more details how to compile tf2 with python3 see: https://github.com/ros/geo
 If you want your computer to store permanently your workspace you need to add the
 listed command into your .bashrc file in "home/user/" directory.
 
-
-### To run the project we reccomend PyCharm.
-
-Install python 2.7.9 and packages:
-* PyYAML
-* enum34
-* genpy
-* numpy
-* ply
-* rospy
-* rospkg
-* rosdistro
-* rosdep
-* tf
-* tf2-ros
 
 ## RUN Example
 
