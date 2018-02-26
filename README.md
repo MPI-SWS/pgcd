@@ -45,6 +45,12 @@ $ sudo apt-get install libbullet-dev
 
 or follow: https://answers.ros.org/question/220676/how-to-install-bullet-on-indigo-in-ubuntu/
 
+* also make sure you installed python header files:
+ 
+```
+$ sudo apt-get install python3-dev
+```
+
 * download this project in your catkin workspace
 
 ```
@@ -53,18 +59,17 @@ $ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-c
 $ cp -a rfccc/. ~/catkin_ws/src/
 ```
 
-* compile and source:
+* compile (with the --force-cmake or it won't work...) and source:
 
 ```
 $ cd ~/catkin_ws
-$ catkin_make
-$ source devel/setup.bash
+$ catkin_make --force-cmake
+$ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 ```
 
 For more details how to compile tf2 with python3 see: https://github.com/ros/geometry2/issues/259 .
 If you want your computer to store permanently your workspace you need to add the
 listed command into your .bashrc file in "home/user/" directory.
-
 
 ## RUN Example
 
@@ -72,12 +77,7 @@ If you have PyCharm you can open the rfccc directory as project:
 * set rfccc/nodes and rfccc/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
 * go to Settings -> Project: rfccc -> Project interpreter -> add python3 venv ([Picture](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png))
 
-
-If you didn't add devel/setup.bash to .bashrc you need to source manually (in pycharm terminal):
-
-```
-$ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
-```
+#You guys need Python header files: https://github.com/giampaolo/psutil/issues/1143
 
 To run the example you need to:
 
