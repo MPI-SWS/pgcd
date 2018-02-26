@@ -34,7 +34,7 @@ $ git clone https://github.com/ros/geometry2
 $ cd ..
 $ virtualenv -p /usr/bin/python3 venv
 $ source venv/bin/activate
-$ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 arpeggio
+$ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 arpeggio defusedxml
 ```
 
 * make sure you have installed bullet library:
@@ -73,16 +73,24 @@ If you have PyCharm you can open the rfccc directory as project:
 * go to Settings -> Project: rfccc -> Project interpreter -> add python3 venv ([Picture](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png))
 
 
+If you didn't add devel/setup.bash to .bashrc you need to source manually (in pycharm terminal):
+
+```
+$ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+```
+
 To run the example you need to:
 
 * Run main.py file
+
+
 * Run terminal command for starting roscore
 
 ```
 $ roslaunch rfccc start.launch
 ```
 
-* Run terminal command for vizualisation
+* Run terminal command for visualisation
 
 ```
 $ rosrun rviz rviz -d `rospack find turtle_tf2`/rviz/turtle_rviz.rviz
