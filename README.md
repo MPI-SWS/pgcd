@@ -1,6 +1,6 @@
 # ROSL - Concurrent Control Code in ROS with resources and frames tracking
 
-ROSL is a programming language for ROS nodes.
+ROSL is a programming language for communication and execution of motion primitives within ROS nodes.
 
 ## Features
 
