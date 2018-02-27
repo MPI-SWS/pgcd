@@ -34,7 +34,7 @@ $ git clone https://github.com/ros/geometry2
 $ cd ..
 $ virtualenv -p /usr/bin/python3 venv
 $ source venv/bin/activate
-$ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 arpeggio defusedxml
+$ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 arpeggio defusedxml # for CableRobot project: z3-solver
 ```
 
 * make sure you have installed bullet library:
