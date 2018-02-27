@@ -11,6 +11,9 @@ Currently the main functionalities of ROSL are:
 
 ## Project setup 
 
+The project uses python3, cause executing motion primitives need python3 (CableRobot project).
+Therefore some tweaks have to be done.
+
 ### Ubuntu16.04 LTS or Debian GNU/Linux 8 (jessie)
 
 To run ROSL you need to:
