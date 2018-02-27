@@ -11,7 +11,7 @@ Currently the main functionalities of ROSL are:
 
 ## Project setup 
 
-The project uses python3, cause executing motion primitives need python3 (CableRobot project).
+The project uses python3 (3.6 for CableRobot integration), cause executing motion primitives need python3 (CableRobot project).
 Therefore some tweaks have to be done.
 
 ### Ubuntu16.04 LTS or Debian GNU/Linux 8 (jessie)
@@ -35,9 +35,9 @@ $ cd src
 $ git clone https://github.com/ros/geometry
 $ git clone https://github.com/ros/geometry2
 $ cd ..
-$ virtualenv -p /usr/bin/python3 venv
-$ source venv/bin/activate
-$ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 arpeggio defusedxml # for CableRobot project: z3-solver
+$ python3.6 -m venv venv3.6
+$ source venv3.6/bin/activate
+$ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 defusedxml # for CableRobot project: z3-solver arpeggio
 ```
 
 * make sure you have installed bullet library:
