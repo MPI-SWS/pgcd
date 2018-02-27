@@ -4,6 +4,7 @@ m_MoveToPosition(position);
 
 if (pose.x - position.x > 0.01 || pose.y - position.y > 0.01)
 {
+
     print("Arrived at: (", pose.x, ", ", pose.y, ")")
 }
 else

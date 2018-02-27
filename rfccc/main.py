@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import rospy
 import roslaunch
-import encasp_2r2p as en
 
 
 def start_ros_nodes():
@@ -19,5 +18,4 @@ def start_ros_nodes():
     print("nodes started")
     input()
 
-en.robot_arm()
 start_ros_nodes()
