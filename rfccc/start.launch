@@ -19,7 +19,7 @@
 
     <group ns="tool_fix">
         <param name="comp" type="string" value="tool"/>
-        <param name="parent" type="string" value="arm"/>
+        <!--<param name="parent" type="string" value="arm"/>-->
         <!--<param name="x" type="double" value="0"/>-->
         <!--<param name="y" type="double" value="0"/>-->
         <!--<param name="z" type="double" value="0.3"/>-->

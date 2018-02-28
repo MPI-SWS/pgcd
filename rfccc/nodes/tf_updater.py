@@ -19,7 +19,7 @@ class TFUpdater:
 
     def set_up_broadcaster(self, _):
         if self.debug:
-            print(self.component.getName(), self.parent)
+            print(self.id + "_" + self.component.getName(), self.parent)
             self.debug = False
         t = geometry_msgs.msg.TransformStamped()
         t.header.frame_id = self.parent

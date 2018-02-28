@@ -1,7 +1,14 @@
 
+# receive(m_Idle){ (msg_Rotate, angles, { m_Rotate(angles) }) };
 
-angles = {"yaw": 3.14159, "pitch":0, "roll":0};
+angles = {"yaw": 0, "pitch": 0.2, "roll": 0.3};
 
-send(id_tool, msg_Rotate, angles);
+m_set_angle_base(angles);
 
-receive(m_Idle){(msg_Rotate, angles, { m_Rotate(angles) })}
+angles.pitch = angles.pitch + 0.2;
+angles.roll = angles.roll + 0.1;
+
+print("Sending --->");
+
+send(id_tool, msg_Rotate, angles)
+

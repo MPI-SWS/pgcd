@@ -79,19 +79,21 @@ class Executor:
         for name in message.__slots__:
             setattr(message, name, value[name])
 
+        print("/" + component,)
         self.pub = rospy.Publisher("/" + component, msg_type, queue_size=3)
         print(self.id + ' ', end='')
         while self.pub.get_num_connections() == 0:
             print('-', end='')
-            rospy.sleep(0.2)
+            rospy.sleep(0.1)
         print('> ' + component)
         self.pub.publish(message)
-        self.pub.unregister()
+        #self.pub.unregister()
 
     def visit_receive(self, node):
         actions = [a.accept(self) for a in node.actions]
         self.waiting_msg = True
         for action in actions:
+            print("/" + self.id)
             self.subs["/" + self.id + '/' + action['msg_type'].__name__] = \
                 rospy.Subscriber("/" + self.id, action['msg_type'],
                                  self.process_msg,
@@ -102,6 +104,7 @@ class Executor:
             rospy.sleep(0.05)
 
     def process_msg(self, msg, args):
+        #print("PRIMIO SAM JEBENU PORUKU!!!!!!!!!!!!!!!!!!")
         with self.lock:
             if self.waiting_msg:
                 for key in self.subs.keys():
@@ -187,6 +190,26 @@ class Executor:
             pass
 
         exps = [x.accept(self) for x in node.exps]
+
+        if value == 'set_angle_base':
+            yaw = pitch = roll = 0
+            print(exps[0]['yaw'], exps[0]['pitch'], exps[0]['roll'])
+            for i in range(10):
+                yaw += exps[0]['yaw']/10
+                pitch += exps[0]['pitch'] / 10
+                roll += exps[0]['roll'] / 10
+                self.robot.set_angle_base(yaw, pitch, roll)
+                self.robot.calculateEndPosition()
+                rospy.sleep(0.2)
+        elif value == 'set_angle_elbow':
+            yaw = pitch = roll = 0
+            for i in range(10):
+                yaw += exps[0]['yaw']/10
+                pitch += exps[0]['pitch'] / 10
+                roll += exps[0]['roll'] / 10
+                self.robot.set_angle_elbow(yaw, pitch, roll)
+                self.robot.calculateEndPosition()
+                rospy.sleep(0.2)
         # if value == 'MoveToPosition':
         #     a = Msg()
         #     a.x = exps[0]['x']

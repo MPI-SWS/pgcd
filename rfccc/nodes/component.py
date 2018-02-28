@@ -21,8 +21,8 @@ class Component(Executor):
         except KeyError:
             self.parent = "world"
         self.robot = en.robot_arm()
-        self.robot.set_angle_base(0, 0,3.14159 / 4)
-        self.robot.set_angle_elbow(0,0,-3.14159 / 4)
+        self.robot.set_angle_base(3.14159 / 2, 3.14159/2, 0)
+        self.robot.set_angle_elbow(0, 0, 0)
         self.robot.calculateEndPosition()
         self.init_parts()
         self.execute_prog()
