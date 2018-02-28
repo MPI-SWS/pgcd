@@ -35,6 +35,7 @@ $ cd src
 $ git clone https://github.com/ros/geometry
 $ git clone https://github.com/ros/geometry2
 $ cd ..
+$ sudo apt-get install python3.6-venv
 $ python3.6 -m venv venv3.6
 $ source venv3.6/bin/activate
 $ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 defusedxml
