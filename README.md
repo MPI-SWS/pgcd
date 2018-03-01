@@ -35,16 +35,17 @@ $ cd src
 $ git clone https://github.com/ros/geometry
 $ git clone https://github.com/ros/geometry2
 $ cd ..
+$ sudo apt-get install python3.6-tk
 $ sudo apt-get install python3.6-venv
 $ python3.6 -m venv venv3.6
 $ source venv3.6/bin/activate
-$ pip install catkin_pkg pyyaml empy rospkg numpy ply sympy enum34 defusedxml
+$ pip install catkin_pkg pyyaml empy rospkg ply enum34 defusedxml # if it isn't working try in pycharm
 ```
 
 * CableRobot project dependencies:
  
 ```
-pip install  z3-solver arpeggio
+pip install  z3-solver arpeggio numpy sympy
 ```
 
 * make sure you have installed bullet library:
