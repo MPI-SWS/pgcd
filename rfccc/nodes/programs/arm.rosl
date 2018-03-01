@@ -1,14 +1,15 @@
-
 # receive(m_Idle){ (msg_Rotate, angles, { m_Rotate(angles) }) };
 
-angles = {"yaw": 0, "pitch": 0.2, "roll": 0.3};
+
+
+angles = {"yaw": 0, "pitch": -3.14159/3, "roll": 0};
 
 m_set_angle_base(angles);
 
 angles.pitch = angles.pitch + 0.2;
 angles.roll = angles.roll + 0.1;
 
-print("Sending --->");
+print("HELLO")
 
-send(id_tool, msg_Rotate, angles)
+#send(id_tool, msg_Rotate, angles)
 

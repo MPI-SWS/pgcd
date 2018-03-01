@@ -87,7 +87,7 @@ class Executor:
             rospy.sleep(0.1)
         print('> ' + component)
         self.pub.publish(message)
-        #self.pub.unregister()
+        self.pub.unregister()
 
     def visit_receive(self, node):
         actions = [a.accept(self) for a in node.actions]
@@ -194,21 +194,21 @@ class Executor:
         if value == 'set_angle_base':
             yaw = pitch = roll = 0
             print(exps[0]['yaw'], exps[0]['pitch'], exps[0]['roll'])
-            for i in range(10):
-                yaw += exps[0]['yaw']/10
-                pitch += exps[0]['pitch'] / 10
-                roll += exps[0]['roll'] / 10
+            for i in range(20):
+                yaw += exps[0]['yaw']/20
+                pitch += exps[0]['pitch'] / 20
+                roll += exps[0]['roll'] / 20
                 self.robot.set_angle_base(yaw, pitch, roll)
-                self.robot.calculateEndPosition()
+                #self.robot.calculateEndPosition()
                 rospy.sleep(0.2)
         elif value == 'set_angle_elbow':
             yaw = pitch = roll = 0
-            for i in range(10):
-                yaw += exps[0]['yaw']/10
-                pitch += exps[0]['pitch'] / 10
-                roll += exps[0]['roll'] / 10
+            for i in range(20):
+                yaw += exps[0]['yaw']/20
+                pitch += exps[0]['pitch'] / 20
+                roll += exps[0]['roll'] / 20
                 self.robot.set_angle_elbow(yaw, pitch, roll)
-                self.robot.calculateEndPosition()
+                #self.robot.calculateEndPosition()
                 rospy.sleep(0.2)
         # if value == 'MoveToPosition':
         #     a = Msg()

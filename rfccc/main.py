@@ -14,7 +14,7 @@ def start_ros_nodes():
     launch.start()
 
     launch.launch(node2)
-    launch.launch(node3)
+    #launch.launch(node3)
     print("nodes started")
     input()
 

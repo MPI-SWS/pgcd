@@ -2,7 +2,7 @@
 
 import rospy
 import tf2_msgs.msg
-
+import sympy as sp
 import encasp_2r2p as en
 import tf_updater
 from executor import Executor
@@ -21,7 +21,7 @@ class Component(Executor):
         except KeyError:
             self.parent = "world"
         self.robot = en.robot_arm()
-        self.robot.set_angle_base(3.14159 / 2, 3.14159/2, 0)
+        self.robot.set_angle_base(0, 0, 0)
         self.robot.set_angle_elbow(0, 0, 0)
         self.robot.calculateEndPosition()
         self.init_parts()
@@ -29,11 +29,11 @@ class Component(Executor):
 
     def init_parts(self):
         list_of_acts = self.robot.linkage.getListOfActuators()
-        self.components[self.robot.list[0].getName()] = tf_updater.TFUpdater(self.id, self.parent, self.robot.list[0])
+        self.components[self.robot.list[0].getName()] = tf_updater.TFUpdater(self.id, self.parent, self.robot.list[0], self.robot.list)
         for i in range(1, len(self.robot.list)):
             parent = self.id + "_" + self.robot.list[i-1].getName()
             self.components[self.robot.list[i].getName()] = tf_updater.TFUpdater(self.id, parent,
-                                                                                 self.robot.list[i])
+                                                                                 self.robot.list[i], self.robot.list)
 
     def execute_prog(self):
         with open(self.prog_path, 'r') as content_file:
