@@ -91,6 +91,12 @@ If you have PyCharm you can open the rfccc directory as project:
 * go to Settings -> Project: rfccc -> Project interpreter -> add python3 venv ([Picture](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png))
 * import CableRobot project or modify the project to remove dependencies (will be done in future)
 
+Before running the example please set the "RFCCC_ROS_PROGRAMS" environment variable to your location of node programs
+(or change the path manually in start.launch file), for example:
+
+```
+RFCCC_ROS_PROGRAMS="/home/$USERNAME/catkin_ws/src/rfccc/nodes/programs/"
+```
 
 To run the example you need to:
 
