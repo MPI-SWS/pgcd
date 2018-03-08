@@ -80,7 +80,7 @@ $ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 
 For more details how to compile tf2 with python3 see: https://github.com/ros/geometry2/issues/259 .
 If you want your computer to store permanently your workspace you need to add the
-listed command into your .bashrc file in "home/user/" directory.
+last listed command into your .bashrc file in "home/user/" directory.
 
 ## RUN Example
 
