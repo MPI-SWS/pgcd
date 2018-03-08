@@ -80,7 +80,7 @@ $ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 
 For more details how to compile tf2 with python3 see: https://github.com/ros/geometry2/issues/259 .
 If you want your computer to store permanently your workspace you need to add the
-listed command into your .bashrc file in "home/user/" directory.
+last listed command into your .bashrc file in "home/user/" directory.
 
 ## RUN Example
 
@@ -91,6 +91,15 @@ If you have PyCharm you can open the rfccc directory as project:
 * go to Settings -> Project: rfccc -> Project interpreter -> add python3 venv ([Picture](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png))
 * import CableRobot project or modify the project to remove dependencies (will be done in future)
 
+Before running the example please set the "RFCCC_ROS_PROGRAMS" environment variable to your location of node programs (globally!)
+(or change the path manually in start.launch file), for example:
+
+```
+RFCCC_ROS_PROGRAMS="/home/$USERNAME/catkin_ws/src/rfccc/nodes/programs/"
+```
+
+make sure that the path is set and that roslaunch will find it! 
+(You can check it in the output of roslaunch)
 
 To run the example you need to:
 
@@ -108,3 +117,9 @@ $ roslaunch rfccc start.launch
 ```
 $ rosrun rviz rviz -d `rospack find turtle_tf2`/rviz/turtle_rviz.rviz
 ```
+
+
+## Need to fix:
+
+* executor.py -> def visit_receive -> no interruption when the receive message arrives
+* executor.py -> def visit_motion -> a better way to simulate and execute motions?
