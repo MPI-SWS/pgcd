@@ -117,3 +117,9 @@ $ roslaunch rfccc start.launch
 ```
 $ rosrun rviz rviz -d `rospack find turtle_tf2`/rviz/turtle_rviz.rviz
 ```
+
+
+## Need to fix:
+
+* executor.py -> def visit_receive -> no interruption when the receive message arrives
+* executor.py -> def visit_motion -> a better way to simulate and execute motions?
