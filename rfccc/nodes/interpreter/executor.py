@@ -84,9 +84,11 @@ class Executor:
         print(self.id + ' ', end='')
         while self.pub.get_num_connections() == 0:
             print('-', end='')
-            rospy.sleep(0.1)
+            rospy.sleep(0.2)
         print('> ' + component)
         self.pub.publish(message)
+        while self.pub.get_num_connections() != 0:
+            rospy.sleep(0.05)
         self.pub.unregister()
 
     def visit_receive(self, node):
@@ -101,7 +103,7 @@ class Executor:
                                  queue_size=100)
         while self.waiting_msg:
             self.visit_motion(node.motion)
-            rospy.sleep(0.05)
+            rospy.sleep(0.01)
 
     def process_msg(self, msg, args):
         #print("PRIMIO SAM JEBENU PORUKU!!!!!!!!!!!!!!!!!!")
@@ -167,7 +169,6 @@ class Executor:
             if node.exp in self.variables.keys():
                 return self.variables[node.exp]
             else:
-                print(node.exp1)
                 return getattr(self, node.exp1)
         if node.tip == Type._print:
             for item in node.exp:
@@ -190,23 +191,23 @@ class Executor:
             pass
 
         exps = [x.accept(self) for x in node.exps]
-
+        k = 10
         if value == 'set_angle_base':
             yaw = pitch = roll = 0
             print(exps[0]['yaw'], exps[0]['pitch'], exps[0]['roll'])
-            for i in range(20):
-                yaw += exps[0]['yaw']/20
-                pitch += exps[0]['pitch'] / 20
-                roll += exps[0]['roll'] / 20
+            for i in range(k):
+                yaw += exps[0]['yaw']/k
+                pitch += exps[0]['pitch'] / k
+                roll += exps[0]['roll'] /k
                 self.robot.set_angle_base(yaw, pitch, roll)
                 #self.robot.calculateEndPosition()
                 rospy.sleep(0.2)
         elif value == 'set_angle_elbow':
             yaw = pitch = roll = 0
-            for i in range(20):
-                yaw += exps[0]['yaw']/20
-                pitch += exps[0]['pitch'] / 20
-                roll += exps[0]['roll'] / 20
+            for i in range(10):
+                yaw += exps[0]['yaw']/k
+                pitch += exps[0]['pitch'] / k
+                roll += exps[0]['roll'] / k
                 self.robot.set_angle_elbow(yaw, pitch, roll)
                 #self.robot.calculateEndPosition()
                 rospy.sleep(0.2)

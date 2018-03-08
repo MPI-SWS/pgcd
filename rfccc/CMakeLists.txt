@@ -55,6 +55,7 @@ add_message_files(
   FILES
   MoveToPosition.msg
   Rotate.msg
+  OK.msg
 )
 
 ## Generate services in the 'srv' folder

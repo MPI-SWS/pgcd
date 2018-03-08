@@ -1,21 +1,21 @@
 #!/usr/bin/env python
-import rospy
-import roslaunch
 
+import roslaunch
+import xml.etree.ElementTree
+import os
 
 def start_ros_nodes():
-    print("start")
     package = 'rfccc'
     broadcaster_comp = 'component.py'
-    node2 = roslaunch.core.Node(package, broadcaster_comp, name="arm_fix", respawn=False, output="screen")
-    node3 = roslaunch.core.Node(package, broadcaster_comp, name="tool_fix", respawn=False, output="screen")
 
     launch = roslaunch.scriptapi.ROSLaunch()
     launch.start()
 
-    launch.launch(node2)
-    #launch.launch(node3)
-    print("nodes started")
+    e = xml.etree.ElementTree.parse(os.getcwd() + '/../start.launch').getroot()
+    for atype in e.findall('group'):
+        node = roslaunch.core.Node(package, broadcaster_comp, name=atype.get('ns'), respawn=False, output="screen")
+        launch.launch(node)
+
     input()
 
 start_ros_nodes()
