@@ -98,6 +98,9 @@ Before running the example please set the "RFCCC_ROS_PROGRAMS" environment varia
 RFCCC_ROS_PROGRAMS="/home/$USERNAME/catkin_ws/src/rfccc/nodes/programs/"
 ```
 
+make sure that the path is set and that roslaunch will find it! 
+(You can check it in the output of roslaunch)
+
 To run the example you need to:
 
 * Run main.py file
