@@ -15,7 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
   turtlesim
   std_msgs
   message_generation
+  gazebo_ros
 )
+
+find_package(gazebo REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -112,7 +115,7 @@ catkin_package(
 #  LIBRARIES rfccc
 #  CATKIN_DEPENDS roscpp rospy tf2 tf2_ros turtlesim
   CATKIN_DEPENDS message_runtime
-#  DEPENDS system_lib
+  DEPENDS gazebo_ros
 )
 
 ###########

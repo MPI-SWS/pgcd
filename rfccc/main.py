@@ -11,7 +11,7 @@ def start_ros_nodes():
     launch = roslaunch.scriptapi.ROSLaunch()
     launch.start()
 
-    e = xml.etree.ElementTree.parse(os.getcwd() + '/../start.launch').getroot()
+    e = xml.etree.ElementTree.parse(os.getcwd() + '/start.launch').getroot()
     for atype in e.findall('group'):
         node = roslaunch.core.Node(package, broadcaster_comp, name=atype.get('ns'), respawn=False, output="screen")
         launch.launch(node)

@@ -2,7 +2,7 @@
 
 import rospy
 
-import encasp_2r2p as en
+import encaps_2r2p as en
 import tf_updater
 from executor import Executor
 
@@ -25,7 +25,7 @@ class Component(Executor):
             self.x = 0
             self.y = 0
             self.z = 0
-        self.robot = en.robot_arm(self.x,self.y,self.z)
+        self.robot = en.robot_arm()
         self.robot.set_angle_base(0, 0, 0)
         self.robot.set_angle_elbow(0, 0, 0)
         self.robot.calculateEndPosition()
