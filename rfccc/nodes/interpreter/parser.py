@@ -2,7 +2,7 @@ import logging
 
 import ply.yacc as yacc
 
-import lexer as rlex
+import interpreter.lexer as rlex
 from ast import *
 
 

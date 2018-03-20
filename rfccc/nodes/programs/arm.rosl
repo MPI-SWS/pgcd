@@ -5,6 +5,7 @@
 angles = {"yaw": 0, "pitch": -3.14159/3, "roll": 0};
 
 m_set_angle_base(angles);
+m_set_angle_elbow(angles);
 
 angles.pitch = angles.pitch + 0.2;
 angles.roll = angles.roll + 0.3;

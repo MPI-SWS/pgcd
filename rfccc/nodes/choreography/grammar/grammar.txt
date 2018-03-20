@@ -1,0 +1,57 @@
+
+The grammar for choreography language:
+======================================
+
+choreography  : ID EQUALS DEF statement IN LSQUARE expression RSQUARE ID
+
+    statement : statement statement
+              | message
+              | motion
+              | guard
+              | merge
+              | fork
+              | join
+              | end
+
+        message : ID EQUALS ID ARROW ID COLON ID arg SEMI ID
+
+            arg    : LPAREN exp RPAREN
+                   | LPAREN RPAREN
+
+            exp    : exp COMMA exp
+                   | expression
+
+        motion : ID EQUALS LPAREN mspecs RPAREN SEMI ID
+
+            mspecs : mspecs COMMA mspecs
+                   | ID COLON ID arg
+
+        guard   : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs
+
+            gargs  : LSQUARE expression RSQUARE ID PLUS gargs
+                   | LSQUARE expression RSQUARE ID
+
+        merge   : ID PLUS margs EQUALS ID
+
+            margs  : ID PLUS margs
+                   | ID
+
+        fork    : ID EQUALS ID OR fargs
+            // jargs and fargs because of unambiguity checking
+            fargs  : ID OR fargs
+                   | ID
+
+        join    : ID OR jargs EQUALS ID
+
+            jargs  : ID OR jargs
+                   | ID
+
+        end     : ID EQUALS END
+
+            expression: expression PLUS/MINUS/TIMES/DIVIDE/MOD expression
+                      | expression AND/OR/GT/GE/LT/LE/EQ/NE expression
+                      | UNMINUS/NOT expression
+                      | SIN/COS/TAN/ABS/SQRT LPAREN expression RPAREN
+                      | LPAREN expression RPAREN
+                      | ICONST/DCONST/SCONST/BCONST
+

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import inspect
 import threading
 
@@ -191,7 +189,7 @@ class Executor:
             pass
 
         exps = [x.accept(self) for x in node.exps]
-        k = 10
+        k = 20
         if value == 'set_angle_base':
             yaw = pitch = roll = 0
             print(exps[0]['yaw'], exps[0]['pitch'], exps[0]['roll'])
@@ -204,7 +202,7 @@ class Executor:
                 rospy.sleep(0.2)
         elif value == 'set_angle_elbow':
             yaw = pitch = roll = 0
-            for i in range(10):
+            for i in range(k):
                 yaw += exps[0]['yaw']/k
                 pitch += exps[0]['pitch'] / k
                 roll += exps[0]['roll'] / k

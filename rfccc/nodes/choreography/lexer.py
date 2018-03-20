@@ -2,9 +2,9 @@ import ply.lex as lex
 import re
 
 
-class Lexer:
+class ChoreographyLexer:
     '''
-    Class represents tokenizer, lexer or scanner, converting sequence of characters into sequence of tokens.
+    Class represents choreography tokenizer (lexer/scanner) converting sequence of characters into sequence of tokens.
     If you are not familiar with generating lexer and parser with python PLY package, go through this tutorial:
     http://www.dabeaz.com/ply/ply.html
     '''
@@ -13,22 +13,22 @@ class Lexer:
 
     # RESERVED WORDS
     reserved = (
-                   'SKIP', 'SEND', 'RECEIVE', 'IF',
-                   'ELSE', 'WHILE', 'PRINT'
+                   'DEF', 'END', 'IN'
                ) + functions
 
     tokens = reserved + (
         # LITERALS (identifier; motion; component; message type; integer, double, string and bool constant)
-        'ID', 'MOTION', 'COMPONENT_ID', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
+        'ID', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
 
         # OPERATORS
-        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
+        'ARROW', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
         # OTHER
-        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'DOT'
+        'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'COMMA', 'SEMI', 'COLON', 'DOT'
     )
 
     # Operators
+    t_ARROW = r'->'
     t_PLUS = r'\+'
     t_MINUS = r'-'
     t_TIMES = r'\*'
@@ -46,8 +46,8 @@ class Lexer:
     t_EQUALS = r'='
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
-    t_LBRACE = r'\{'
-    t_RBRACE = r'\}'
+    t_LSQUARE = r'\['
+    t_RSQUARE = r'\]'
     t_COMMA = r','
     t_SEMI = r';'
     t_COLON = r':'
@@ -71,16 +71,7 @@ class Lexer:
 
     def t_ID(self, t):
         r'[A-Za-z_][\w_]*'
-        if re.match(r'm_.*', str(t.value)):
-            t.value = str(t.value)[2:]
-            t.type = 'MOTION'
-        elif re.match(r'id_.*', str(t.value)):
-            t.value = str(t.value)[3:]
-            t.type = 'COMPONENT_ID'
-        elif re.match(r'msg_.*', str(t.value)):
-            t.value = str(t.value)[4:]
-            t.type = 'MSGTYPE'
-        elif re.match(r'(true|false)', str(t.value)):
+        if re.match(r'(true|false)', str(t.value)):
             t.value = (t.value == 'true')
             t.type = 'BCONST'
         else:
