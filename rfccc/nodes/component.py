@@ -8,23 +8,28 @@ from executor import Executor
 
 class Component(Executor):
 
-    components = {}
-
     def __init__(self):
-        Executor.__init__(self, rospy.get_param('~comp'))
-        self.id = rospy.get_param('~comp')
+        Executor.__init__(self, rospy.get_name())
+        self.id = rospy.get_name()[1:]
+        self.components = {}
         self.prog_path = rospy.get_param('~program_location') + self.id + '.rosl'
+
         try:
             self.parent = rospy.get_param('~parent')
+        except KeyError as e:
+            print(str(e))
+            self.parent = "world"
+        print(self.parent)
+        try:
             self.x = rospy.get_param('~x')
             self.y = rospy.get_param('~y')
             self.z = rospy.get_param('~z')
         except KeyError as e:
             print(str(e))
-            self.parent = "world"
             self.x = 0
             self.y = 0
             self.z = 0
+
         self.robot = en.robot_arm(self.x, self.y, self.z)
         self.robot.set_angle_base(0, 0, 0)
         self.robot.set_angle_elbow(0, 0, 0)

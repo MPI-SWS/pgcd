@@ -6,16 +6,11 @@ import collections
 import choreography.lexer as clexer
 from choreography.ast import *
 
+import os
+
 
 class ChoreographyParser:
-
-    begin_states = set()
-
-    continue_states = set()
-
-    start_state = None
-
-    end_appeared = False
+    initialized_components = set()
 
     precedence = (
         ('left', 'AND', 'OR', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
@@ -36,28 +31,39 @@ class ChoreographyParser:
         self.lexer = clexer.ChoreographyLexer(debuglog=log, debug=True)
         self.tokens = self.lexer.tokens
         self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
+        self.left_states = set()
+        self.right_states = set()
+        self.start_state = None
+        self.end_appeared = False
+        self.fork_join_stack = 0
+        self.choice_merge_stack = 0
 
     def parse(self, text):
         tree = self.parser.parse(text, self.lexer.lexer)
-        if len(self.begin_states - self.continue_states) != 1: # start state is always in
-            raise Exception('States ' + str(self.begin_states ^ self.continue_states) + ' are not on LHS or RHS!')
+        if len(self.left_states ^ self.right_states) != 1:  # start state is always in
+            raise Exception('States ' + str(self.left_states ^ self.right_states) + ' are not on LHS or RHS!')
         return tree
 
     def ambiguity_check(self, state, is_left):
+
         if self.start_state is None:
             self.start_state = state
+
+        if self.graph_ended:
+            raise Exception('Distributed states are not connected!')
+
         if is_left:
-            if self.begin_states.__contains__(state):
+            if self.left_states.__contains__(state):
                 raise Exception('State "' + state + '" appeared on LHS twice...')
             else:
-                self.begin_states.add(state)
+                self.left_states.add(state)
         else:
-            if self.continue_states.__contains__(state):
+            if self.right_states.__contains__(state):
                 raise Exception('State "' + state + '" appeared on RHS twice...')
             elif state == self.start_state:
                 raise Exception('Start state "' + state + '" cannot appear on RHS.')
             else:
-                self.continue_states.add(state)
+                self.right_states.add(state)
 
     # ------------------------------------- STATEMENTS --------------------------------------
 
@@ -79,12 +85,23 @@ class ChoreographyParser:
         else:
             p[0] = p[1]
 
-
     def p_message(self, p):
         'message : ID EQUALS ID ARROW ID COLON ID arg SEMI ID'
         p[0] = Message(p[1], p[3], p[5], p[7], p[8], p[10])
+        if p[3] == p[5]:
+            raise Exceptionmessage("No self message! (" + p[3] + "->" + p[5] + ")")
         self.ambiguity_check(p[1], True)
         self.ambiguity_check(p[10], False)
+        # TODO : this is only for testing purposes here,
+        # when the main.py launches self.initialized_components
+        # will be populated!
+        if len(self.initialized_components) != 0:
+            if p[3] not in self.initialized_components:
+                raise Exception("Component with name '" + p[3] + "' is not in programs processes.")
+            if p[5] not in self.initialized_components:
+                raise Exception("Component with name '" + p[5] + "' is not in programs processes.")
+        else:
+            print('------WARNING: no components initialized, this is only for debugging purposes...-------')
 
     def p_arg(self, p):
         ''' arg : LPAREN exp RPAREN
@@ -121,6 +138,7 @@ class ChoreographyParser:
         p[0] = Guard(p[1], [GuardArg(p[4], p[6])] + p[8])
         self.ambiguity_check(p[1], True)
         self.ambiguity_check(p[6], False)
+        self.choice_merge_stack += 1
 
     def p_gargs(self, p):
         ''' gargs : LSQUARE expression RSQUARE ID PLUS gargs
@@ -136,6 +154,9 @@ class ChoreographyParser:
         p[0] = Merge([p[1]] + p[3], p[5])
         self.ambiguity_check(p[1], True)
         self.ambiguity_check(p[5], False)
+        if self.choice_merge_stack == 0:
+            raise Exception('Cannot do join before merge at state "' + p[1])
+        self.choice_merge_stack -= 1
 
     def p_margs(self, p):
         ''' margs : ID PLUS margs
@@ -151,6 +172,7 @@ class ChoreographyParser:
         p[0] = Fork(p[1], [p[3]] + p[5])
         self.ambiguity_check(p[1], True)
         self.ambiguity_check(p[3], False)
+        self.fork_join_stack += 1
 
     def p_fargs(self, p):
         ''' fargs : ID OR fargs
@@ -166,6 +188,9 @@ class ChoreographyParser:
         p[0] = Join([p[1]] + p[3], p[5])
         self.ambiguity_check(p[1], True)
         self.ambiguity_check(p[5], False)
+        if self.fork_join_stack == 0:
+            raise Exception('Cannot do join before fork at state "' + p[1])
+        self.fork_join_stack -= 1
 
     def p_jargs(self, p):
         ''' jargs : ID OR jargs
@@ -276,3 +301,18 @@ class ChoreographyParser:
             print("Line " + str(self.lexer.lexer.lineno) + ". : syntax error at: '{0}'...".format(p.value))
         else:
             print("Syntax error at EOF")
+
+
+    class GraphNode:
+
+        def __init__(self):
+            self.children = []
+
+        def add_child(self, child):
+            self.children.append(child)
+
+        def traverse(self):
+            sum = 1
+            for x in children:
+                sum += x.traverse()
+            return sum

@@ -3,6 +3,7 @@
 import roslaunch
 import xml.etree.ElementTree
 import os
+from choreography.parser import *
 
 def start_ros_nodes():
     package = 'rfccc'
@@ -15,6 +16,7 @@ def start_ros_nodes():
     for atype in e.findall('group'):
         node = roslaunch.core.Node(package, broadcaster_comp, name=atype.get('ns'), respawn=False, output="screen")
         launch.launch(node)
+        ChoreographyParser.initialized_components.add(atype.get('ns'))
 
     input()
 

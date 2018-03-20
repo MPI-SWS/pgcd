@@ -7,6 +7,7 @@ from ast import *
 
 
 class Parser:
+
     precedence = (
         ('left', 'AND', 'OR', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
         ('right', 'NOT'),
