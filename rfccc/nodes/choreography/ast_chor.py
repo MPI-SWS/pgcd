@@ -1,5 +1,5 @@
 from enum import Enum
-from interpreter.ast import Node, BinOp, UnOp, Constant
+from interpreter.ast_inter import Node
 
 class Type(Enum):
     choreography = 0
@@ -43,13 +43,18 @@ class DistributedStateNode(Node):
 
     def __init__(self, tip, start_state, end_state):
         Node.__init__(self, tip)
+        self.start_states_reached = set()
+        self.end_states_reached = set()
         self.start_state = start_state
         self.end_state = end_state
 
     def __str__(self):
         return Node.__str__(self) + ": " + str(self.start_state) + " -> " + str(self.end_state)
 
+
 class Choreography(DistributedStateNode):
+
+    initialized_components = set()
 
     def __init__(self, id, statements, predicate, start_state):
         DistributedStateNode.__init__(self, Type.choreography, start_state, None)
@@ -65,25 +70,27 @@ class Choreography(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
-class Statements(Node):
-
-    def __init__(self, children):
-        Node.__init__(self, Type.statement)
-        self.children = children
-
-    def __str__(self):
-        string = ''
-        for c in self.children:
-            string += str(c) + '\n'
-        return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
 class Message(DistributedStateNode):
 
+
     def __init__(self, start_state, comp1, comp2, msg_type, expressions, continue_state):
         DistributedStateNode.__init__(self, Type.message, start_state, continue_state)
+
+        if comp1 == comp2:
+            raise Exception("No self message! (" + comp1 + "->" + comp2 + ")")
+
+        # TODO : this is only for testing purposes here,
+        # when the main.py launches self.initialized_components
+        # will be populated!
+        if len(Choreography.initialized_components) != 0:
+            if comp1 not in Choreography.initialized_components:
+                raise Exception("Component with name '" + comp1 + "' is not in programs processes.")
+            if comp2 not in Choreography.initialized_components:
+                raise Exception("Component with name '" + comp2 + "' is not in programs processes.")
+        else:
+            print('------WARNING: no components initialized, this is only for debugging purposes...-------')
+
         self.comp1 = comp1
         self.comp2 = comp2
         self.msg_type = msg_type
@@ -124,9 +131,9 @@ class MotionArg(Node):
 
 class Guard(DistributedStateNode):
 
-    def __init__(self, start_state, guarded_states):
-        DistributedStateNode.__init__(self, Type.guard, start_state, None)
-        self.guarded_states = guarded_states
+    def __init__(self, start_state, continue_state):
+        DistributedStateNode.__init__(self, Type.guard, start_state, [ x.id for x in continue_state ])
+        self.guarded_states = continue_state
 
     def __str__(self):
         return 'Guard'
@@ -149,9 +156,8 @@ class GuardArg(Node):
 
 class Merge(DistributedStateNode):
 
-    def __init__(self, merge_states, continue_state):
-        DistributedStateNode.__init__(self, Type.merge, None, continue_state)
-        self.merge_states = merge_states
+    def __init__(self, start_state, continue_state):
+        DistributedStateNode.__init__(self, Type.merge, start_state, continue_state)
 
     def __str__(self):
         return 'Merge'
@@ -161,9 +167,8 @@ class Merge(DistributedStateNode):
 
 class Fork(DistributedStateNode):
 
-    def __init__(self, start_state, forked_states):
-        DistributedStateNode.__init__(self, Type.merge, start_state, None)
-        self.forked_states = forked_states
+    def __init__(self, start_state, continue_state):
+        DistributedStateNode.__init__(self, Type.merge, start_state, continue_state)
 
     def __str__(self):
         return 'Fork'
@@ -173,9 +178,9 @@ class Fork(DistributedStateNode):
 
 class Join(DistributedStateNode):
 
-    def __init__(self, joined_states, continue_state):
-        DistributedStateNode.__init__(self, Type.merge, None, continue_state)
-        self.joined_states = joined_states
+    def __init__(self, start_state, continue_state):
+        DistributedStateNode.__init__(self, Type.merge, start_state, continue_state)
+        self.check_states = []
 
     def __str__(self):
         return 'Join'
@@ -183,10 +188,12 @@ class Join(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+
+
 class End(DistributedStateNode):
 
     def __init__(self, start_state):
-        DistributedStateNode.__init__(self, Type.end, start_state, None)
+        DistributedStateNode.__init__(self, Type.end, start_state, [])
 
     def __str__(self):
         return 'End'
