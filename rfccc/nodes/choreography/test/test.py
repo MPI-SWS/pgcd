@@ -38,7 +38,7 @@ def armsHandover():
             x3 = (A: idle(), B: closeGripper()); x4
             x4 = B -> A : holding(); x5
             x5 = (A: openGripper(), B: idle()); x6
-            x6 = A -> B : released; x7
+            x6 = A -> B : action(released); x7
             x7 = (A: moveToOrigin(), B: moveToOrigin()); x8
             x8 = end
         in [true] x0
@@ -75,19 +75,19 @@ def binSorting():
             x11 + x14 + x17 = _x11
             x12 + x15 + x18 = _x12
 
-            x10 = A -> B : done; x20
-            _x11 = A -> B : wait; x21
-            _x12 = A -> B : wait; x22
-            x13 = A -> B : ok; x23
-            x14 = A -> B : ok; x24
-            x15 = A -> B : ok; x25
+            x10 = A -> B : done(); x20
+            _x11 = A -> B : wait(); x21
+            _x12 = A -> B : wait(); x22
+            x13 = A -> B : ok(); x23
+            x14 = A -> B : ok(); x24
+            x15 = A -> B : ok(); x25
 
             x20 = end
-            x21 = (A: putInBin(1), B idle()); x31
-            x22 = (A: putInBin(2), B idle()); x32
+            x21 = (A: putInBin(1), B: idle()); x31
+            x22 = (A: putInBin(2), B: idle()); x32
             x23 = (A: idle(), B: putInBin(1)); x33
             x24 = (A: idle(), B: putInBin(2)); x34
-            x25 = (A: putInBin(1), B putInBin(2)); x35
+            x25 = (A: putInBin(1), B: putInBin(2)); x35
 
         in [true] x0
     '''
@@ -101,8 +101,8 @@ def binSorting():
 # - while the cart is busy with A/B then B/A can do something else
 def ferry():
     return ''' G =
-        def x0 = (A: idle(), B: idle(), C: idle()); x1
-            x1 + cb2a1 = ca
+        def x0 = (A: idle(), B: idle(), C: idle()); ca
+            # x1 + cb2a1 = ca
             ca = ca1 || ca3
             ca1 = (B: idle()); ca2
             ca3 = C -> A : rdy(); ca4
@@ -116,16 +116,17 @@ def ferry():
             cb4 = (B: getFromCart(), C: idle()); cb5
             cb5 = B -> C : done(); cb6
             cb2 || cb6 = cb2a
-            ca2b = (A: idle(), B: idle(), C: moveToA()); ca2b1
+            cb2a = (A: idle(), B: idle(), C: moveToA()); ca2b1
+            ca2b1 = end
         in [true] x0
     '''
 
 
 def main():
-    algorithm1 = cartAndArmFetch()
+    #algorithm1 = cartAndArmFetch()
     #algorithm1 = armsHandover()
     #algorithm1 = binSorting()
-    #algorithm1 = ferry()
+    algorithm1 = ferry()
     visitor = exec.ChoreographyExecutor()
     visitor.execute(algorithm1)
 

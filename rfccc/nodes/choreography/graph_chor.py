@@ -35,16 +35,19 @@ class ChoreographyCheck:
             for s in node.end_state:
                 if not visited.__contains__(s):
                     self.check_graph(s, set(), s)
-                    break
 
         elif isinstance(node, Join):
             if not self.join_scope[self.scope].__contains__(process):
                 raise Exception('Cannot execute join whose states are not in the same scope.')
             self.join_scope[self.scope].remove(process)
             if len(self.join_scope[self.scope]) == 0:
+                del self.join_scope[self.scope]
+                self.scope -= 1
                 self.check_graph(node.end_state[0], visited, process)
 
         elif isinstance(node, End):
+            if len(self.join_scope) != 0:
+                raise Exception('Failed to join all threads!')
             print('Test passed... ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓')
 
 

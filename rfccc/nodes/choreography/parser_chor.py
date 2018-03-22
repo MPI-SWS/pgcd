@@ -44,7 +44,7 @@ class ChoreographyParser:
 
     def well_formdness_check(self, sequence):
         if len(self.left_states ^ self.right_states) != 1:  # start state is always in
-            raise Exception('States ' + str(self.left_states ^ self.right_states) + ' are not on LHS or RHS!')
+            raise Exception('States ' + str((self.left_states ^ self.right_states) - set([self.start_state])) + ' are not on LHS or RHS!')
 
         ChoreographyCheck(self.state_to_node, self.start_state)
 

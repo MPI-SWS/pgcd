@@ -112,6 +112,6 @@ class ChoreographyExecutor:
         for x in node.start_state:
             print(x, end='')
             if x != node.start_state[-1]:
-                print('+', end='')
+                print('||', end='')
         print('=' + ''.join(node.end_state), end='')
 
