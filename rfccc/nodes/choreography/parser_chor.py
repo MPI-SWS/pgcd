@@ -6,7 +6,7 @@ import collections
 import lexer_chor as clexer
 from ast_chor import *
 from sympy import *
-from  graph_chor import *
+from graph_chor import *
 
 import os
 
@@ -38,16 +38,18 @@ class ChoreographyParser:
         self.state_to_node = {}
 
     def parse(self, text):
+        if len(Choreography.initialized_components) == 0:
+            print('---------WARNING: no components initialized, this is only for debugging purposes...-------')
         sequence = self.parser.parse(text, self.lexer.lexer)
         self.well_formdness_check(sequence)
         return sequence
 
     def well_formdness_check(self, sequence):
         if len(self.left_states ^ self.right_states) != 1:  # start state is always in
-            raise Exception('States ' + str((self.left_states ^ self.right_states) - set([self.start_state])) + ' are not on LHS or RHS!')
+            raise Exception('States ' + str((self.left_states ^ self.right_states) - {
+                self.start_state}) + ' are not on LHS or RHS!')
 
         ChoreographyCheck(self.state_to_node, self.start_state)
-
 
     def add_to_state_dict(self, lhs_list, rhs_list, node):
 
@@ -68,11 +70,8 @@ class ChoreographyParser:
             else:
                 self.right_states.add(state)
 
-
-
     def track_down_states(self, list):
         pass
-
 
     # ------------------------------------- STATEMENTS --------------------------------------
 

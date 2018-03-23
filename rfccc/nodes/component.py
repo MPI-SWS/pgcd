@@ -2,7 +2,7 @@
 
 import rospy
 
-import encasp_2r2p as en
+import encaps_2r2p as en
 import tf_updater
 from executor import Executor
 

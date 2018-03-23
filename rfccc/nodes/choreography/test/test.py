@@ -113,7 +113,7 @@ def ferry():
             cb = cb1 || cb3
             cb1 = (A: idle()); cb2
             cb3 = C -> B : rdy(); cb4
-            cb4 = (B: getFromCart(), C: idle()); cb5
+            cb4 = (A: getFromCart(), C: idle()); cb5
             cb5 = B -> C : done(); cb6
             cb2 || cb6 = cb2a
             cb2a = (A: idle(), B: idle(), C: moveToA()); ca2b1

@@ -1,6 +1,7 @@
 from enum import Enum
 from interpreter.ast_inter import Node
 
+
 class Type(Enum):
     choreography = 0
     statement = 1
@@ -36,7 +37,7 @@ class Type(Enum):
     id = 31
     dot = 32
     motion = 33
-    end=34
+    end = 34
 
 
 class DistributedStateNode(Node):
@@ -53,7 +54,6 @@ class DistributedStateNode(Node):
 
 
 class Choreography(DistributedStateNode):
-
     initialized_components = set()
 
     def __init__(self, id, statements, predicate, start_state):
@@ -73,7 +73,6 @@ class Choreography(DistributedStateNode):
 
 class Message(DistributedStateNode):
 
-
     def __init__(self, start_state, comp1, comp2, msg_type, expressions, continue_state):
         DistributedStateNode.__init__(self, Type.message, start_state, continue_state)
 
@@ -83,13 +82,14 @@ class Message(DistributedStateNode):
         # TODO : this is only for testing purposes here,
         # when the main.py launches self.initialized_components
         # will be populated!
-        if len(Choreography.initialized_components) != 0:
-            if comp1 not in Choreography.initialized_components:
-                raise Exception("Component with name '" + comp1 + "' is not in programs processes.")
-            if comp2 not in Choreography.initialized_components:
-                raise Exception("Component with name '" + comp2 + "' is not in programs processes.")
-        else:
-            print('------WARNING: no components initialized, this is only for debugging purposes...-------')
+        # if not self.is_debug and len(Choreography.initialized_components) != 0:
+        #     if comp1 not in Choreography.initialized_components:
+        #         raise Exception("Component with name '" + comp1 + "' is not in programs processes.")
+        #     if comp2 not in Choreography.initialized_components:
+        #         raise Exception("Component with name '" + comp2 + "' is not in programs processes.")
+        # else:
+        Choreography.initialized_components.add(comp1)
+        Choreography.initialized_components.add(comp2)
 
         self.comp1 = comp1
         self.comp2 = comp2
@@ -103,6 +103,7 @@ class Message(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+
 class Motion(DistributedStateNode):
 
     def __init__(self, start_state, motions, end_state):
@@ -115,6 +116,7 @@ class Motion(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+
 class MotionArg(Node):
 
     def __init__(self, id, motion_name, motion_params):
@@ -123,16 +125,23 @@ class MotionArg(Node):
         self.motion_name = motion_name
         self.motion_params = motion_params
 
+        # if not self.is_debug and len(Choreography.initialized_components) != 0:
+        #     if motion_name not in Choreography.initialized_components:
+        #         raise Exception("Component with name '" + motion_name + "' is not in programs processes.")
+        # else:
+        Choreography.initialized_components.add(motion_name)
+
     def __str__(self):
         return 'MotionArg'
 
     def accept(self, visitor):
         visitor.visit(self)
 
+
 class Guard(DistributedStateNode):
 
     def __init__(self, start_state, continue_state):
-        DistributedStateNode.__init__(self, Type.guard, start_state, [ x.id for x in continue_state ])
+        DistributedStateNode.__init__(self, Type.guard, start_state, [x.id for x in continue_state])
         self.guarded_states = continue_state
 
     def __str__(self):
@@ -140,6 +149,7 @@ class Guard(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
 
 class GuardArg(Node):
 
@@ -154,6 +164,7 @@ class GuardArg(Node):
     def accept(self, visitor):
         visitor.visit(self)
 
+
 class Merge(DistributedStateNode):
 
     def __init__(self, start_state, continue_state):
@@ -165,6 +176,7 @@ class Merge(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+
 class Fork(DistributedStateNode):
 
     def __init__(self, start_state, continue_state):
@@ -175,6 +187,7 @@ class Fork(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
 
 class Join(DistributedStateNode):
 
@@ -189,7 +202,6 @@ class Join(DistributedStateNode):
         visitor.visit(self)
 
 
-
 class End(DistributedStateNode):
 
     def __init__(self, start_state):
@@ -200,4 +212,3 @@ class End(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
-
