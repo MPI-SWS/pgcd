@@ -10,6 +10,7 @@ class ChoreographyCheck:
         self.forks = 0
         self.motion_thread = {start_state: set()}
         self.join_scope = {}
+        self.join = None
         self.motion_check = {}
         self.loop_has_motion = True
         self.check_graph(start_state, set(), start_state)
@@ -29,17 +30,19 @@ class ChoreographyCheck:
             self.loop_has_motion = True
             self.check_graph(node.end_state[0], visited, process)
 
-        elif isinstance(node, Guard):
-            if not self.loop_has_motion:
-                raise Exception('Loop has not any motion!.')
-            self.loop_has_motion = False
+        elif isinstance(node, GuardedChoice):
             for s in node.end_state:
                 if not visited.__contains__(s):
                     self.check_graph(s, visited, process)
                     break
 
+
         elif isinstance(node, Merge):
+            if not self.loop_has_motion and visited.__contains__(node.end_state[0]):
+                raise Exception('Loop has not any motion!.')
+            self.loop_has_motion = False
             self.check_graph(node.end_state[0], visited, process)
+
 
         elif isinstance(node, Fork):
             self.scope += 1
@@ -55,6 +58,11 @@ class ChoreographyCheck:
         elif isinstance(node, Join):
             if not self.join_scope[self.scope].__contains__(process):
                 raise Exception('Cannot execute join whose states are not in the same scope.')
+            if self.join is None:
+                self.join = node
+            elif self.join != node:
+                raise Exception('Cannot join these processes: "' + ','.join(node.start_state) + '".')
+
             self.join_scope[self.scope].remove(process)
             if len(self.join_scope[self.scope]) == 0:
                 for i in range(0, len(self.motion_check[self.scope]) - 1):
@@ -68,6 +76,7 @@ class ChoreographyCheck:
                 del self.motion_check[self.scope]
                 self.scope -= 1
                 self.check_graph(node.end_state[0], visited, process)
+                self.join = None
 
         elif isinstance(node, End):
             if len(self.join_scope) != 0:

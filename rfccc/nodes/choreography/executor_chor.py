@@ -28,7 +28,7 @@ class ChoreographyExecutor:
         elif isinstance(node, MotionArg):
             self.visit_motion_arg(node)
 
-        elif isinstance(node, Guard):
+        elif isinstance(node, GuardedChoice):
             self.visit_guard(node)
 
         elif isinstance(node, GuardArg):
@@ -75,11 +75,7 @@ class ChoreographyExecutor:
 
     def visit_motion_arg(self, node):
         print(node.id + ': ', end='')
-        print(node.motion_name + '(', end='')
-        for x in node.motion_params:
-            print(str(x), end='')
-            if x != node.motion_params[-1]:
-                print(',', end='')
+        print(node.sympy_formula, end='')
         print(')', end='')
 
     def visit_guard(self, node):

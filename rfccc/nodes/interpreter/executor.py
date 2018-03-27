@@ -104,7 +104,6 @@ class Executor:
             rospy.sleep(0.01)
 
     def process_msg(self, msg, args):
-        #print("PRIMIO SAM JEBENU PORUKU!!!!!!!!!!!!!!!!!!")
         with self.lock:
             if self.waiting_msg:
                 for key in self.subs.keys():
@@ -150,10 +149,9 @@ class Executor:
 
     def visit_bin_op(self, node):
         if node.tip == Type.dot:
-            if node.exp1 in self.variables.keys():
-                return self.variables[node.exp1][node.exp2]
-            else:
-                return getattr(self, node.exp1).__getattribute__(node.exp2)
+            if node.exp1 not in self.variables.keys():
+                self.variables[node.exp1] = getattr(self, node.exp1)
+            return self.variables[node.exp1][node.exp2]
         else:
             var1 = node.exp1.accept(self)
             var2 = node.exp2.accept(self)

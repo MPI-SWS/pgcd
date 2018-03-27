@@ -94,13 +94,13 @@ class ChoreographyParser:
             p[0] = [p[1]]
 
     def p_message(self, p):
-        'message : ID EQUALS ID ARROW ID COLON ID arg SEMI ID'
+        'message : ID EQUALS ID ARROW ID COLON ID msgarg SEMI ID'
         p[0] = Message([p[1]], p[3], p[5], p[7], p[8], [p[10]])
         self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
 
-    def p_arg(self, p):
-        ''' arg : LPAREN exp RPAREN
-                | LPAREN RPAREN'''
+    def p_msgarg(self, p):
+        ''' msgarg : LPAREN exp RPAREN
+                   | LPAREN RPAREN'''
         if len(p) > 3:
             p[0] = p[2]
         else:
@@ -121,15 +121,27 @@ class ChoreographyParser:
 
     def p_mspecs(self, p):
         ''' mspecs : mspecs COMMA mspecs
-                   | ID COLON ID arg'''
+                   | ID COLON function'''
         if p[2] == ',':
             p[0] = p[1] + p[3]
         else:
-            p[0] = [MotionArg(p[1], p[3], p[4])]
+            p[0] = [MotionArg(p[1], p[3])]
+
+    def p_function(self, p):
+        ''' function : ID LPAREN funcargs RPAREN'''
+        p[0] = sympify('"' + p[1] + '(' + p[3] + ')' + '"')
+
+    def p_funcargs(self, p):
+        ''' funcargs : funcargs COMMA funcargs
+                     | expression'''
+        if len(p) > 2:
+            p[0] = p[1] + ", " + p[3]
+        else:
+            p[0] = p[1]
 
     def p_guard(self, p):
         ''' guard   : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs '''
-        p[0] = Guard([p[1]], [GuardArg(sympify('"' + p[4] + '"'), p[6])] + p[8])
+        p[0] = GuardedChoice([p[1]], [GuardArg(sympify('"' + p[4] + '"'), p[6])] + p[8])
         self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
 
     def p_gargs(self, p):

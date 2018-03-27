@@ -19,7 +19,8 @@ class Component(Executor):
         except KeyError as e:
             print(str(e))
             self.parent = "world"
-        print(self.parent)
+        #print(self.parent)
+
         try:
             self.x = rospy.get_param('~x')
             self.y = rospy.get_param('~y')

@@ -14,28 +14,6 @@ class Type(Enum):
     join_fork_arg = 8
     motion_arg = 9
     expression = 10
-    plus = 11
-    minus = 12
-    times = 13
-    divide = 14
-    mod = 15
-    _and = 16
-    _or = 17
-    gt = 18
-    ge = 19
-    lt = 20
-    le = 21
-    eq = 22
-    ne = 23
-    uminus = 24
-    _sin = 25
-    _cos = 26
-    _tan = 27
-    _abs = 28
-    _sqrt = 29
-    _not = 30
-    id = 31
-    dot = 32
     motion = 33
     end = 34
 
@@ -119,17 +97,16 @@ class Motion(DistributedStateNode):
 
 class MotionArg(Node):
 
-    def __init__(self, id, motion_name, motion_params):
+    def __init__(self, id, sympy_formula):
         Node.__init__(self, Type.motion_arg)
         self.id = id
-        self.motion_name = motion_name
-        self.motion_params = motion_params
+        self.sympy_formula = sympy_formula
 
         # if not self.is_debug and len(Choreography.initialized_components) != 0:
         #     if motion_name not in Choreography.initialized_components:
         #         raise Exception("Component with name '" + motion_name + "' is not in programs processes.")
         # else:
-        Choreography.initialized_components.add(motion_name)
+        Choreography.initialized_components.add(id)
 
     def __str__(self):
         return 'MotionArg'
@@ -138,7 +115,7 @@ class MotionArg(Node):
         visitor.visit(self)
 
 
-class Guard(DistributedStateNode):
+class GuardedChoice(DistributedStateNode):
 
     def __init__(self, start_state, continue_state):
         DistributedStateNode.__init__(self, Type.guard, start_state, [x.id for x in continue_state])
