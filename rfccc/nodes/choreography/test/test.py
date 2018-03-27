@@ -121,12 +121,24 @@ def ferry():
         in [true] x0
     '''
 
+def funny_thread_partition():
+    return ''' G =
+        def x0 = [x] x1 + [x] x2
+            x1 = x3 || x4
+            x2 = x5 || x6
+            x3 || x5 = x7
+            x4 || x6 = x8
+            x7 + x8 = x9
+            x9 = end
+        in [true] x0
+    '''
 
 def main():
     #algorithm1 = cartAndArmFetch()
     #algorithm1 = armsHandover()
     #algorithm1 = binSorting()
-    algorithm1 = ferry()
+    #algorithm1 = ferry()
+    algorithm1 = funny_thread_partition()
     visitor = exec.ChoreographyExecutor()
     visitor.execute(algorithm1)
 
