@@ -3,6 +3,8 @@ print(sys.version)
 
 import parser as rp
 import choreography.executor_chor as exec
+import unittest
+
 
 # The example from the paper
 def cartAndArmFetch():
@@ -135,13 +137,26 @@ def funny_thread_partition():
         in [true] x0
     '''
 
-def main():
-    #algorithm1 = cartAndArmFetch()
-    #algorithm1 = armsHandover()
-    #algorithm1 = binSorting()
-    #algorithm1 = ferry()
-    algorithm1 = funny_thread_partition()
+def run(ch):
     visitor = exec.ChoreographyExecutor()
-    visitor.execute(algorithm1)
+    visitor.execute(ch)
 
-main()
+class ChoreograhyTests(unittest.TestCase):
+
+    def test_fetch(self):
+      run(cartAndArmFetch())
+
+    def test_handover(self):
+      run(armsHandover())
+
+    def test_sorting(self):
+      run(binSorting())
+
+    def test_ferry(self):
+      run(binSorting())
+    
+    def test_err1(self):
+      run(funny_thread_partition())
+
+if __name__ == '__main__':
+    unittest.main()
