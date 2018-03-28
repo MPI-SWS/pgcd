@@ -1,3 +1,4 @@
+from email.policy import strict
 from enum import Enum
 from interpreter.ast_inter import Node
 
@@ -16,6 +17,11 @@ class Type(Enum):
     expression = 10
     motion = 33
     end = 34
+    projection = 40
+    send_message = 41
+    receive_message = 42
+    indirection = 43
+    external_choice = 44
 
 
 class DistributedStateNode(Node):
@@ -42,7 +48,10 @@ class Choreography(DistributedStateNode):
         self.start_state = start_state
 
     def __str__(self):
-        string = 'choreography ' + self.id
+        string = "def "+ self.id +" \n"
+        for stmt in self.statements:
+            string += str(stmt) + '\n'
+        string += " in [" + str(self.predicate) + ']' + str(self.start_state)
         return string
 
     def accept(self, visitor):
@@ -57,7 +66,7 @@ class Message(DistributedStateNode):
         if comp1 == comp2:
             raise Exception("No self message! (" + comp1 + "->" + comp2 + ")")
 
-        # TODO : this is only for testing purposes here,
+        # TODO : uncomment in production mode
         # when the main.py launches self.initialized_components
         # will be populated!
         # if not self.is_debug and len(Choreography.initialized_components) != 0:
@@ -76,6 +85,10 @@ class Message(DistributedStateNode):
 
     def __str__(self):
         string = 'Message'
+        string += self.start_state[0] + '=' + self.comp1 + '->' + self.comp2 + ':' + self.msg_type + '('
+        for x in self.expressions:
+            string += str(x)
+        string += ');' + self.end_state[0]
         return string
 
     def accept(self, visitor):
@@ -89,7 +102,13 @@ class Motion(DistributedStateNode):
         self.motions = motions
 
     def __str__(self):
-        return 'Motion'
+        string = ''.join(self.start_state) + '= ('
+        for x in self.motions:
+            string += str(x)
+            if x != self.motions[-1]:
+                string += ','
+        string += '); ' + ''.join(self.end_state)
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -109,7 +128,9 @@ class MotionArg(Node):
         Choreography.initialized_components.add(id)
 
     def __str__(self):
-        return 'MotionArg'
+        string = self.id + ': '
+        string += self.sympy_formula + ')'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -122,7 +143,12 @@ class GuardedChoice(DistributedStateNode):
         self.guarded_states = continue_state
 
     def __str__(self):
-        return 'Guard'
+        string = ''.join(self.start_state) + '='
+        for x in self.guarded_states:
+            string += str(x)
+            if x != self.guarded_states[-1]:
+                string += '+'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -136,7 +162,10 @@ class GuardArg(Node):
         self.expression = expression
 
     def __str__(self):
-        return 'GuardArg'
+        string = '['
+        string += str(self.expression)
+        string += ']' + str(self.id)
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -148,7 +177,12 @@ class Merge(DistributedStateNode):
         DistributedStateNode.__init__(self, Type.merge, start_state, continue_state)
 
     def __str__(self):
-        return 'Merge'
+        string = ''
+        for x in self.start_state:
+            string += str(x)
+            if x != self.start_state[-1]:
+                string += ' + '
+        string += '=' + ''.join(self.end_state)
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -160,7 +194,12 @@ class Fork(DistributedStateNode):
         DistributedStateNode.__init__(self, Type.merge, start_state, continue_state)
 
     def __str__(self):
-        return 'Fork'
+        string = ''.join(self.start_state) + '='
+        for x in self.end_state:
+            string += str(x)
+            if x != self.end_state[-1]:
+                string += '||'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -173,7 +212,13 @@ class Join(DistributedStateNode):
         self.check_states = []
 
     def __str__(self):
-        return 'Join'
+        string = ''
+        for x in self.start_state:
+            string += str(x)
+            if x != self.start_state[-1]:
+                string += '||'
+        string += '=' + ''.join(self.end_state)
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -185,7 +230,7 @@ class End(DistributedStateNode):
         DistributedStateNode.__init__(self, Type.end, start_state, [])
 
     def __str__(self):
-        return 'End'
+        return ''.join(self.start_state) + '=' + 'end'
 
     def accept(self, visitor):
         visitor.visit(self)

@@ -1,4 +1,5 @@
 import sys
+
 print(sys.version)
 
 import parser as rp
@@ -29,6 +30,7 @@ def cartAndArmFetch():
         in [true]x0
     '''
 
+
 # 2 arms next to each other handing an object to each other
 # `loc` needs to be within the reach of both arms
 # `delta` is a positive offset which is roughly the reach/length of the gripper also is has to be aligned with the position of A and B
@@ -45,6 +47,7 @@ def armsHandover():
             x8 = end
         in [true] x0
     '''
+
 
 # A sightly more complicated example with two arm sitting on one table with two bins between them.
 # They need to put objects in the bin without crossing.
@@ -94,6 +97,7 @@ def binSorting():
         in [true] x0
     '''
 
+
 # 2 arms and 1 cart ferrying objects between them
 # this example should be made a bit more realistic with:
 # - the move result not exact (but cart still knows his position) so the cart tells the arm his position
@@ -123,40 +127,52 @@ def ferry():
         in [true] x0
     '''
 
+
 def funny_thread_partition():
     return ''' G =
         def x0 = [x] x1 + [x] x2
             x1 = x3 || x4
             x2 = x5 || x6
-            x3 = B -> C : done(); x10
-            x4 = B -> C : done(); x11
-            x10 || x11 = x7
-            x5 || x6 = x8
+            x3 || x5 = x7
+            x4 || x6 = x8
             x7 + x8 = x9
             x9 = end
         in [true] x0
     '''
 
+
 def run(ch):
     visitor = exec.ChoreographyExecutor()
-    visitor.execute(ch)
+    if visitor.execute(ch):
+        print("SUCCESS")
+    else:
+        print("FAILED")
 
 class ChoreograhyTests(unittest.TestCase):
 
+    if len(exec.Choreography.initialized_components) == 0:
+        print('WARNING: no components initialized, this is only for debugging purposes...')
+
     def test_fetch(self):
-      run(cartAndArmFetch())
+        print("cartAndArmFetch", end=' -> ')
+        run(cartAndArmFetch())
 
     def test_handover(self):
-      run(armsHandover())
+        print("armsHandover", end=' -> ')
+        run(armsHandover())
 
     def test_sorting(self):
-      run(binSorting())
+        print("binSorting", end=' -> ')
+        run(binSorting())
 
     def test_ferry(self):
-      run(binSorting())
-    
+        print("ferry", end=' -> ')
+        run(ferry())
+
     def test_err1(self):
-      run(funny_thread_partition())
+        print("funny_thread_partition", end=' -> ')
+        run(funny_thread_partition())
+
 
 if __name__ == '__main__':
     unittest.main()

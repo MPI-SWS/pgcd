@@ -6,7 +6,7 @@ import collections
 import lexer_chor as clexer
 from ast_chor import *
 from sympy import *
-from graph_chor import *
+from check_chor import *
 
 import os
 
@@ -28,9 +28,9 @@ class ChoreographyParser:
             format="%(filename)10s:%(lineno)4d:%(message)s"
         )
         log = logging.getLogger()
-        self.lexer = clexer.ChoreographyLexer(debuglog=log, debug=True)
+        self.lexer = clexer.ChoreographyLexer(debuglog=log, debug=False)
         self.tokens = self.lexer.tokens
-        self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
+        self.parser = yacc.yacc(module=self, debuglog=log, debug=False)
         self.left_states = set()
         self.right_states = set()
         self.start_state = None
@@ -38,20 +38,22 @@ class ChoreographyParser:
         self.state_to_node = {}
 
     def parse(self, text):
-        if len(Choreography.initialized_components) == 0:
-            print('---------WARNING: no components initialized, this is only for debugging purposes...-------')
-        sequence = self.parser.parse(text, self.lexer.lexer)
-        self.well_formdness_check(sequence)
-        return sequence
+        try:
+            sequence = self.parser.parse(text, self.lexer.lexer)
+        except Exception as e:
+            print(str(e))
+            return False, None
+        return self.check_well_formdness(sequence), sequence
 
-    def well_formdness_check(self, sequence):
+    def check_well_formdness(self, sequence):
         if len(self.left_states ^ self.right_states) != 1:  # start state is always in
             raise Exception('States ' + str((self.left_states ^ self.right_states) - {
                 self.start_state}) + ' are not on LHS or RHS!')
 
-        ChoreographyCheck(self.state_to_node, self.start_state)
+        check = ChoreographyCheck(self.state_to_node, self.start_state)
+        return check.check_well_formedness()
 
-    def add_to_state_dict(self, lhs_list, rhs_list, node):
+    def check_lhs_and_rhs_equality_state(self, lhs_list, rhs_list, node):
 
         if self.start_state is None:
             self.start_state = lhs_list[0]
@@ -96,7 +98,7 @@ class ChoreographyParser:
     def p_message(self, p):
         'message : ID EQUALS ID ARROW ID COLON ID msgarg SEMI ID'
         p[0] = Message([p[1]], p[3], p[5], p[7], p[8], [p[10]])
-        self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
+        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_msgarg(self, p):
         ''' msgarg : LPAREN exp RPAREN
@@ -117,7 +119,7 @@ class ChoreographyParser:
     def p_motion(self, p):
         'motion : ID EQUALS LPAREN mspecs RPAREN SEMI ID'
         p[0] = Motion([p[1]], p[4], [p[7]])
-        self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
+        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_mspecs(self, p):
         ''' mspecs : mspecs COMMA mspecs
@@ -128,8 +130,12 @@ class ChoreographyParser:
             p[0] = [MotionArg(p[1], p[3])]
 
     def p_function(self, p):
-        ''' function : ID LPAREN funcargs RPAREN'''
-        p[0] = sympify('"' + p[1] + '(' + p[3] + ')' + '"')
+        ''' function : ID LPAREN funcargs RPAREN
+                     | ID LPAREN RPAREN'''
+        if len(p) > 4:
+            p[0] = sympify('"' + p[1] + '(' + p[3] + ')' + '"')
+        else:
+            p[0] = sympify('"' + p[1] + '(' + ')' + '"')
 
     def p_funcargs(self, p):
         ''' funcargs : funcargs COMMA funcargs
@@ -142,7 +148,7 @@ class ChoreographyParser:
     def p_guard(self, p):
         ''' guard   : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs '''
         p[0] = GuardedChoice([p[1]], [GuardArg(sympify('"' + p[4] + '"'), p[6])] + p[8])
-        self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
+        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_gargs(self, p):
         ''' gargs : LSQUARE expression RSQUARE ID PLUS gargs
@@ -155,7 +161,7 @@ class ChoreographyParser:
     def p_merge(self, p):
         ''' merge : ID PLUS margs EQUALS ID '''
         p[0] = Merge([p[1]] + p[3], [p[5]])
-        self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
+        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_margs(self, p):
         ''' margs : ID PLUS margs
@@ -168,7 +174,7 @@ class ChoreographyParser:
     def p_fork(self, p):
         ''' fork : ID EQUALS ID OR fargs '''
         p[0] = Fork([p[1]], [p[3]] + p[5])
-        self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
+        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_fargs(self, p):
         ''' fargs : ID OR fargs
@@ -181,7 +187,7 @@ class ChoreographyParser:
     def p_join(self, p):
         ''' join : ID OR jargs EQUALS ID '''
         p[0] = Join([p[1]] + p[3], [p[5]])
-        self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
+        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_jargs(self, p):
         ''' jargs : ID OR jargs
@@ -196,7 +202,7 @@ class ChoreographyParser:
         if self.end_appeared:
             raise Exception("Error: 'end' appeared more than once!")
         p[0] = End([p[1]])
-        self.add_to_state_dict(p[0].start_state, p[0].end_state, p[0])
+        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
         self.end_appeared = True
 
     # ------------------------------------EXPRESSIONS--------------------------------------
@@ -260,6 +266,30 @@ class ChoreographyParser:
 
     def p_error(self, p):
         if p:
-            print("Line " + str(self.lexer.lexer.lineno) + ". : syntax error at: '{0}'...".format(p.value))
+            print("Line " + str(self.lexer.lexer.lineno) + ". : syntax error at: '{0}' in '{1}'...".format(p.value, p.lexer.lexdata.split('\n')[self.lexer.lexer.lineno-1].strip()))
         else:
             print("Syntax error at EOF")
+        raise Exception("Parser encountered an error.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
