@@ -19,7 +19,6 @@ class Component(ABC):
         self._name = name
         self._parent = parent
         self._children = {}
-        self._motionPrimitives = {}
         if parent != None:
             parent.addChildren(index, self)
 
@@ -50,10 +49,15 @@ class Component(ABC):
         return cp
 
 
+# Currently the convention is that processes should prefix their variable by "$name_".
+# In the future, we may check/automate that part
+
 class Process(Component):
     
     def __init__(self, name, parent = None, index = 0):
         super().__init__(name, parent, index)
+        self._connections = {}
+        self._motionPrimitives = {}
     
     def isProcess(self):
         return True
@@ -72,7 +76,7 @@ class Process(Component):
     
     def variables(self):
         """returns all the variables as sympy symbols"""
-        return internalVariables + inputVariables + outputVariables
+        return self.internalVariables() + self.inputVariables() + self.outputVariables()
     
     def ownResources(self, point):
         """returns constraints that are true if point is in the resources of this process"""
@@ -88,6 +92,10 @@ class Process(Component):
         """an overapproximation of the resources, easier to solve"""
         return true
     
+    def connect(self, index, component, connection = {}):
+        self.addChildren(index, component)
+        self._connections[index] = connection
+    
     def addMotionPrimitive(self, mp):
         n = mp.name()
         assert(not (n in self._motionPrimitives))
@@ -96,6 +104,8 @@ class Process(Component):
     def motionPrimitive(self, name):
         return self._motionPrimitives[name]
 
+# Some motion primitives have parameters, we represent that with a factory.
+# Given some concrete value for the parameters we get a motion primitive.
 
 class MotionPrimitiveFactory(ABC):
 
@@ -110,6 +120,7 @@ class MotionPrimitiveFactory(ABC):
         return []
 
     # returns a MotionPrimitive
+    @abstractmethod
     def setParameters(self, *args):
         pass
 
@@ -121,8 +132,15 @@ class MotionPrimitive():
     def timeSymbol(self):
         return Symbol("t")
 
-    def timify(self, var):
+    def timifyVar(self, var):
         return Function(var.name)(self.timeSymbol())
+    
+    def timify(self, pred):
+        time = { var: self.timifyVar(var) for var in self._component.variables() }
+        return pred.subs(time)
+
+    def isPreemptible(self):
+        return False
 
     def duration(self):
         return Int(1)

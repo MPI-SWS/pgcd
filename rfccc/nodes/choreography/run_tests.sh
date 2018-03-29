@@ -1,6 +1,6 @@
 #! /bin/sh
 
-export PYTHONPATH=.:..
+export PYTHONPATH=$PYTHONPATH:.:..
 
 echo Running tests
 for f in test/*.py; do

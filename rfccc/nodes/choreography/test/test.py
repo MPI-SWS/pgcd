@@ -77,15 +77,15 @@ def binSorting():
             x7 = [a0]x13 + [a1]x14 + [a2]x15    # choice at A
             x8 = [a0]x16 + [a1]x17 + [a2]x18    # choice at A
 
-            x11 + x14 + x17 = _x11
+            x11 + x14 = _x11
             x12 + x15 + x18 = _x12
 
             x10 = A -> B : done(); x20
             _x11 = A -> B : wait(); x21
             _x12 = A -> B : wait(); x22
             x13 = A -> B : ok(); x23
-            x14 = A -> B : ok(); x24
-            x15 = A -> B : ok(); x25
+            x16 = A -> B : ok(); x24
+            x17 = A -> B : ok(); x25
 
             x20 = end
             x21 = (A: putInBin(1), B: idle()); x31

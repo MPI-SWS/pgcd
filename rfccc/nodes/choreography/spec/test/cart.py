@@ -20,7 +20,7 @@ class Cart(Process):
         # mount is 11cm above the ground
         self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + 0.11 * f.k)
         # motion primitives
-        MoveToward(self)
+        MoveFromTo(self)
     
     def position(self):
         f = self.frame()
@@ -41,42 +41,65 @@ class Cart(Process):
         return cylinder(self.position(), self.radius, self.height, point)
 
 
-class MoveToward(MotionPrimitiveFactory):
+class MoveFromTo(MotionPrimitiveFactory):
     
     def __init__(self, component):
         super().__init__(component)
 
     def parameters(self):
-        return [Symbol('targetLoc')]
+        return ['sourceLoc','targetLoc']
     
     def setParameters(self, *args):
-        assert(len(args) == 1)
-        return MoveTowardLoc(self._component, args[0])
+        assert(len(args) == 2)
+        return CartMove(self._component, args[0], args[1])
 
 
-class MoveTowardLoc(MotionPrimitive):
+class CartMove(MotionPrimitive):
     
-    def __init__(self, component, loc):
+    def __init__(self, component, src, dst):
         super().__init__(component)
         self._frame = self._component.frame()
-        self._loc = loc
-        self._locVec = loc.position_wrt(self._frame)
+        self._radius = component.radius
+        self._height = component.height
+        self._src = src
+        self._dst = dst
+        self._maxError = 0.1
+
+    def _locAsVec(self, loc):
+        return loc.position_wrt(self._frame)
+
+    def _onGround(self, loc):
+        return Eq(self._component.frame().k.dot(self._locAsVec(loc)) , 0)
+
+    def _srcFrame(self):
+        return self._frame.locate_new("src", self._locAsVec(self._src))
+    
+    def _dstFrame(self):
+        return self._frame.locate_new("dst", self._locAsVec(self._dst))
 
     def pre(self):
-        return Eq(self._component.frame().k.dot(self._locVec) , 0)
-    
+        onGround = And(self._onGround(self._src), self._onGround(self._dst), self._onGround(self._component.position()))
+        near = distance(self._component.position(), self._src) <= self._maxError
+        return And(onGround, near)
+
     def post(self):
-        return distance(self._component.position(), self._loc) <= 0.5
+        onGround = self._onGround(self._component.position())
+        near = distance(self._component.position(), self._dst) <= self._maxError
+        return And(onGround, near)
     
-    #TODO need to make the formula dependent on the "old" state
     def inv(self):
-        return True
+        onGround = self._onGround(self._component.position())
+        workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxError)
+        return self.timify(And(onGround, workSpace))
     
     def preFP(self, point):
-        return True
+        return cylinder(self._srcFrame(), self._radius + self._maxError, self._height, point)
     
     def postFP(self, point):
-        return True
+        return cylinder(self._dstFrame(), self._radius + self._maxError, self._height, point)
     
     def invFP(self, point):
-        return True
+        dst_height = self._dst.locate_new('dsth', self._frame.k * self._height)
+        pos_as_point = self._component.position().origin
+        i = cube(self._frame, self._src, dst_height, pos_as_point, self._maxError + self._radius)
+        return self.timify(i)
