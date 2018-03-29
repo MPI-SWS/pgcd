@@ -5,3 +5,4 @@
 **/.idea
 *.pyc
 **/pycache
+**/chor_parselog.txt
