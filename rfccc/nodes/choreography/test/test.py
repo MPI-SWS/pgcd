@@ -155,7 +155,6 @@ def causal_ok():
 def causal_err():
     # needs processes C, A1, A2
     return ''' G =
-    p->q; p->r; (q->p || r->p)
         def x0 = C -> A1: msg(); x1
             x1 = C -> A2: msg(); x2
             x2 = x3 || x4
@@ -166,11 +165,30 @@ def causal_err():
         in [true] x0
     '''
 
+def nomraliztion_err():
+    # not correct because it mixes internal and external choice when removing ||
+    return ''' G =
+        def x0 = x1 || x2
+            x1 = C -> A1: msg(); x3
+            x3 = A1 -> C: msg(); x4
+            x2 = C -> A2: msg(); x5
+            x5 = A2 -> C: msg(); x6
+            x4 || x6 = x7
+            x7 = end
+        in [true] x0
+    '''
 
-def run(ch):
-    visitor = exec.ChoreographyExecutor()
-    visitor.execute(ch)
-    return True
+def run(ch, shouldSucceed = True):
+    try:
+        visitor = exec.ChoreographyExecutor()
+        visitor.execute(ch)
+        passed = True
+    except Exception as e:
+        passed = False
+        if shouldSucceed:
+            raise e
+    if passed and not shouldSucceed:
+        raise Exception("test passed but should have failed")
 
 class ChoreograhyTests(unittest.TestCase):
 
@@ -178,19 +196,25 @@ class ChoreograhyTests(unittest.TestCase):
         print('WARNING: no components initialized, this is only for debugging purposes...')
 
     def test_fetch(self):
-        self.assertEqual(run(cartAndArmFetch()), True)
+        run(cartAndArmFetch())
 
     def test_handover(self):
-        self.assertEqual(run(armsHandover()), True)
+        run(armsHandover())
 
     def test_sorting(self):
-        self.assertEqual(run(binSorting()), True)
+        run(binSorting())
 
     def test_ferry(self):
-        self.assertEqual(run(ferry()), True)
+        run(ferry())
 
     def test_err1(self):
-        self.assertEqual(run(funny_thread_partition()), False)
+        run(funny_thread_partition(), False)
+
+    def test_ok1(self):
+        run(causal_ok())
+
+    def test_err2(self):
+        run(causal_err(), False)
 
 
 if __name__ == '__main__':
