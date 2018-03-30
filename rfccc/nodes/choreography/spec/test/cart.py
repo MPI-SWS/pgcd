@@ -47,22 +47,22 @@ class MoveFromTo(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ['sourceLoc','targetLoc']
+        return ['sourceX', 'sourceY','targetX','targetY']
     
     def setParameters(self, *args):
-        assert(len(args) == 2)
-        return CartMove(self._component, args[0], args[1])
+        assert(len(args) == 4)
+        return CartMove(self._component, args[0], args[1], args[2], args[3])
 
 
 class CartMove(MotionPrimitive):
     
-    def __init__(self, component, src, dst):
+    def __init__(self, component, srcX, srcY, dstX, dstY):
         super().__init__(component)
         self._frame = self._component.frame()
         self._radius = component.radius
         self._height = component.height
-        self._src = src
-        self._dst = dst
+        self._src = self._frame.origin.locate_new('src', srcX * self._frame.i + srcY * self._frame.j)
+        self._dst = self._frame.origin.locate_new('dst', dstX * self._frame.i + dstY * self._frame.j)
         self._maxError = 0.1
 
     def _locAsVec(self, loc):
@@ -103,3 +103,6 @@ class CartMove(MotionPrimitive):
         pos_as_point = self._component.position().origin
         i = cube(self._frame, self._src, dst_height, pos_as_point, self._maxError + self._radius)
         return self.timify(i)
+
+#TODO idle motion primitive
+#the tricky part is that it maintain the ruccent state, so it is state-dependent

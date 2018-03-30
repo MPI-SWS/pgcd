@@ -77,10 +77,15 @@ class Process(Component):
     def variables(self):
         """returns all the variables as sympy symbols"""
         return self.internalVariables() + self.inputVariables() + self.outputVariables()
+
+    def invariant(self):
+        """returns some constraints over the variables"""
+        #TODO in the future we'll need to split this in assumption and guarantees depending on the variables
+        return True
     
     def ownResources(self, point):
         """returns constraints that are true if point is in the resources of this process"""
-        return true
+        return True
     
     def allResources(self, point):
         """returns constraints that are true if point is in the resources of this process or its children"""
@@ -90,7 +95,7 @@ class Process(Component):
     
     def abstractResources(self, point):
         """an overapproximation of the resources, easier to solve"""
-        return true
+        return True
     
     def connect(self, index, component, connection = {}):
         self.addChildren(index, component)

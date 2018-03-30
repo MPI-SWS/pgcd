@@ -1,5 +1,6 @@
 from sympy import *
 from sympy.vector import CoordSys3D
+from mpmath import mp
 from spec import *
 from geometry import *
 
@@ -37,9 +38,23 @@ class Arm(Process):
     
     def abstractResources(self, point):
         f = self.frame()
+        #TODO instead of max, use 'a' and 'b'
         r = self.baseHeight + self.upperArmLength + self.lowerArmLength #roughly
         return halfSphere(f, r, f.k, point)
     
     def mountingPoint(self, index):
         assert(index == 0)
         return self._effector
+
+    def invariant(self):
+        pi = mp.pi
+        domain_a = And(self._a >= pi/2, self._a <= pi/2)
+        domain_b = And(self._b >= 0, self._b <= 2*pi/3)
+        domain_c = And(self._c >= -pi, self._c <= pi)
+        return And(domain_a, domain_b, domain_c)
+
+#TODO motion primitives
+#-move (fold = move toward origin)
+#-open/close gripper 
+#-grab/put (move + gripper)
+#-idle
