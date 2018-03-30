@@ -234,7 +234,8 @@ class ChoreographyParser:
                       | TAN LPAREN expression RPAREN
                       | ABS LPAREN expression RPAREN
                       | SQRT LPAREN expression RPAREN
-                      | ID LPAREN expression RPAREN'''
+                      | ID LPAREN expression RPAREN
+                      | expression TIMES TIMES expression'''
         p[0] = str(p[1]) + str(p[2]) + str(p[3]) + str(p[4])
 
     def p_expression_rd(self, p):
