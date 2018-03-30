@@ -39,14 +39,15 @@ class ChoreographyParser:
 
     def parse(self, text):
         sequence = self.parser.parse(text, self.lexer.lexer)
-        return self.check_well_formdness(sequence), sequence
+        self.check_well_formdness(sequence)
+        return sequence
 
     def check_well_formdness(self, sequence):
-        assert len(self.left_states ^ self.right_states) != 1, 'States ' + str((self.left_states ^ self.right_states) - {
+        assert not len(self.left_states ^ self.right_states) != 1, 'States ' + str((self.left_states ^ self.right_states) - {
                 self.start_state}) + ' are not on LHS or RHS!'
 
         check = ChoreographyCheck(self.state_to_node, self.start_state)
-        return check.check_well_formedness()
+        check.check_well_formedness()
 
     def check_lhs_and_rhs_equality_state(self, lhs_list, rhs_list, node):
 
@@ -54,12 +55,12 @@ class ChoreographyParser:
             self.start_state = lhs_list[0]
 
         for state in lhs_list:
-            assert self.left_states.__contains__(state), 'State "' + state + '" appeared on LHS twice...'
+            assert not self.left_states.__contains__(state), 'State "' + state + '" appeared on LHS twice...'
             self.left_states.add(state)
             self.state_to_node[state] = node
         for state in rhs_list:
-            assert self.right_states.__contains__(state), 'State "' + state + '" appeared on RHS twice...'
-            assert state == self.start_state, 'Start state "' + state + '" cannot appear on RHS.'
+            assert not self.right_states.__contains__(state), 'State "' + state + '" appeared on RHS twice...'
+            assert not state == self.start_state, 'Start state "' + state + '" cannot appear on RHS.'
             self.right_states.add(state)
 
     def track_down_states(self, list):

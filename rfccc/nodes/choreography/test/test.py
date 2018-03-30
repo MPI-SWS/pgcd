@@ -169,10 +169,8 @@ def causal_err():
 
 def run(ch):
     visitor = exec.ChoreographyExecutor()
-    if visitor.execute(ch):
-        return True
-    else:
-        return False
+    visitor.execute(ch)
+    return True
 
 class ChoreograhyTests(unittest.TestCase):
 
@@ -180,24 +178,19 @@ class ChoreograhyTests(unittest.TestCase):
         print('WARNING: no components initialized, this is only for debugging purposes...')
 
     def test_fetch(self):
-        print("cartAndArmFetch", end=' -> ')
         self.assertEqual(run(cartAndArmFetch()), True)
 
     def test_handover(self):
-        print("armsHandover", end=' -> ')
         self.assertEqual(run(armsHandover()), True)
 
     def test_sorting(self):
-        print("binSorting", end=' -> ')
         self.assertEqual(run(binSorting()), True)
 
     def test_ferry(self):
-        print("ferry", end=' -> ')
         self.assertEqual(run(ferry()), True)
 
     def test_err1(self):
-        print("funny_thread_partition", end=' -> ')
-        self.assertEqual(run(ferry()), False)
+        self.assertEqual(run(funny_thread_partition()), False)
 
 
 if __name__ == '__main__':

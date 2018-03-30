@@ -13,10 +13,8 @@ class ChoreographyExecutor:
         self.parser = ChoreographyParser()
 
     def execute(self, code):
-        well_formednes, tree = self.parser.parse(code)
-        if well_formednes:
-            CreateProjectionFromChoreography(tree, "cart", "cart")
-        return well_formednes
+        tree = self.parser.parse(code)
+        CreateProjectionFromChoreography(tree, "cart", "cart")
 
     def visit(self, node):
 
