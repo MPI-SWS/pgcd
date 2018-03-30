@@ -140,13 +140,38 @@ def funny_thread_partition():
         in [true] x0
     '''
 
+def causal_ok():
+    # needs processes C, A1, A2
+    return ''' G =
+        def x0 = C -> A1: msg(); x1
+            x1 = A1 -> C: msg(); x2
+            x2 = C -> A2: msg(); x3
+            x3 = A2 -> C: msg(); x4
+            x4 = end
+        in [true] x0
+    '''
+
+def causal_err():
+    # needs processes C, A1, A2
+    return ''' G =
+    p->q; p->r; (q->p || r->p)
+        def x0 = C -> A1: msg(); x1
+            x1 = C -> A2: msg(); x2
+            x2 = x3 || x4
+            x3 = A1 -> C: msg(); x5
+            x4 = A2 -> C: msg(); x6
+            x5 || x6 = x7
+            x7 = end
+        in [true] x0
+    '''
+
 
 def run(ch):
     visitor = exec.ChoreographyExecutor()
     if visitor.execute(ch):
-        print("SUCCESS")
+        return True
     else:
-        print("FAILED")
+        return False
 
 class ChoreograhyTests(unittest.TestCase):
 
@@ -155,23 +180,23 @@ class ChoreograhyTests(unittest.TestCase):
 
     def test_fetch(self):
         print("cartAndArmFetch", end=' -> ')
-        run(cartAndArmFetch())
+        self.assertEqual(run(cartAndArmFetch()), True)
 
     def test_handover(self):
         print("armsHandover", end=' -> ')
-        run(armsHandover())
+        self.assertEqual(run(armsHandover()), True)
 
     def test_sorting(self):
         print("binSorting", end=' -> ')
-        run(binSorting())
+        self.assertEqual(run(binSorting()), True)
 
     def test_ferry(self):
         print("ferry", end=' -> ')
-        run(ferry())
+        self.assertEqual(run(ferry()), True)
 
     def test_err1(self):
         print("funny_thread_partition", end=' -> ')
-        run(funny_thread_partition())
+        self.assertEqual(run(ferry()), False)
 
 
 if __name__ == '__main__':
