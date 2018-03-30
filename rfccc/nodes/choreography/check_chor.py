@@ -28,7 +28,7 @@ class ChoreographyCheck:
         visited.add(state)
 
         if isinstance(node, Message):
-            causality.p_message_q(node.comp1, node.comp2)
+            causality.p_message_q(node.comp1, node.comp2, node.start_state)
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
@@ -36,7 +36,7 @@ class ChoreographyCheck:
             for comp_mot in node.motions:
                 self.process_motions_dictionary[process].add(comp_mot.id)
             self.loop_has_motion = True
-            # TODO self.causality.motion( DURATION? )
+            self.causality.motion(1)
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
@@ -86,7 +86,7 @@ class ChoreographyCheck:
             del self.join_scope[self.scope]
             del self.motion_check[self.scope]
             del self.join_node[self.scope]
-            causality.join_with_causalities(self.join_causalities[self.scope])
+            causality.join_with_causalities(self.join_causalities[self.scope], node.start_state)
             del self.join_causalities[self.scope]
 
             self.scope -= 1
@@ -161,9 +161,8 @@ class CausalityTracker:
                 return False
         return True
 
-    def p_message_q(self, p, q):
-        assert self.p_after_q(p, q), 'Process "' + str(
-            self.process_to_vclock[p][0]) + '" isn\'t after process "' + str(self.process_to_vclock[q][0]) + '".'
+    def p_message_q(self, p, q, state):
+        assert self.p_after_q(p, q), 'Process at state "' + ''.join(state) + '": "' + str(self.process_to_vclock[p][0]) + '" isn\'t after process "' + str(self.process_to_vclock[q][0]) + '".'
         self.inc_thread_vclock(p)
         self.process_to_vclock[q] = (np.copy(self.process_to_vclock[p][0]), self.process_to_vclock[q][1])
         self.inc_thread_vclock(q)
@@ -172,9 +171,9 @@ class CausalityTracker:
         self.time += duration
         self.init_vclocks()
 
-    def join_with_causalities(self, causalities):
+    def join_with_causalities(self, causalities, end_states):
         for i in range(len(causalities)):
-            assert self.time == causalities[i].time, str(self.time) + ' != ' + str(causalities[i].time)
+            assert self.time == causalities[i].time, 'Cannot join states: "' + ' , '.join(end_states) + '" because time doesn\'t match: "' + str(self.time) + ' != ' + str(causalities[i].time) + '".'
             for proc in self.process_set:
                 self.process_to_vclock[proc] = (
                 np.maximum(self.process_to_vclock[proc][0], causalities[i].process_to_vclock[proc][0]),
