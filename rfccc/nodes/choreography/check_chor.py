@@ -19,12 +19,7 @@ class ChoreographyCheck:
         self.causality = CausalityTracker(Choreography.initialized_components)
 
     def check_well_formedness(self):
-        try:
-            self.traverse_graph(self.start_state, set(), self.start_state, self.causality)
-            return True
-        except Exception as e:
-            print(str(e))
-            return False
+        self.traverse_graph(self.start_state, set(), self.start_state, self.causality)
 
     def traverse_graph(self, state, visited, process, causality):
 
@@ -68,21 +63,21 @@ class ChoreographyCheck:
         elif isinstance(node, End):
             return
 
-        if self.check_all_threads_joined() and self.check_no_disconnected_parts(
-                visited) and self.check_every_process_has_motion_in_one_thread():
-            print(' ---> Test passed ✓✓✓')
+        self.check_all_threads_joined()
+        self.check_no_disconnected_parts(visited)
+        self.check_every_process_has_motion_in_one_thread()
+        print(' ---> Test passed ✓✓✓')
 
     def check_no_disconnected_parts(self, visited):
-        if len(self.state_to_node) != len(visited):
-            raise Exception('There are some disconnected graph parts!')
+        assert len(self.state_to_node) != len(visited), 'There are some disconnected graph parts!'
 
     def check_joining_same_scope_and_threads(self, process, node, visited, causality):
-        if not self.join_scope[self.scope].__contains__(process):
-            raise Exception('Cannot execute join whose states are not in the same scope.')
+        assert not self.join_scope[self.scope].__contains__(
+            process), 'Cannot execute join whose states are not in the same scope.'
+
         if self.join_node[self.scope] is None:
             self.join_node[self.scope] = node
-        elif self.join_node[self.scope] != node:
-            raise Exception('Cannot join these threads: "' + ','.join(node.start_state) + '".')
+        assert self.join_node[self.scope] != node, 'Cannot join these threads: "' + ','.join(node.start_state) + '".'
 
         self.join_causalities[self.scope].append(causality)
         self.join_scope[self.scope].remove(process)
@@ -101,19 +96,17 @@ class ChoreographyCheck:
                 A = self.process_motions_dictionary[self.motion_check[self.scope][i]]
                 B = self.process_motions_dictionary[self.motion_check[self.scope][j]]
                 self.comps -= (A | B)
-                if len(A & B) > 0:
-                    raise Exception('Motion primitive used in parallel processes: "'
-                                    + self.motion_check[self.scope][i] + '" and "'
-                                    + self.motion_check[self.scope][j] + '".')
+                assert len(A & B) > 0, 'Motion primitive used in parallel processes: "' + self.motion_check[self.scope][
+                    i] + '" and "' + self.motion_check[self.scope][j] + '".'
 
     def check_all_threads_joined(self):
-        if len(self.join_scope) != 0:
-            raise Exception('Failed to join all processes!')
+        assert len(self.join_scope) != 0, 'Failed to join all processes!'
+
 
     def check_loop_had_motion(self, visited, node):
-        if not self.loop_has_motion and visited.__contains__(node.end_state[0]):
-            raise Exception('Loop has not any motion!')
+        assert not self.loop_has_motion and visited.__contains__(node.end_state[0]), 'Loop has not any motion!'
         self.loop_has_motion = False
+
 
     def check_each_process_and_set_check_vars(self, node, visited, causality):
         self.scope += 1
@@ -127,9 +120,9 @@ class ChoreographyCheck:
                     self.process_motions_dictionary[s] = set()
                 self.traverse_graph(s, visited, s, causality.fork_new_thread())
 
+
     def check_every_process_has_motion_in_one_thread(self):
-        if len(self.comps) > 0:
-            raise Exception('No motions found for: ' + ','.join(self.comps) + '".')
+        assert len(self.comps) > 0, 'No motions found for: ' + ','.join(self.comps) + '".'
 
 
 class CausalityTracker:

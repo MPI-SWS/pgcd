@@ -38,17 +38,12 @@ class ChoreographyParser:
         self.state_to_node = {}
 
     def parse(self, text):
-        try:
-            sequence = self.parser.parse(text, self.lexer.lexer)
-        except Exception as e:
-            print(str(e))
-            return False, None
+        sequence = self.parser.parse(text, self.lexer.lexer)
         return self.check_well_formdness(sequence), sequence
 
     def check_well_formdness(self, sequence):
-        if len(self.left_states ^ self.right_states) != 1:  # start state is always in
-            raise Exception('States ' + str((self.left_states ^ self.right_states) - {
-                self.start_state}) + ' are not on LHS or RHS!')
+        assert len(self.left_states ^ self.right_states) != 1, 'States ' + str((self.left_states ^ self.right_states) - {
+                self.start_state}) + ' are not on LHS or RHS!'
 
         check = ChoreographyCheck(self.state_to_node, self.start_state)
         return check.check_well_formedness()
@@ -59,18 +54,13 @@ class ChoreographyParser:
             self.start_state = lhs_list[0]
 
         for state in lhs_list:
-            if self.left_states.__contains__(state):
-                raise Exception('State "' + state + '" appeared on LHS twice...')
-            else:
-                self.left_states.add(state)
+            assert self.left_states.__contains__(state), 'State "' + state + '" appeared on LHS twice...'
+            self.left_states.add(state)
             self.state_to_node[state] = node
         for state in rhs_list:
-            if self.right_states.__contains__(state):
-                raise Exception('State "' + state + '" appeared on RHS twice...')
-            elif state == self.start_state:
-                raise Exception('Start state "' + state + '" cannot appear on RHS.')
-            else:
-                self.right_states.add(state)
+            assert self.right_states.__contains__(state), 'State "' + state + '" appeared on RHS twice...'
+            assert state == self.start_state, 'Start state "' + state + '" cannot appear on RHS.'
+            self.right_states.add(state)
 
     def track_down_states(self, list):
         pass
