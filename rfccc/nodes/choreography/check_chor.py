@@ -8,7 +8,6 @@ class ChoreographyCheck:
         self.start_state = start_state
         self.state_to_node = state_to_node
         self.scope = 0
-        self.forks = 0
         self.process_motions_dictionary = {start_state: set()}
         self.join_scope = {}
         self.join_node = {}
@@ -36,7 +35,7 @@ class ChoreographyCheck:
             for comp_mot in node.motions:
                 self.process_motions_dictionary[process].add(comp_mot.id)
             self.loop_has_motion = True
-            self.causality.motion(1)
+            causality.motion(1)
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
@@ -80,7 +79,6 @@ class ChoreographyCheck:
             self.join_node[self.scope] = node
         assert self.join_node[self.scope] == node, 'Cannot join these threads: "' + ','.join(node.start_state) + '".'
 
-        self.join_causalities[self.scope].append(causality)
         self.join_scope[self.scope].remove(process)
         if len(self.join_scope[self.scope]) == 0:
             del self.join_scope[self.scope]
@@ -91,6 +89,8 @@ class ChoreographyCheck:
 
             self.scope -= 1
             self.traverse_graph(node.end_state[0], visited, process, causality)
+        else:
+            self.join_causalities[self.scope].append(causality)
 
     def check_component_motion_is_in_only_one_forked_thread(self):
         for i in range(0, len(self.motion_check[self.scope]) - 1):
@@ -112,15 +112,15 @@ class ChoreographyCheck:
 
     def check_each_process_and_set_check_vars(self, node, visited, causality):
         self.scope += 1
-        self.forks += 1
         self.join_scope[self.scope] = node.end_state[:]
         self.join_causalities[self.scope] = []
         self.motion_check[self.scope] = node.end_state[:]
         for s in node.end_state:
+            var = causality.fork_new_thread()
             if not visited.__contains__(s):
                 if not self.process_motions_dictionary.__contains__(s):
                     self.process_motions_dictionary[s] = set()
-                self.traverse_graph(s, visited, s, causality.fork_new_thread())
+                self.traverse_graph(s, visited, s, var)
 
     def check_every_process_has_motion_in_one_thread(self):
         assert not len(self.comps) > 0, 'No motions found for: ' + ','.join(self.comps) + '".'
