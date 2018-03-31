@@ -49,7 +49,7 @@ class MoveFromTo(MotionPrimitiveFactory):
     def parameters(self):
         return ['sourceX', 'sourceY','targetX','targetY']
     
-    def setParameters(self, *args):
+    def setParameters(self, args):
         assert(len(args) == 4)
         return CartMove(self._component, args[0], args[1], args[2], args[3])
 

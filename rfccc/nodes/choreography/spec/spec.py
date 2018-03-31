@@ -106,8 +106,8 @@ class Process(Component):
         assert(not (n in self._motionPrimitives))
         self._motionPrimitives[n] = mp
     
-    def motionPrimitive(self, name):
-        return self._motionPrimitives[name]
+    def motionPrimitive(self, name, *args):
+        return self._motionPrimitives[name].setParameters(args)
 
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.
@@ -126,7 +126,7 @@ class MotionPrimitiveFactory(ABC):
 
     # returns a MotionPrimitive
     @abstractmethod
-    def setParameters(self, *args):
+    def setParameters(self, args):
         pass
 
 class MotionPrimitive():
