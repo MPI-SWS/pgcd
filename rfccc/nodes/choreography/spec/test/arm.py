@@ -16,10 +16,12 @@ class Arm(Process):
         self.upperArmRadius = 0.05
         self.lowerArmLength = 0.2
         self.lowerArmRadius = 0.05
+        self.gripperReach = 0.5
         # variables
         self._a = symbols(name + '_a') # rotation along the Y-axis (upper arm to lower arm)
         self._b = symbols(name + '_b') # rotation along the Y-axis (base to upper arm)
         self._c = symbols(name + '_c') # rotation along the Z-axis (base)
+        #TODO state of the gripper
         # frame and stuff
         self._frame = parent.mountingPoint(index)
         self._base = self._frame.orient_new_axis(name + '_base', self._c, self._frame.k)
@@ -43,6 +45,9 @@ class Arm(Process):
     def gamma(self):
         '''rotation along the Z-axis (base)'''
         return self._c
+    
+    def internalVariables(self):
+        return [self._a, self._b, self._c]
     
     def ownResources(self, point):
         baseFP = cylinder(self._base, self.baseRadius, self.baseHeight, point)
@@ -110,6 +115,6 @@ class ArmFold(MotionPrimitive):
         return self.timify(i)
 
 #TODO motion primitives
-#-open/close gripper 
+#-open/close gripper (preserve the rest)
 #-grab/put (move + gripper)
 #-idle

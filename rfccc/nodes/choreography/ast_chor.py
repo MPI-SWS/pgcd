@@ -191,7 +191,7 @@ class Merge(DistributedStateNode):
 class Fork(DistributedStateNode):
 
     def __init__(self, start_state, continue_state):
-        DistributedStateNode.__init__(self, Type.merge, start_state, continue_state)
+        DistributedStateNode.__init__(self, Type.fork, start_state, continue_state)
 
     def __str__(self):
         string = ''.join(self.start_state) + '='
@@ -208,7 +208,7 @@ class Fork(DistributedStateNode):
 class Join(DistributedStateNode):
 
     def __init__(self, start_state, continue_state):
-        DistributedStateNode.__init__(self, Type.merge, start_state, continue_state)
+        DistributedStateNode.__init__(self, Type.join, start_state, continue_state)
         self.check_states = []
 
     def __str__(self):

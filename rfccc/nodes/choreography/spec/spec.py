@@ -73,6 +73,10 @@ class Process(Component):
     def outputVariables(self):
         """returns a list output variables as sympy symbols"""
         return []
+
+    def ownVariables(self):
+        """returns all the internal and output as sympy symbols"""
+        return self.internalVariables() + self.outputVariables()
     
     def variables(self):
         """returns all the variables as sympy symbols"""
@@ -149,6 +153,10 @@ class MotionPrimitive():
 
     def duration(self):
         return Int(1)
+
+    def modifies(self):
+        '''some motion primitive (like idle) does not change all the variables'''
+        return self._component.ownVariables()
     
     def pre(self):
         """precondition over the component's variables"""

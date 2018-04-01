@@ -10,7 +10,7 @@ import unittest
 # The example from the paper
 # origin is (0,0), target is (2,0)
 def cartAndArmFetch():
-    return ''' G =
+    return ''' Fetch =
         def x0 = C -> A : action(fold) ; x1
             x1 = (C : idle(), A : fold()) ; x2
             x2 = A -> C : state(folded) ; x3
@@ -36,7 +36,7 @@ def cartAndArmFetch():
 # `loc` needs to be within the reach of both arms
 # `delta` is a positive offset which is roughly the reach/length of the gripper also is has to be aligned with the position of A and B
 def armsHandover():
-    return ''' G =
+    return ''' Handover =
         def x0 = A -> B : meetAt(loc); x1
             x1 = (A: moveTo(loc - delta), B: moveTo(loc + delta)); x2
             x2 = A -> B : holding(); x3
@@ -65,7 +65,7 @@ def armsHandover():
 # The unlabeled boxes next to the arm is where they get their respective objects from.
 # FIXME DZ: this one is syntactically correct but I don't think it fits our sntax restriction unless we have a quite fancy thread correctness check (need to think some more about that)
 def binSorting():
-    return ''' G =
+    return ''' BinSorting =
         def x0 = (A: idle(), B: idle()); x1         # because we cannot loop to x0 (is that restriction really needed?)
             x1 + x31 + x32 + x33 + x34 + x35 = x2
 
@@ -107,7 +107,7 @@ def binSorting():
 # - while the cart is moving the arms can do something else
 # - while the cart is busy with A/B then B/A can do something else
 def ferry():
-    return ''' G =
+    return ''' Ferry =
         def x0 = (A: idle(), B: idle(), C: idle()); ca
             # x1 + cb2a1 = ca
             ca = ca1 || ca3
@@ -165,6 +165,31 @@ def causal_err():
         in [true] x0
     '''
 
+def funny_fine_but_not_causal():
+    # DZ: our definition of causality is a bit too strong and we reject example like this which are fine
+    # DZ: need to think about something better
+    # needs processes C, A
+    return ''' G =
+        def x0 = C -> A: msg(); x1
+            x1 = C -> A: msg(); x2
+            x2 = end
+        in [true] x0
+    '''
+
+def causal_loop_err():
+    # the problem here is when we stay in the loop: there is C->A2 (previous iteration) and A1->A2 (next iteration) wich should conflict at A2
+    # needs processes C, A1, A2
+    return ''' G =
+        def x0 = C -> A1: msg(); x1
+            x1 + x6 = x2
+            x2 = [True] x3 + [True] x7
+            x3 = A1 -> A2: msg(); x4
+            x4 = (C: idle(), A1: idle(), A2: idle()); x5
+            x5 = C -> A2: msg(); x6
+            x7 = end
+        in [true] x0
+    '''
+
 def nomraliztion_err():
     # not correct because it mixes internal and external choice when removing ||
     return ''' G =
@@ -215,6 +240,12 @@ class ChoreograhyTests(unittest.TestCase):
 
     def test_err2(self):
         run(causal_err(), False)
+
+    def test_err2(self):
+        run(causal_loop_err(), False)
+
+    def test_funny_causal(self):
+        run(funny_fine_but_not_causal(), False)
 
 
 if __name__ == '__main__':

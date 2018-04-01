@@ -54,7 +54,7 @@ def ferryWorld():
 
 
 # creating a few thing to test if it works:
-def test():
+def testing():
     print("cart and arm")
     w = cartAndArmWorld()
     print(w)
@@ -71,5 +71,3 @@ def test():
     w = ferryWorld()
     print(w)
     print(w.allProcesses())
-
-test()
