@@ -35,3 +35,9 @@ def cube(frame, lowerBackLeft, upperFrontRight, p, maxError = 0.0):
     mz = lz + dz
     inZ = And(pz - mz <= Abs(dz) + maxError, pz - mz >= -Abs(dz) - maxError)
     return And(inX, inY, inZ)
+
+def halfSpace(frame, normal, p, maxError = 0.0):
+    #plane goes through frame.origin
+    #normal must be an unit vector
+    v = p.position_wrt(frame.origin)
+    return normal.dot(v) >= maxError
