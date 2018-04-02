@@ -23,6 +23,23 @@ def conjContains(conj1, conj2):
     #print("contains " + str(c1) + " " + str(c2) + " = " + str(res))
     return res
 
+def choiceAt(node, process_set):
+    allGuards = [ gs.expression.free_symbols for gs in node.guarded_states ]
+    choiceCandidates = [ p for p in process_set if any([ v in allGuards for v in p.variables() ]) ]
+    if len(choiceCandidates) == 0:
+        raise Exception("choice cannot be traced back to any process: " + str(allGuards))
+    elif len(choiceCandidates) > 1:
+        raise Exception("choice can be traced back to more than one process: " + str(allGuards) + " " + str(choiceCandidates))
+    else:
+        return choiceCandidates.pop()
+
+class VC:
+
+    def __init___(self, title, formulas, shouldBeSat = False):
+        self.title = title
+        self.formulas = formulas # a list of formula from imprecise (easy to solve) to precise (hard to solve)
+        self.sat = shouldBeSat
+
 class ProcessPredicatesTracker:
 
     def __init__(self, process):
@@ -38,7 +55,7 @@ class ProcessPredicatesTracker:
     def addPred(self, pred):
         disj1 = getDisjuncts(self._pred)
         disj2 = [And(pred, d) for d in disj1]
-        res =  functools.reduce(Or, disj2, S.false)
+        res =  Or(*disj2)
         self._pred = res
     
     def relaxVariables(self, variables):
@@ -107,7 +124,7 @@ class ProcessesPredicatesTracker:
             return self._process_to_pred[process].pred()
         else:
             conjs = [self._process_to_pred[p].pred() for p in self._process_set]
-            conj = functools.reduce(And, conjs, S.true)
+            conj = And(*conjs)
             return to_dnf(conj)
 
     def _findProcess(self, pred):
@@ -157,9 +174,152 @@ class CompatibilityCheck:
         self.processes = world.allProcesses()
         self.node_to_pred = {}
         for n in state_to_node.keys():
-            self.node_to_process_to_pred[n] = ProcessesPredicatesTracker(self.processes)
+            self.node_to_pred[n] = ProcessesPredicatesTracker(self.processes)
+        self.predComputed = False
         self.vcs = []
 
-    def generateChecks():
-        pass
+    def _guard(self, pred, guard, succ):
+        trackerSrc = self.node_to_pred[pred]
+        tracker = trackerSrc.copy()
+        tracker.addFormula(guard)
+        trackerOld = self.node_to_pred[succ]
+        self.node_to_pred[succ] = tracker
+        return not trackerOld.equals(tracker)
+
+    def _motion(self, pred, motions, succ):
+        #TODO how to deal with the processes specified in other branches?
+        #TODO this assums we have all the processes!
+        trackerSrd = self.node_to_pred[pred]
+        tracker = trackerSrc.copy()
+        #relax for the variables that changes
+        for mp in motions:
+            tracker.relaxVariables(mp.modifies())
+        #add the postconditions
+        for mp in motions:
+            tracker.addFormula(mp.post())
+        trackerOld = self.node_to_pred[succ]
+        self.node_to_pred[succ] = tracker
+        return not trackerOld.equals(tracker)
+    
+    # for operation that do not change the predicates
+    def _transfer(self, pred, succ):
+        p = self.node_to_pred[pred]
+        s = self.node_to_pred[succ]
+        changed = not p.equals(s)
+        self.node_to_pred[succ] = p
+        return changed
+
+    def _merge(self, preds, succ):
+        tracker = ProcessesPredicatesTracker(self.processes)
+        for p in preds:
+            tracker.merge(self.node_to_pred[p])
+        trackerOld = self.node_to_pred[succ]
+        self.node_to_pred[succ] = tracker
+        return not trackerOld.equals(tracker)
+
+    def motionForProcess(self, motions, process):
+        candidates = [ m for m in motions if m.id == process.name() ]
+        assert(len(candidates) <= 1)
+        if len(candidates) == 0:
+            return None
+        elif len(candidates) == 1:
+            return candidates.pop()
+        else:
+            raise Exception("more than one motion primitive for " + p.name() + " -> " + str(candidates))
+    
+    def processForMotion(self, processes, motion):
+        candidates = [ p for p in processes if p.name() == motion.id ]
+        assert(len(candidates) <= 1)
+        if len(candidates) == 0:
+            return None
+        elif len(candidates) == 1:
+            return candidates.pop()
+        else:
+            raise Exception("more than one process for motion primitive " + motion.id + " -> " + str(candidates))
+
+    # a fixed point to compute the pred at each point in the choreography
+    # TODO smarter fixed point with a work queue
+    def computePreds(self):
+        changed = True
+        while changed:
+            changed = False
+            for node in state_to_node.values():
+                if isinstance(node, Message):
+                    succ = self.state_to_node[node.end_state[0]]
+                    res = self._transfer(node, succ)
+                    changed = changed or res
+                elif isinstance(node, GuardedChoice):
+                    for gs in node.guarded_states:
+                        guard = gs.expression
+                        succ = self.state_to_node[gs.id]
+                        res = self._guard(node, guard, succ)
+                        changed = changed or res
+                elif isinstance(node, Merge):
+                    preds = [ self.state_to_node[p] for p in node.start_state ]
+                    succ = self.state_to_node[node.end_state[0]]
+                    res = self._merge(node, preds, succ)
+                    changed = changed or res
+                elif isinstance(node, Fork):
+                    for s in node.end_state:
+                        succ = self.state_to_node[s]
+                        res = self._transfer(node, succ)
+                        changed = changed or res
+                elif isinstance(node, Join):
+                    # TODO probably not the best approach
+                    preds = [ self.state_to_node[p] for p in node.start_state ]
+                    succ = self.state_to_node[node.end_state[0]]
+                    res = self._merge(node, preds, succ)
+                    changed = changed or res
+                elif isinstance(node, Motion):
+                    processes = []
+                    mps = []
+                    for motion in node.motions:
+                        proc = self.processForMotion(self.processes, motion)
+                        primitive = motion.sympy_formula
+                        mpName = primitive.func
+                        mpArgs = primitive.args
+                        mp = proc.motionPrimitive(mpName, *mpArgs)
+                        processes.append(proc)
+                        mps.append(mp)
+                    assert(set(processes) == set(self.processes))
+                    succ = self.state_to_node[node.end_state[0]]
+                    res = self._motion(node, mps, succ)
+                    changed = changed or res
+                elif isinstance(node, End):
+                    pass
+        self.predComputed = True
+
+    # compatibility of motion primitives
+    def generateCompatibilityChecks(self):
+        assert(self.predComputed)
+        for node in state_to_node.values():
+            if isinstance(node, Motion):
+                tracker = self.state_to_node[node]
+                for p in self.processes:
+                    motion = self.motionForProcess(node.motions, p)
+                    #TODO don't forget the connection
+                    #pre:
+                    #- process resources is included in mp footprint
+                    #- mp.pre follows from pred
+                    #- mp.preFP are disjoint
+                    #inv:
+                    #- mp.inv is sat
+                    #- mp.invFP are disjoint
+                    #- process resources is included in mp footprint
+                    #post:
+                    #- mp.post is sat
+                    #- mp.postFP are disjoint
+                    #- process resources is included in mp footprint
+                    raise NotImplemented
+
+    def localChoiceChecks(self):
+        for node in self.state_to_node.values():
+            if isinstance(node, GuardedChoice):
+                choiceAt(node, self.processes)
+
+    def generateTotalGuardsChecks(self):
+        for node in state_to_node.values():
+            if isinstance(node, GuardedChoice):
+                allGuards = Or(*[ gs.expression for gs in node.guarded_states ])
+                self.vcs.append( VC("total guard @ " + str(node.id), [Not(allGuards)]) )
 
