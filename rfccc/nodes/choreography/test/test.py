@@ -190,6 +190,17 @@ def causal_loop_err():
         in [true] x0
     '''
 
+def causal_independent_err():
+    # DZ: our algorithm causality does not catch that example
+    # DZ: need to think about something better
+    # needs processes A, B, C, D
+    return ''' G =
+        def x0 = A -> B: msg(); x1
+            x1 = C -> D: msg(); x2
+            x2 = end
+        in [true] x0
+    '''
+
 def nomraliztion_err():
     # not correct because it mixes internal and external choice when removing ||
     return ''' G =
@@ -243,6 +254,9 @@ class ChoreograhyTests(unittest.TestCase):
 
     def test_err2(self):
         run(causal_loop_err(), False)
+
+    def test_err3(self):
+        run(causal_independent_err(), False)
 
     def test_funny_causal(self):
         run(funny_fine_but_not_causal(), False)

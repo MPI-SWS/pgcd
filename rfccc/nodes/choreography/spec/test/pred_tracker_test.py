@@ -57,6 +57,21 @@ class PredTrackerTests(unittest.TestCase):
         pred = And(pred1, pred2)
         t.addFormula(pred)
         self.assertEqual(t.pred(), pred)
+    
+    def test_07(self):
+        w = experiments_setups.cartAndArmWorld()
+        t1 = ProcessesPredicatesTracker(w.allProcesses())
+        t2 = ProcessesPredicatesTracker(w.allProcesses())
+        pred1 = Eq(Symbol('C_x'), Integer(0))
+        pred2 = Eq(Symbol('A_a'), Integer(0))
+        pred3 = Eq(Symbol('C_y'), Integer(0))
+        t1.addPred(pred1)
+        t1.addPred(pred2)
+        t2.addPred(pred3)
+        t2.merge(t1)
+        #print(t2.pred())
+        self.assertEqual(t2.contains(t1), True)
+        self.assertEqual(t1.contains(t2), False)
 
 if __name__ == '__main__':
     unittest.main()

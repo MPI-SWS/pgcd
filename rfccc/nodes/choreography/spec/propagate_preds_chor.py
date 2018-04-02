@@ -55,6 +55,10 @@ class ProcessPredicatesTracker:
                     #print('drop ' + str(c))
             accD = Or(accD, accC)
         self._pred = accD
+
+    def merge(self, tracker):
+        assert(self._process == tracker._process)
+        self._pred = Or(self._pred, tracker._pred)
         
     # syntactic, not semantic!
     # contains tracker of all the pred in tracker are in self
@@ -134,10 +138,28 @@ class ProcessesPredicatesTracker:
             self._process_to_pred[p].relaxVariables(vs)
 
     def merge(self, tracker):
-        pass
+        for p in self._process_set:
+            self._process_to_pred[p].merge(tracker._process_to_pred[p])
 
     def contains(self, tracker):
         return all([ self._process_to_pred[p].contains(tracker._process_to_pred[p]) for p in self._process_set])
     
     def equals(self, tracker):
         return all([ self._process_to_pred[p].equals(tracker._process_to_pred[p]) for p in self._process_set])
+
+
+class CompatibilityCheck:
+
+    def __init__(self, state_to_node, start_state, world):
+        self.start_state = start_state
+        self.state_to_node = state_to_node
+        self.world = world
+        self.processes = world.allProcesses()
+        self.node_to_pred = {}
+        for n in state_to_node.keys():
+            self.node_to_process_to_pred[n] = ProcessesPredicatesTracker(self.processes)
+        self.vcs = []
+
+    def generateChecks():
+        pass
+
