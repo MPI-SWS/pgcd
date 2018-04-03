@@ -1,25 +1,29 @@
 from ast_chor import *
 from sympy import *
+from spec import *
 
 
-def CreateProjectionFromChoreography(choreography, _id, process):
-    tree = ChoreographyProjection(_id, [], choreography.start_state, choreography.end_state, process)
+def CreateProjectionFromChoreography(choreography, projection_name, process):
+    ''' Creates a projection of a choreography on process '''
+    tree = ChoreographyProjection(projection_name, [], choreography.start_state, choreography.end_state, process.name())
+    state_to_node = {}
 
     for node in choreography.statements:
 
         if isinstance(node, Message):
-            if node.comp1 == process:
+            if node.comp1 == process.name():
                 tree.statements.append(
                     SendMessage(node.start_state, node.comp2, node.msg_type, node.expressions, node.end_state))
-            elif node.comp2 == process:
-                tree.statements.append(ReceiveMessage(node.start_state, node.msg_type, node.expressions, node.end_state))
+            elif node.comp2 == process.name():
+                tree.statements.append(
+                    ReceiveMessage(node.start_state, node.msg_type, node.expressions, node.end_state))
             else:
                 tree.statements.append(Indirection(node.start_state, node.end_state))
 
         elif isinstance(node, Motion):
             motions = []
             for x in node.motions:
-                if x.id == process:
+                if x.id == process.name():
                     tree.statements.append(node)
                     continue
                 motions.append(x.mp_name)
@@ -28,15 +32,19 @@ def CreateProjectionFromChoreography(choreography, _id, process):
                        node.end_state))
 
         elif isinstance(node, GuardedChoice):
-            # TODO if set(node.guarded_states.expression.free_symbols) <= getProcess().variables
-            tree.statements.append(node)
-            # else
-            # tree.statements.append(ExternalChoice(node.start_state, [x.id for x in node.end_state])
-
+            if set(node.guarded_states.expression.free_symbols) | \
+                    set(node.guarded_states.expression.atoms(Function)) <= process.variables():
+                tree.statements.append(node)
+            else:
+                tree.statements.append(ExternalChoice(node.start_state, [x.id for x in node.end_state]))
         else:
             tree.statements.append(node)
 
-    return tree
+        last = tree.statements[-1]
+        for state in last.start_state:
+            state_to_node[state] = last
+
+    return tree, state_to_node
 
 
 class ChoreographyProjection(DistributedStateNode):

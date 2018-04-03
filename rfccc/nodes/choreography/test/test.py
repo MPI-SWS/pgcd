@@ -252,7 +252,7 @@ class ChoreograhyTests(unittest.TestCase):
     def test_err2(self):
         run(causal_err(), False)
 
-    def test_err2(self):
+    def test_err4(self):
         run(causal_loop_err(), False)
 
     def test_err3(self):

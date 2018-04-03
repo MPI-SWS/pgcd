@@ -35,22 +35,15 @@ class ChoreographyCheck:
         elif isinstance(node, Motion):
             for comp_mot in node.motions:
                 self.process_motions_dictionary[process].add(comp_mot.id)
+                self.comps -= {comp_mot.id}
             self.loop_has_motion = True
             causality.motion(1)
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
         elif isinstance(node, GuardedChoice):
-            for s in node.end_state:
-                # TODO self.causality.GUARD?
-                if not visited.__contains__(s):
-                    self.traverse_graph(s, visited, process, causality)
-                    break
-                elif not self.looped_states.__contains__(s):
-                    self.looped_states.add(s)
-                    self.traverse_graph(s, visited, process, causality)
-                    self.end = False
-                    break
+            # TODO here I assume the end path is last state...
+            self.check_same_path_twice(node, visited, process, causality)
             return
 
         elif isinstance(node, Merge):
@@ -74,6 +67,19 @@ class ChoreographyCheck:
         self.check_no_disconnected_parts(visited)
         self.check_every_process_has_motion_in_one_thread()
         print(' ---> Test passed ✓✓✓')
+
+    def check_same_path_twice(self, node, visited, process, causality):
+        for s in node.end_state:
+            # TODO self.causality.GUARD?
+            if not visited.__contains__(s):
+                self.traverse_graph(s, visited, process, causality)
+                break
+            elif not self.looped_states.__contains__(s):
+                self.looped_states.add(s)
+                self.traverse_graph(s, visited, process, causality)
+                self.end = False
+                break
+        return
 
     def check_no_disconnected_parts(self, visited):
         assert not len(self.state_to_node) != len(visited), 'There are some disconnected graph parts!'
