@@ -105,7 +105,7 @@ class ChoreographyParser:
         if len(p) > 2:
             p[0] = p[1] + p[3]
         else:
-            p[0] = [sympify('"' + p[1] + '"')]
+            p[0] = [sympify(p[1])]
 
     def p_motion(self, p):
         'motion : ID EQUALS LPAREN mspecs RPAREN SEMI ID'
@@ -124,9 +124,12 @@ class ChoreographyParser:
         ''' function : ID LPAREN funcargs RPAREN
                      | ID LPAREN RPAREN'''
         if len(p) > 4:
-            p[0] = sympify('"' + p[1] + '(' + p[3] + ')' + '"')
+            p[0] = sympify(p[1] + '(' + p[3] + ')')
         else:
-            p[0] = sympify('"' + p[1] + '(' + ')' + '"')
+            try:
+                p[0] = sympify(p[1] + '( false )')
+            except Exception as e:
+                print(e)
 
     def p_funcargs(self, p):
         ''' funcargs : funcargs COMMA funcargs
@@ -138,16 +141,16 @@ class ChoreographyParser:
 
     def p_guard(self, p):
         ''' guard   : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs '''
-        p[0] = GuardedChoice([p[1]], [GuardArg(sympify('"' + p[4] + '"'), p[6])] + p[8])
+        p[0] = GuardedChoice([p[1]], [GuardArg(sympify(p[4]), p[6])] + p[8])
         self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_gargs(self, p):
         ''' gargs : LSQUARE expression RSQUARE ID PLUS gargs
                   | LSQUARE expression RSQUARE ID '''
         if len(p) > 5:
-            p[0] = [GuardArg(sympify('"' + p[2] + '"'), p[4])] + p[6]
+            p[0] = [GuardArg(sympify(p[2]), p[4])] + p[6]
         else:
-            p[0] = [GuardArg(sympify('"' + p[2] + '"'), p[4])]
+            p[0] = [GuardArg(sympify(p[2]), p[4])]
 
     def p_merge(self, p):
         ''' merge : ID PLUS margs EQUALS ID '''
@@ -227,6 +230,7 @@ class ChoreographyParser:
                       | SQRT LPAREN expression RPAREN
                       | ID LPAREN expression RPAREN
                       | expression TIMES TIMES expression'''
+        # p[1] = symbols('f g h', cls=Function)
         p[0] = str(p[1]) + str(p[2]) + str(p[3]) + str(p[4])
 
     def p_expression_rd(self, p):
