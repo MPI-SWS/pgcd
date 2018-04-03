@@ -84,7 +84,7 @@ class Message(DistributedStateNode):
         self.expressions = expressions
 
     def __str__(self):
-        string = 'Message'
+        string = ''
         string += self.start_state[0] + '=' + self.comp1 + '->' + self.comp2 + ':' + self.msg_type + '('
         for x in self.expressions:
             string += str(x)
@@ -183,6 +183,7 @@ class Merge(DistributedStateNode):
             if x != self.start_state[-1]:
                 string += ' + '
         string += '=' + ''.join(self.end_state)
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)

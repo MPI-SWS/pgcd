@@ -13,8 +13,9 @@ class ChoreographyCheck:
         self.join_node = {}
         self.join_causalities = {}
         self.motion_check = {}
-        self.loop_states = {}
+        self.looped_states = set()
         self.loop_has_motion = False
+        self.end = False
         self.comps = set(Choreography.initialized_components)
         self.causality = CausalityTracker(Choreography.initialized_components)
 
@@ -45,6 +46,11 @@ class ChoreographyCheck:
                 if not visited.__contains__(s):
                     self.traverse_graph(s, visited, process, causality)
                     break
+                elif not self.looped_states.__contains__(s):
+                    self.looped_states.add(s)
+                    self.traverse_graph(s, visited, process, causality)
+                    self.end = False
+                    break
             return
 
         elif isinstance(node, Merge):
@@ -61,6 +67,7 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, End):
+            self.end = True
             return
 
         self.check_all_threads_joined()
@@ -134,6 +141,13 @@ class CausalityTracker:
         self.process_set = process_set
         self.init_vclocks()
 
+    def copy(self, tracker):
+        self.time = tracker.time
+        idx = 0
+        for proc in self.process_set:
+            self.process_to_vclock[proc] = (np.copy(tracker.process_to_vclock[proc][0]), idx)
+            idx += 1
+
     def init_vclocks(self):
         idx = 0
         for proc in self.process_set:
@@ -154,8 +168,6 @@ class CausalityTracker:
         v2 = self.process_to_vclock[q][0]
         if len(v1) > len(v2):
             return False
-        if (v1 == v2).all():
-            return True
         for first, second in zip(v1, v2):
             if second > first:
                 return False
