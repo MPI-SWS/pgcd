@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 # This will be used for the compatibility check.                     #
 ######################################################################
     
-def timeSymbol(self):
+def timeSymbol():
     return Symbol("t")
 
 def timifyVar(var):

@@ -143,7 +143,7 @@ class MotionArg(Node):
 
     def __str__(self):
         string = self.id + ': ' + self.mp_name + "("
-        string += ", ".join(self.mp_args) + ')'
+        string += ", ".join([str(a) for a in self.mp_args]) + ')'
         return string
 
     def accept(self, visitor):

@@ -16,7 +16,7 @@ def cartAndArmFetch():
             x2 = A -> C : state(folded) ; x3
             x3 + x6 = x4
             x4 = [sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1] x5 + [sqrt((C_x - 2)**2 + (C_y - 0)**2) <= 0.1] x7
-            x5 = (C : MoveFromTo(0,0, 2,0), A : Idle()) ; x6
+            x5 = (C : MoveFromTo(Pnt(0,0,0), Pnt(2,0,0)), A : Idle()) ; x6
             x7 = C -> A : action(grab) ; x8
             x8 = ( C : Idle(), A : Grab(target)) ; x9
             x9 = A -> C : state(grabbed) ; x10
@@ -25,7 +25,7 @@ def cartAndArmFetch():
             x12 = A -> C : state(folded) ; x13
             x13 + x16 = x14
             x14 = [sqrt((C_x - 0)**2 + (C_y - 0)**2) > 0.1] x15 + [sqrt((C_x - 0)**2 + (C_y - 0)**2) <= 0.1] x17
-            x15 = (C : MoveFromTo(2, 0, 0, 0), A : Idle()) ; x16
+            x15 = (C : MoveFromTo(Pnt(2, 0, 0), Pnt(0, 0, 0)), A : Idle()) ; x16
             x17 = C -> A : state(done) ; x18
             x18 = end
         in [true]x0

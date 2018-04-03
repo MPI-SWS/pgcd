@@ -3,12 +3,22 @@ from propagate_preds_chor import *
 from sympy import *
 from test.test import cartAndArmFetch, binSorting
 from parser_chor import *
+from vectorize_spec import *
 
 import unittest
 
 class CompatibilityCheckTest(unittest.TestCase):
     
     def test_01(self):
+        world = experiments_setups.cartAndArmWorld()
+        code = cartAndArmFetch()
+        parser = ChoreographyParser()
+        tree = parser.parse(code)
+        vectorize(parser.state_to_node, world)
+        for n in parser.state_to_node.values():
+            print(str(n))
+    
+    def test_02(self):
         world = experiments_setups.cartAndArmWorld()
         code = cartAndArmFetch()
         parser = ChoreographyParser()
@@ -21,7 +31,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         #    print(str(v))
         checker.computePreds()
 
-    def test_02(self):
+    def test_03(self):
         world = experiments_setups.binSortingWorld()
         code = binSorting()
         parser = ChoreographyParser()

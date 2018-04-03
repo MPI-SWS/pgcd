@@ -44,7 +44,7 @@ def main():
     print("cart + children footprint")
     print(c.allResources(pt))
     loc = w.frame().origin.locate_new("loc", w.frame().i * 5 )
-    mp = c.motionPrimitive("MoveFromTo", 0, 0, 5, 0)
+    mp = c.motionPrimitive("MoveFromTo", w.frame().origin, loc)
     print("cart -> move -> pre")
     print(mp.pre())
     print("cart -> move -> preFP")

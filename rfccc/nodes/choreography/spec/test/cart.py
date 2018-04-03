@@ -51,19 +51,19 @@ class MoveFromTo(MotionPrimitiveFactory):
         return ['sourcX', 'sourceY', 'targetX', 'targetY']
     
     def setParameters(self, args):
-        assert(len(args) == 4)
-        return CartMove(self.name(), self._component, args[0], args[1], args[2], args[3])
+        assert(len(args) == 2)
+        return CartMove(self.name(), self._component, args[0], args[1])
 
 
 class CartMove(MotionPrimitive):
     
-    def __init__(self, name, component, srcX, srcY, dstX, dstY):
+    def __init__(self, name, component, src, dst):
         super().__init__(name, component)
         self._frame = self._component.frame()
         self._radius = component.radius
         self._height = component.height
-        self._src = self._frame.origin.locate_new('src', srcX * self._frame.i + srcY * self._frame.j)
-        self._dst = self._frame.origin.locate_new('dst', dstX * self._frame.i + dstY * self._frame.j)
+        self._src = src
+        self._dst = dst
         self._maxError = 0.1
 
     def _locAsVec(self, loc):

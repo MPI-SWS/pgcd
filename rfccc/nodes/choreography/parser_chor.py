@@ -260,7 +260,7 @@ class ChoreographyParser:
         elif p[1] == 'sqrt':
             p[0] = sqrt(p[3])
         else:
-            Function(p[1])(p[3])
+            p[0] = Function(p[1])(*p[3])
 
     def p_expression_rd(self, p):
         'expression : LPAREN expression RPAREN'
