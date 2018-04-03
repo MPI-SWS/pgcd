@@ -17,6 +17,7 @@ class ChoreographyParser:
         ('right', 'NOT'),
         ('left', 'PLUS', 'MINUS'),
         ('left', 'TIMES', 'DIVIDE', 'MOD'),
+        ('left', 'POW'),
         ('right', 'UMINUS', 'SIN', 'TAN', 'COS', 'ABS', 'SQRT')
     )
 
@@ -114,30 +115,22 @@ class ChoreographyParser:
 
     def p_mspecs(self, p):
         ''' mspecs : mspecs COMMA mspecs
-                   | ID COLON function'''
+                   | ID COLON ID LPAREN funcargs RPAREN '''
         if p[2] == ',':
             p[0] = p[1] + p[3]
         else:
-            p[0] = [MotionArg(p[1], p[3])]
-
-    def p_function(self, p):
-        ''' function : ID LPAREN funcargs RPAREN
-                     | ID LPAREN RPAREN'''
-        if len(p) > 4:
-            p[0] = sympify(p[1] + '(' + p[3] + ')')
-        else:
-            try:
-                p[0] = sympify(p[1] + '( false )')
-            except Exception as e:
-                print(e)
+            p[0] = [MotionArg(p[1], p[3], p[5])]
 
     def p_funcargs(self, p):
-        ''' funcargs : funcargs COMMA funcargs
-                     | expression'''
+        ''' funcargs : expression COMMA funcargs
+                     | expression
+                     | '''
         if len(p) > 2:
-            p[0] = p[1] + ", " + p[3]
+            p[0] = [p[1]] + p[3]
+        elif len(p) > 1:
+            p[0] = [p[1]]
         else:
-            p[0] = p[1]
+            p[0] = []
 
     def p_guard(self, p):
         ''' guard   : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs '''
@@ -207,6 +200,7 @@ class ChoreographyParser:
                   | expression TIMES expression
                   | expression DIVIDE expression
                   | expression MOD expression
+                  | expression POW expression
                   | expression AND expression
                   | expression OR expression
                   | expression GT expression
@@ -216,11 +210,35 @@ class ChoreographyParser:
                   | expression EQ expression
                   | expression NE expression'''
         if p[2] == '&&':
-            p[0] = str(p[1]) + ' and ' + str(p[3])
+            p[0] = And(p[1], p[3])
         elif p[2] == '\|\|':
-            p[0] = str(p[1]) + ' or ' + str(p[2])
+            p[0] = Or(p[1], p[3])
+        elif p[2] == '+':
+            p[0] = p[1] + p[3]
+        elif p[2] == '-':
+            p[0] = p[1] - p[3]
+        elif p[2] == '*':
+            p[0] = p[1] * p[3]
+        elif p[2] == '/':
+            p[0] = p[1] / p[3]
+        elif p[2] == '**':
+            p[0] = p[1] ** p[3]
+        elif p[2] == '%':
+            p[0] = p[1] % p[3]
+        elif p[2] == '>':
+            p[0] = p[1] > p[3]
+        elif p[2] == '>=':
+            p[0] = p[1] >= p[3]
+        elif p[2] == '<':
+            p[0] = p[1] > p[3]
+        elif p[2] == '<=':
+            p[0] = p[1] >= p[3]
+        elif p[2] == '==':
+            p[0] = Eq(p[1], p[3])
+        elif p[2] == '!=':
+            p[0] = Ne(p[1], p[3])
         else:
-            p[0] = str(p[1]) + str(p[2]) + str(p[3])
+            raise Exception("operator not known:" + p[2])
 
     def p_expression_nd(self, p):
         '''expression : SIN LPAREN expression RPAREN
@@ -228,21 +246,32 @@ class ChoreographyParser:
                       | TAN LPAREN expression RPAREN
                       | ABS LPAREN expression RPAREN
                       | SQRT LPAREN expression RPAREN
-                      | ID LPAREN expression RPAREN
-                      | expression TIMES TIMES expression'''
+                      | ID LPAREN funcargs RPAREN'''
         # p[1] = symbols('f g h', cls=Function)
         p[0] = str(p[1]) + str(p[2]) + str(p[3]) + str(p[4])
+        if p[1] == 'sin':
+            p[0] = sin(p[3])
+        elif p[1] == 'cos':
+            p[0] = cos(p[3])
+        elif p[1] == 'tan':
+            p[0] = tan(p[3])
+        elif p[1] == 'abs':
+            p[0] = Abs(p[3])
+        elif p[1] == 'sqrt':
+            p[0] = sqrt(p[3])
+        else:
+            Function(p[1])(p[3])
 
     def p_expression_rd(self, p):
         'expression : LPAREN expression RPAREN'
-        p[0] = str(p[2])
+        p[0] = p[2]
 
     def p_expression_4th(self, p):
         '''expression : ICONST
                       | DCONST
                       | SCONST
                       | BCONST'''
-        p[0] = str(p[1])
+        p[0] = sympify(p[1])
 
     def p_expression_5th(self, p):
         '''expression : ID
@@ -250,13 +279,13 @@ class ChoreographyParser:
                       | NOT expression
                       | MINUS expression %prec UMINUS'''
         if len(p) == 4:
-            p[0] = str(p[1]) + '.' + str(p[3])
+            p[0] = str(p[1]) + '.' + str(p[3]) #?
         elif p[1] == u'!':
-            p[0] = ' not ' + str(p[2])
+            p[0] = Not(p[2])
         elif len(p) == 3:
-            p[0] = str(p[1]) + str(p[2])
+            p[0] = str(p[1]) + str(p[2]) #?
         else:
-            p[0] = str(p[1])
+            p[0] = Symbol(p[1])
 
     # --------------------------------------------ERROR----------------------------
 

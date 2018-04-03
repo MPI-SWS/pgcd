@@ -21,6 +21,7 @@ class Cart(Process):
         self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + 0.11 * f.k)
         # motion primitives
         MoveFromTo(self)
+        Idle(self)
     
     def position(self):
         f = self.frame()
@@ -47,17 +48,17 @@ class MoveFromTo(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ['sourceX', 'sourceY','targetX','targetY']
+        return ['sourcX', 'sourceY', 'targetX', 'targetY']
     
     def setParameters(self, args):
         assert(len(args) == 4)
-        return CartMove(self._component, args[0], args[1], args[2], args[3])
+        return CartMove(self.name(), self._component, args[0], args[1], args[2], args[3])
 
 
 class CartMove(MotionPrimitive):
     
-    def __init__(self, component, srcX, srcY, dstX, dstY):
-        super().__init__(component)
+    def __init__(self, name, component, srcX, srcY, dstX, dstY):
+        super().__init__(name, component)
         self._frame = self._component.frame()
         self._radius = component.radius
         self._height = component.height
@@ -104,5 +105,41 @@ class CartMove(MotionPrimitive):
         i = cube(self._frame, self._src, dst_height, pos_as_point, self._maxError + self._radius)
         return self.timify(i)
 
-#TODO idle motion primitive
-#the tricky part is that it maintain the ruccent state, so it is state-dependent
+class Idle(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+    
+    def setParameters(self, args):
+        assert(len(args) == 0)
+        return CartIdle(self.name, self._component)
+
+class CartIdle(MotionPrimitive):
+    
+    def __init__(self, name, component):
+        super().__init__(name, component)
+
+    def modifies(self):
+        return []
+
+    def pre(self):
+        return True
+
+    def post(self):
+        return True
+    
+    def inv(self):
+        return True
+    
+    def preFP(self, point):
+        return And(self._component.invariant(), self._component.abstractResources(point))
+    
+    def postFP(self, point):
+        return And(self.post, self._component.abstractResources(point))
+    
+    def invFP(self, point):
+        i = And(self._component.invariant(), self._component.abstractResources(point))
+        return self.timify(i)

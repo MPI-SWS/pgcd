@@ -22,9 +22,9 @@ def CreateProjectionFromChoreography(choreography, _id, process):
                 if x.id == process:
                     tree.statements.append(node)
                     continue
-                motions.append(str(x.sympy_formula).split('(')[0])
+                motions.append(x.mp_name)
             tree.statements.append(
-                Motion(node.start_state, [MotionArg(process, sympify('"wait(duration(' + ','.join(motions) + '))"'))],
+                Motion(node.start_state, [MotionArg(process, "wait", sympify(1))], #TODO DZ: fix that later
                        node.end_state))
 
         elif isinstance(node, GuardedChoice):

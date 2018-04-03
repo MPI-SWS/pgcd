@@ -7,6 +7,20 @@ from abc import ABC, abstractmethod
 # Some classes to write the spec of components and motion primitive. #
 # This will be used for the compatibility check.                     #
 ######################################################################
+    
+def timeSymbol(self):
+    return Symbol("t")
+
+def timifyVar(var):
+    return Function(var.name)(timeSymbol())
+    
+def timifyFormula(self, var, pred):
+    time = { v: timifyVar(v) for v in var }
+    return pred.subs(time)
+    
+def deTimifyFormula(self, var, pred):
+    detime = { timifyVar(v): v for v in var }
+    return pred.subs(detime)
 
 class Component(ABC):
     
@@ -111,7 +125,8 @@ class Process(Component):
         self._motionPrimitives[n] = mp
     
     def motionPrimitive(self, name, *args):
-        return self._motionPrimitives[name].setParameters(args)
+        n = name
+        return self._motionPrimitives[n].setParameters(args)
 
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.
@@ -135,17 +150,15 @@ class MotionPrimitiveFactory(ABC):
 
 class MotionPrimitive():
     
-    def __init__(self, component):
+    def __init__(self, name, component):
+        self._name = name
         self._component = component
     
-    def timeSymbol(self):
-        return Symbol("t")
+    def name(self):
+        return self._name
 
-    def timifyVar(self, var):
-        return Function(var.name)(self.timeSymbol())
-    
     def timify(self, pred):
-        time = { var: self.timifyVar(var) for var in self._component.variables() }
+        time = { var: timifyVar(var) for var in self._component.variables() }
         return pred.subs(time)
 
     def isPreemptible(self):

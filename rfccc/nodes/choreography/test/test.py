@@ -12,20 +12,20 @@ import unittest
 def cartAndArmFetch():
     return ''' Fetch =
         def x0 = C -> A : action(fold) ; x1
-            x1 = (C : idle(), A : fold()) ; x2
+            x1 = (C : Idle(), A : Fold()) ; x2
             x2 = A -> C : state(folded) ; x3
             x3 + x6 = x4
             x4 = [sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1] x5 + [sqrt((C_x - 2)**2 + (C_y - 0)**2) <= 0.1] x7
-            x5 = (C : moveToward(0,0, 2,0), A : idle()) ; x6
+            x5 = (C : MoveFromTo(0,0, 2,0), A : Idle()) ; x6
             x7 = C -> A : action(grab) ; x8
-            x8 = ( C : idle(), A : grab(target)) ; x9
+            x8 = ( C : Idle(), A : Grab(target)) ; x9
             x9 = A -> C : state(grabbed) ; x10
             x10 = C -> A : action(fold) ; x11
-            x11 = (C : idle(), A : fold()) ; x12
+            x11 = (C : Idle(), A : Fold()) ; x12
             x12 = A -> C : state(folded) ; x13
             x13 + x16 = x14
             x14 = [sqrt((C_x - 0)**2 + (C_y - 0)**2) > 0.1] x15 + [sqrt((C_x - 0)**2 + (C_y - 0)**2) <= 0.1] x17
-            x15 = (C : moveFromTo(2, 0, 0, 0), A : idle()) ; x16
+            x15 = (C : MoveFromTo(2, 0, 0, 0), A : Idle()) ; x16
             x17 = C -> A : state(done) ; x18
             x18 = end
         in [true]x0
@@ -38,13 +38,13 @@ def cartAndArmFetch():
 def armsHandover():
     return ''' Handover =
         def x0 = A -> B : meetAt(loc); x1
-            x1 = (A: moveTo(loc - delta), B: moveTo(loc + delta)); x2
+            x1 = (A: MoveTo(loc - delta), B: MoveTo(loc + delta)); x2
             x2 = A -> B : holding(); x3
-            x3 = (A: idle(), B: closeGripper()); x4
+            x3 = (A: Idle(), B: CloseGripper()); x4
             x4 = B -> A : holding(); x5
-            x5 = (A: openGripper(), B: idle()); x6
+            x5 = (A: OpenGripper(), B: Idle()); x6
             x6 = A -> B : action(released); x7
-            x7 = (A: moveToOrigin(), B: moveToOrigin()); x8
+            x7 = (A: MoveToOrigin(), B: MoveToOrigin()); x8
             x8 = end
         in [true] x0
     '''
@@ -66,17 +66,17 @@ def armsHandover():
 # FIXME DZ: this one is syntactically correct but I don't think it fits our sntax restriction unless we have a quite fancy thread correctness check (need to think some more about that)
 def binSorting():
     return ''' BinSorting =
-        def x0 = (A: idle(), B: idle()); x1         # because we cannot loop to x0 (is that restriction really needed?)
+        def x0 = (A: Idle(), B: Idle()); x1         # because we cannot loop to x0 (is that restriction really needed?)
             x1 + x31 + x32 + x33 + x34 + x35 = x2
 
-            x2 = [b0]x3 + [b1]x4 + [b2]x5       # B makes a choice whether is it going to put an object in a bin (b0/1/2 are dummy variables to track the choice back to B)
+            x2 = [B_dummy >= 0] x3 + [B_dummy <= 0]x4 + [B_dummy >= 0]x5   # B makes a choice whether is it going to put an object in a bin (B_dummy is a dummy variable to track the choice back to B)
             x3 = B -> A : useBin(0); x6
             x4 = B -> A : useBin(1); x7
             x5 = B -> A : useBin(2); x8
 
-            x6 = [a0]x10 + [a1]x11 + [a2]x12    # choice at A
-            x7 = [a0]x13 + [a1]x14 + [a2]x15    # choice at A
-            x8 = [a0]x16 + [a1]x17 + [a2]x18    # choice at A
+            x6 = [A_dummy >= 0]x10 + [A_dummy <= 0]x11 + [A_dummy >= 0]x12    # choice at A
+            x7 = [A_dummy >= 0]x13 + [A_dummy <= 0]x14 + [A_dummy >= 0]x15    # choice at A
+            x8 = [A_dummy >= 0]x16 + [A_dummy <= 0]x17 + [A_dummy >= 0]x18    # choice at A
 
             x11 + x14 = _x11
             x12 + x15 + x18 = _x12
@@ -89,11 +89,11 @@ def binSorting():
             x17 = A -> B : ok(); x25
 
             x20 = end
-            x21 = (A: putInBin(1), B: idle()); x31
-            x22 = (A: putInBin(2), B: idle()); x32
-            x23 = (A: idle(), B: putInBin(1)); x33
-            x24 = (A: idle(), B: putInBin(2)); x34
-            x25 = (A: putInBin(1), B: putInBin(2)); x35
+            x21 = (A: PutInBin(1), B: Idle()); x31
+            x22 = (A: PutInBin(2), B: Idle()); x32
+            x23 = (A: Idle(), B: PutInBin(1)); x33
+            x24 = (A: Idle(), B: PutInBin(2)); x34
+            x25 = (A: PutInBin(1), B: PutInBin(2)); x35
 
         in [true] x0
     '''

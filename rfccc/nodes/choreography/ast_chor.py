@@ -116,10 +116,11 @@ class Motion(DistributedStateNode):
 
 class MotionArg(Node):
 
-    def __init__(self, id, sympy_formula):
+    def __init__(self, id, mp_name, mp_args):
         Node.__init__(self, Type.motion_arg)
         self.id = id
-        self.sympy_formula = sympy_formula
+        self.mp_name = mp_name
+        self.mp_args = mp_args
 
         # if not self.is_debug and len(Choreography.initialized_components) != 0:
         #     if motion_name not in Choreography.initialized_components:
@@ -128,8 +129,8 @@ class MotionArg(Node):
         Choreography.initialized_components.add(id)
 
     def __str__(self):
-        string = self.id + ': '
-        string += self.sympy_formula + ')'
+        string = self.id + ': ' + self.mp_name + "("
+        string += ", ".join(self.mp_args) + ')'
         return string
 
     def accept(self, visitor):

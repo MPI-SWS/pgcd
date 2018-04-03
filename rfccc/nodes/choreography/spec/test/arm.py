@@ -30,6 +30,8 @@ class Arm(Process):
         self._effector = self._lower.locate_new(name + '_effector', self.lowerArmLength * self._lower.k)
         # motion primitives
         Fold(self)
+        Idle(self)
+        Grab(self)
     
     def frame(self):
         return self._frame
@@ -47,7 +49,7 @@ class Arm(Process):
         return self._c
     
     def internalVariables(self):
-        return [self._a, self._b, self._c]
+        return [self._a, self._b, self._c, Symbol(self._name + '_dummy')]
     
     def ownResources(self, point):
         baseFP = cylinder(self._base, self.baseRadius, self.baseHeight, point)
@@ -83,15 +85,15 @@ class Fold(MotionPrimitiveFactory):
     def parameters(self):
         return []
     
-    def setParameters(self, *args):
+    def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmFold(self._component)
+        return ArmFold(self.name, self._component)
 
 
 class ArmFold(MotionPrimitive):
     
-    def __init__(self, component):
-        super().__init__(component)
+    def __init__(self, name, component):
+        super().__init__(name, component)
 
     def pre(self):
         return True
@@ -114,7 +116,56 @@ class ArmFold(MotionPrimitive):
         i = And(self._component.invariant(), self._component.abstractResources(point))
         return self.timify(i)
 
+class Idle(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+    
+    def setParameters(self, args):
+        assert(len(args) == 0)
+        return ArmIdle(self.name, self._component)
+
+class ArmIdle(MotionPrimitive):
+    
+    def __init__(self, name, component):
+        super().__init__(name, component)
+
+    def modifies(self):
+        return [Symbol(self._component.name() + '_dummy')]
+
+    def pre(self):
+        return True
+
+    def post(self):
+        return True
+    
+    def inv(self):
+        return True
+    
+    def preFP(self, point):
+        return And(self._component.invariant(), self._component.abstractResources(point))
+    
+    def postFP(self, point):
+        return And(self.post, self._component.abstractResources(point))
+    
+    def invFP(self, point):
+        i = And(self._component.invariant(), self._component.abstractResources(point))
+        return self.timify(i)
+
+class Grab(MotionPrimitiveFactory):
+    
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ["objX", "objY", "objZ"]
+
+    def setParameters(self, args):
+        raise NotImplemented
+
 #TODO motion primitives
 #-open/close gripper (preserve the rest)
 #-grab/put (move + gripper)
-#-idle

@@ -21,7 +21,7 @@ class ChoreographyLexer:
         'ID', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
 
         # OPERATORS
-        'ARROW', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
+        'ARROW', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'POW', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
         # OTHER
         'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'COMMA', 'SEMI', 'COLON', 'DOT'
@@ -34,6 +34,7 @@ class ChoreographyLexer:
     t_TIMES = r'\*'
     t_DIVIDE = r'/'
     t_MOD = r'%'
+    t_POW = r'\*\*'
     t_OR = r'\|\|'
     t_AND = r'&&'
     t_NOT = r'!'

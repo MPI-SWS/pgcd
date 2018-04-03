@@ -40,8 +40,8 @@ def armsHandoverWorld():
 
 def binSortingWorld():
     w = World( (0,0,0,0), (1,0,0,mp.pi) )
-    a1 = Arm("A1", w, 0)
-    a2 = Arm("A2", w, 1)
+    a1 = Arm("A", w, 0)
+    a2 = Arm("B", w, 1)
     return w
 
 def ferryWorld():
