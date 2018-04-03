@@ -39,11 +39,11 @@ class ChoreographyParser:
         self.state_to_node = {}
 
     def parse(self, text):
-        sequence = self.parser.parse(text, self.lexer.lexer)
-        self.check_well_formdness(sequence)
-        return sequence
+        choreography = self.parser.parse(text, self.lexer.lexer)
+        self.check_well_formdness()
+        return choreography
 
-    def check_well_formdness(self, sequence):
+    def check_well_formdness(self):
         assert not len(self.left_states ^ self.right_states) != 1, 'States ' + str((self.left_states ^ self.right_states) - {
                 self.start_state}) + ' are not on LHS or RHS!'
 

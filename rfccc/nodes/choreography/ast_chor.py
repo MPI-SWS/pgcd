@@ -36,6 +36,19 @@ class DistributedStateNode(Node):
     def __str__(self):
         return Node.__str__(self) + ": " + str(self.start_state) + " -> " + str(self.end_state)
 
+    def __eq__(self, o: object) -> bool:
+        if super().__eq__(o):
+            for f, s in zip(self.start_state, o.start_state):
+                if f != s:
+                    return False
+
+            for f, s in zip(self.end_state, o.end_state):
+                if f != s:
+                    return False
+            return self.tip == o.tip
+        else:
+            return False
+
 
 class Choreography(DistributedStateNode):
     initialized_components = set()

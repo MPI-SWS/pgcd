@@ -5,46 +5,47 @@ from spec import *
 
 def CreateProjectionFromChoreography(choreography, projection_name, process):
     ''' Creates a projection of a choreography on process '''
-    tree = ChoreographyProjection(projection_name, [], choreography.start_state, choreography.end_state, process.name())
+    chor_proj = ChoreographyProjection(projection_name, [], choreography.start_state, choreography.end_state,
+                                       process.name())
     state_to_node = {}
 
     for node in choreography.statements:
 
         if isinstance(node, Message):
             if node.comp1 == process.name():
-                tree.statements.append(
+                chor_proj.statements.append(
                     SendMessage(node.start_state, node.comp2, node.msg_type, node.expressions, node.end_state))
             elif node.comp2 == process.name():
-                tree.statements.append(
+                chor_proj.statements.append(
                     ReceiveMessage(node.start_state, node.msg_type, node.expressions, node.end_state))
             else:
-                tree.statements.append(Indirection(node.start_state, node.end_state))
+                chor_proj.statements.append(Indirection(node.start_state, node.end_state))
 
         elif isinstance(node, Motion):
             motions = []
             for x in node.motions:
                 if x.id == process.name():
-                    tree.statements.append(node)
+                    chor_proj.statements.append(node)
                     continue
                 motions.append(x.mp_name)
-            tree.statements.append(
-                Motion(node.start_state, [MotionArg(process, "wait", sympify(1))], #TODO DZ: fix that later
+            chor_proj.statements.append(
+                Motion(node.start_state, [MotionArg(process, "wait", sympify(1))],  # TODO DZ: fix that later
                        node.end_state))
 
         elif isinstance(node, GuardedChoice):
             if set(node.guarded_states.expression.free_symbols) | \
-                    set(node.guarded_states.expression.atoms(Function)) <= process.variables():
-                tree.statements.append(node)
+                    set(node.guarded_states.expression.atoms(Function)) <= process.ownVariables():
+                chor_proj.statements.append(node)
             else:
-                tree.statements.append(ExternalChoice(node.start_state, [x.id for x in node.end_state]))
+                chor_proj.statements.append(ExternalChoice(node.start_state, [x.id for x in node.end_state]))
         else:
-            tree.statements.append(node)
+            chor_proj.statements.append(node)
 
-        last = tree.statements[-1]
+        last = chor_proj.statements[-1]
         for state in last.start_state:
             state_to_node[state] = last
 
-    return tree, state_to_node
+    return chor_proj, state_to_node
 
 
 class ChoreographyProjection(DistributedStateNode):
@@ -87,6 +88,9 @@ class SendMessage(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def __eq__(self, o: DistributedStateNode) -> bool:
+        return DistributedStateNode.__eq__(o)
+
 
 class ReceiveMessage(DistributedStateNode):
 
@@ -106,6 +110,12 @@ class ReceiveMessage(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def __eq__(self, o: DistributedStateNode) -> bool:
+        if DistributedStateNode.__eq__(o) and self.msg_type == o.msg_type and self.expressions == o.expression:
+            return True
+        else:
+            return False
+
 
 class Indirection(DistributedStateNode):
 
@@ -117,6 +127,9 @@ class Indirection(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def __eq__(self, o: DistributedStateNode) -> bool:
+        return DistributedStateNode.__eq__(o)
 
 
 class ExternalChoice(DistributedStateNode):
@@ -134,3 +147,6 @@ class ExternalChoice(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def __eq__(self, o: DistributedStateNode) -> bool:
+        return DistributedStateNode.__eq__(o)
