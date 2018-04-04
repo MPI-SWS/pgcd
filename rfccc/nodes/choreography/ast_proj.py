@@ -88,9 +88,6 @@ class SendMessage(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
-    def __eq__(self, o: DistributedStateNode) -> bool:
-        return DistributedStateNode.__eq__(o)
-
 
 class ReceiveMessage(DistributedStateNode):
 
@@ -110,12 +107,6 @@ class ReceiveMessage(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
-    def __eq__(self, o: DistributedStateNode) -> bool:
-        if DistributedStateNode.__eq__(o) and self.msg_type == o.msg_type and self.expressions == o.expression:
-            return True
-        else:
-            return False
-
 
 class Indirection(DistributedStateNode):
 
@@ -128,8 +119,6 @@ class Indirection(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
-    def __eq__(self, o: DistributedStateNode) -> bool:
-        return DistributedStateNode.__eq__(o)
 
 
 class ExternalChoice(DistributedStateNode):
@@ -148,5 +137,3 @@ class ExternalChoice(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
-    def __eq__(self, o: DistributedStateNode) -> bool:
-        return DistributedStateNode.__eq__(o)
