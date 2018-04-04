@@ -28,26 +28,23 @@ class DistributedStateNode(Node):
 
     def __init__(self, tip, start_state, end_state):
         Node.__init__(self, tip)
-        self.start_states_reached = set()
-        self.end_states_reached = set()
         self.start_state = start_state
         self.end_state = end_state
 
     def __str__(self):
         return Node.__str__(self) + ": " + str(self.start_state) + " -> " + str(self.end_state)
-
-    def __eq__(self, o: object) -> bool:
-        if super().__eq__(o):
-            for f, s in zip(self.start_state, o.start_state):
-                if f != s:
-                    return False
-
-            for f, s in zip(self.end_state, o.end_state):
-                if f != s:
-                    return False
-            return self.tip == o.tip
-        else:
-            return False
+    #
+    # def __eq__(self, o: Node) -> bool:
+    #     if super().__eq__(o):
+    #         if len(self.start_state) == len(o.start_state) or len(self.start_state) == len(o.start_state):
+    #             return self.tip == o.tip
+    #     return False
+    #
+    # def __key(self):
+    #     return self.tip
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
 
 
 class Choreography(DistributedStateNode):
@@ -69,6 +66,19 @@ class Choreography(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    # def __eq__(self, o: Node) -> bool:
+    #     if super().__eq__(o):
+    #         for first, second in zip(self.statements, o.statements):
+    #             if first != second:
+    #                 return False
+    #     return False
+    #
+    # def __key(self):
+    #     return (self.id)
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
 
 
 class Message(DistributedStateNode):
@@ -107,6 +117,12 @@ class Message(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    # def __key(self):
+    #     return (tuple(self.start_state), tuple(self.end_state))
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
+
 
 class Motion(DistributedStateNode):
 
@@ -125,6 +141,12 @@ class Motion(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    # def __key(self):
+    #     return tuple(self.motions)
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
 
 
 class MotionArg(Node):
@@ -149,6 +171,12 @@ class MotionArg(Node):
     def accept(self, visitor):
         visitor.visit(self)
 
+    # def __key(self):
+    #     return (tuple(self.start_state), tuple(self.end_state))
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
+
 
 class GuardedChoice(DistributedStateNode):
 
@@ -167,6 +195,12 @@ class GuardedChoice(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    # def __key(self):
+    #     return (tuple(self.start_state), tuple(self.end_state))
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
+
 
 class GuardArg(Node):
 
@@ -183,6 +217,12 @@ class GuardArg(Node):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    # def __key(self):
+    #     return (tuple(self.start_state), tuple(self.end_state))
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
 
 
 class Merge(DistributedStateNode):
@@ -201,6 +241,12 @@ class Merge(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    # def __key(self):
+    #     return (tuple(self.start_state), tuple(self.end_state))
+    #
+    # def __hash__(self) -> int:
+    #     return hash(self.__key())
 
 
 class Fork(DistributedStateNode):
