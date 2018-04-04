@@ -4,12 +4,12 @@ from sympy import *
 
 def vectorize(state_to_node, world):
     '''replace variables by vectors in the world's frame'''
-    #interpret function Vec(x,y,z) as constructor
+    #interpret function Vec(x,y,z) as constructor for vectors
+    #interpret function Pnt(x,y,z) as constructor for point
     #interpret id_x/y/z as accessing coord
-    #an id get converted to (id_x, id_y, id_z)
+    #an id get converted to a point (id_x, id_y, id_z) in the world's frame
     f = world.frame()
     seen = {}
-    count = 1
 
     def isKnown(sym):
         return any([ sym in p.variables() for p in world.allProcesses() ])

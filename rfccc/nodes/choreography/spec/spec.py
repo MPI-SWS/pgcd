@@ -18,7 +18,7 @@ def timifyFormula(self, var, pred):
     time = { v: timifyVar(v) for v in var }
     return pred.subs(time)
     
-def deTimifyFormula(self, var, pred):
+def deTimifyFormula(var, pred):
     detime = { timifyVar(v): v for v in var }
     return pred.subs(detime)
 
@@ -54,7 +54,7 @@ class Component(ABC):
         self._children[index] = component
 
     def isProcess(self):
-        return False
+        return S.false
 
     def allProcesses(self):
         cp = [p for c in self._children.values() for p in c.allProcesses()]
@@ -74,7 +74,7 @@ class Process(Component):
         self._motionPrimitives = {}
     
     def isProcess(self):
-        return True
+        return S.true
 
     def internalVariables(self):
         """returns a list internal variables as sympy symbols"""
@@ -99,11 +99,11 @@ class Process(Component):
     def invariant(self):
         """returns some constraints over the variables"""
         #TODO in the future we'll need to split this in assumption and guarantees depending on the variables
-        return True
+        return S.true
     
     def ownResources(self, point):
         """returns constraints that are true if point is in the resources of this process"""
-        return True
+        return S.true
     
     def allResources(self, point):
         """returns constraints that are true if point is in the resources of this process or its children"""
@@ -113,7 +113,7 @@ class Process(Component):
     
     def abstractResources(self, point):
         """an overapproximation of the resources, easier to solve"""
-        return True
+        return S.true
     
     def connect(self, index, component, connection = {}):
         self.addChildren(index, component)
@@ -162,7 +162,7 @@ class MotionPrimitive():
         return pred.subs(time)
 
     def isPreemptible(self):
-        return False
+        return S.false
 
     def duration(self):
         return Int(1)
@@ -173,24 +173,24 @@ class MotionPrimitive():
     
     def pre(self):
         """precondition over the component's variables"""
-        return False
+        return S.false
     
     def post(self):
         """postcondition over the component's variables"""
-        return True
+        return S.true
     
     def inv(self):
         """an invariant over the component's variables (as function of time)"""
-        return True
+        return S.true
     
     def preFP(self, point):
         """footprint of the precondition"""
-        return True
+        return S.true
     
     def postFP(self, point):
         """footprint of the postcondition"""
-        return True
+        return S.true
     
     def invFP(self, point):
         """footprint of the invariant"""
-        return True
+        return S.true

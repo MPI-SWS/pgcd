@@ -115,7 +115,7 @@ class Idle(MotionPrimitiveFactory):
     
     def setParameters(self, args):
         assert(len(args) == 0)
-        return CartIdle(self.name, self._component)
+        return CartIdle(self.name(), self._component)
 
 class CartIdle(MotionPrimitive):
     
@@ -126,19 +126,19 @@ class CartIdle(MotionPrimitive):
         return []
 
     def pre(self):
-        return True
+        return S.true
 
     def post(self):
-        return True
+        return S.true
     
     def inv(self):
-        return True
+        return S.true
     
     def preFP(self, point):
         return And(self._component.invariant(), self._component.abstractResources(point))
     
     def postFP(self, point):
-        return And(self.post, self._component.abstractResources(point))
+        return And(self.post(), self._component.abstractResources(point))
     
     def invFP(self, point):
         i = And(self._component.invariant(), self._component.abstractResources(point))
