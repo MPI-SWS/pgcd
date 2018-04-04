@@ -32,6 +32,7 @@ class Arm(Process):
         Fold(self)
         Idle(self)
         Grab(self)
+        PutInBin(self)
     
     def frame(self):
         return self._frame
@@ -87,7 +88,7 @@ class Fold(MotionPrimitiveFactory):
     
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmFold(self.name, self._component)
+        return ArmFold(self.name(), self._component)
 
 
 class ArmFold(MotionPrimitive):
@@ -96,21 +97,21 @@ class ArmFold(MotionPrimitive):
         super().__init__(name, component)
 
     def pre(self):
-        return True
+        return S.true
 
     def post(self):
-        a = Eq(self._component.alpha(), mp.pi/2),
+        a = Eq(self._component.alpha(), mp.pi/2)
         b = Eq(self._component.beta(), mp.pi/2)
         return And(a, b)
     
     def inv(self):
-        return True
+        return S.true
     
     def preFP(self, point):
         return And(self._component.invariant(), self._component.abstractResources(point))
     
     def postFP(self, point):
-        return And(self.post, self._component.abstractResources(point))
+        return And(self.post(), self._component.abstractResources(point))
     
     def invFP(self, point):
         i = And(self._component.invariant(), self._component.abstractResources(point))
@@ -126,7 +127,7 @@ class Idle(MotionPrimitiveFactory):
     
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmIdle(self.name, self._component)
+        return ArmIdle(self.name(), self._component)
 
 class ArmIdle(MotionPrimitive):
     
@@ -137,19 +138,19 @@ class ArmIdle(MotionPrimitive):
         return [Symbol(self._component.name() + '_dummy')]
 
     def pre(self):
-        return True
+        return S.true
 
     def post(self):
-        return True
+        return S.true
     
     def inv(self):
-        return True
+        return S.true
     
     def preFP(self, point):
         return And(self._component.invariant(), self._component.abstractResources(point))
     
     def postFP(self, point):
-        return And(self.post, self._component.abstractResources(point))
+        return And(self.post(), self._component.abstractResources(point))
     
     def invFP(self, point):
         i = And(self._component.invariant(), self._component.abstractResources(point))
@@ -161,10 +162,56 @@ class Grab(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ["objX", "objY", "objZ"]
+        return ["target"]
 
     def setParameters(self, args):
-        raise NotImplemented
+        assert(len(args) == 1)
+        return ArmGrab(self.name(), self._component, args[0])
+
+class ArmGrab(MotionPrimitive):
+
+    def __init__(self, name, component, target):
+        super().__init__(name, component)
+        self._target = target
+
+    def pre(self):
+        maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.upperArmRadius + self._component.gripperReach
+        #TODO min distance
+        return distance(self._component._upper.origin, self._target) <= maxRadius
+
+    def post(self):
+        return S.true
+    
+    def inv(self):
+        return S.true
+    
+    def preFP(self, point):
+        return And(self._component.invariant(), self._component.abstractResources(point))
+    
+    def postFP(self, point):
+        return And(self.post(), self._component.abstractResources(point))
+    
+    def invFP(self, point):
+        i = And(self._component.invariant(), self._component.abstractResources(point))
+        return self.timify(i)
+
+class PutInBin(MotionPrimitiveFactory):
+    
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ["bin number"]
+
+    def setParameters(self, args):
+        assert(len(args) == 1)
+        return ArmPutInBin(self.name(), self._component, args[0])
+
+class ArmPutInBin(MotionPrimitive):
+
+    def __init__(self, name, component, binNumber):
+        super().__init__(name, component)
+        self._bin = binNumber
 
 #TODO motion primitives
 #-open/close gripper (preserve the rest)
