@@ -28,18 +28,58 @@ class ChoreographyExecutor:
         if isinstance(node, Indirection):
             state_to_node[node.start_state[0]] = state_to_node[node.end_state[0]]
             self.normalize_projection(node.end_state[0], state_to_node)
+            return
 
         elif isinstance(node, ExternalChoice):
-            nodes = set()
+            node_type = state_to_node[node.end_state[0]].tip
+            nodes = []
+            prev = None
+            eq_types = True
             for choice in node.end_state:
                 nodes.add(state_to_node[choice])
-            if len(nodes) == 1:
-                for choice in node.end_state:
-                    del state_to_node[choice]
-                state_to_node[state] = nodes.pop()
-                state_to_node[state_to_node[state].end_state[0]] = node
+                if prev is not None or not prev.shift_delay_check(state_to_node[choice]):
+                    eq_types = False
+                    break
+                prev = state_to_node[choice]
+            if len(nodes) == 1 and nodes[0].tip == Type.merge and len(
+                    set(node.start_state) - set(nodes[0].end_state)) == 0:
+                state_to_node[state] = Indirection([state], [nodes[0].end_state])
+            elif eq_types:   # x0 = x1 & x2 | x1 = Y; x3 | x2 = Y; x4
+                merge_list = [x.end_state[0] for x in nodes] # x3, x4
+                modif = nodes[0] # x1 = Y; x3
+                modif.start_state = node.start_state[0] # x0 = Y; x3
+                modif.end_state = node.end_start[0]  # x0 = Y; x1
+                state_to_node[state] = modif # x0 -> x0 = Y; x1
+                #--------------------------------------------------------
+                ex_choice = node # x0 = x1 & x2
+                ex_choice.end_state = merge_list # x0 = x3 & x4
+                ex_choice.start_state = modif.end_state # x1 = x3 & x4
+                state_to_node[modif.end_state[0]] = ex_choice # x1 -> x1 = x3 & x4
+            for st in modif.end_state[0]:
+                self.normalize_projection(st, state_to_node)
+            return
+
+        elif isinstance(node, Fork):
+            for fork in node.end_state:
+                self.normalize_projection(fork, state_to_node)
 
 
-            self.normalize_projection(node.end_state[0], state_to_node)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

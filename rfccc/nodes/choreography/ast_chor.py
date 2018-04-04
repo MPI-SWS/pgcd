@@ -58,7 +58,7 @@ class Choreography(DistributedStateNode):
         self.start_state = start_state
 
     def __str__(self):
-        string = "def "+ self.id +" \n"
+        string = "def " + self.id + " \n"
         for stmt in self.statements:
             string += str(stmt) + '\n'
         string += " in [" + str(self.predicate) + ']' + str(self.start_state)
@@ -142,6 +142,12 @@ class Motion(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        for mot1, mot2 in zip(self.motions, node.motions):
+            if not mot1.shift_delay_check(mot2):
+                return False
+        return True
+
     # def __key(self):
     #     return tuple(self.motions)
     #
@@ -171,6 +177,9 @@ class MotionArg(Node):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        return self.id == node.id and self.mp_name == node.mp_name and self.mp_args == node.mp_args
+
     # def __key(self):
     #     return (tuple(self.start_state), tuple(self.end_state))
     #
@@ -195,6 +204,11 @@ class GuardedChoice(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        for g1, g2 in zip(self.guarded_states, node.guarded_states):
+            if not g1.shift_delay_check(g2):
+                return False
+        return True
     # def __key(self):
     #     return (tuple(self.start_state), tuple(self.end_state))
     #
@@ -217,6 +231,9 @@ class GuardArg(Node):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def shift_delay_check(self, node):
+        return self.id == node.id and self.expression == node.expression
 
     # def __key(self):
     #     return (tuple(self.start_state), tuple(self.end_state))
@@ -242,6 +259,9 @@ class Merge(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        return False
+
     # def __key(self):
     #     return (tuple(self.start_state), tuple(self.end_state))
     #
@@ -265,6 +285,9 @@ class Fork(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        return False
+
 
 class Join(DistributedStateNode):
 
@@ -284,6 +307,9 @@ class Join(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        return False
+
 
 class End(DistributedStateNode):
 
@@ -295,3 +321,6 @@ class End(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def shift_delay_check(self, node):
+        return False

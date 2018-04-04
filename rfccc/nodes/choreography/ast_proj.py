@@ -3,6 +3,7 @@ from sympy import *
 from spec import *
 
 
+
 def CreateProjectionFromChoreography(choreography, projection_name, process):
     ''' Creates a projection of a choreography on process '''
     chor_proj = ChoreographyProjection(projection_name, [], choreography.start_state, choreography.end_state,
@@ -88,6 +89,9 @@ class SendMessage(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        return self.receiver == node.receiver and self.msg_type == node.msg_type and self.expressions == node.expressions
+
 
 class ReceiveMessage(DistributedStateNode):
 
@@ -107,6 +111,10 @@ class ReceiveMessage(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        return self.msg_type == node.msg_type and self.expressions == node.expressions
+
+
 
 class Indirection(DistributedStateNode):
 
@@ -119,6 +127,8 @@ class Indirection(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def shift_delay_check(self, node):
+        return False
 
 
 class ExternalChoice(DistributedStateNode):
@@ -136,4 +146,7 @@ class ExternalChoice(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def shift_delay_check(self, node):
+        return False
 

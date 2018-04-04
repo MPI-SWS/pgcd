@@ -1,7 +1,5 @@
 import sys
 
-print(sys.version)
-
 import parser as rp
 import choreography.executor_chor as exec
 import unittest
