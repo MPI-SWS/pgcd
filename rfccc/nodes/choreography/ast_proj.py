@@ -128,7 +128,7 @@ class Indirection(DistributedStateNode):
         visitor.visit(self)
 
     def shift_delay_check(self, node):
-        return False
+        return  self == node
 
 
 class ExternalChoice(DistributedStateNode):
@@ -148,5 +148,5 @@ class ExternalChoice(DistributedStateNode):
         visitor.visit(self)
 
     def shift_delay_check(self, node):
-        return False
+        return self == node
 

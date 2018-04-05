@@ -260,7 +260,7 @@ class Merge(DistributedStateNode):
         visitor.visit(self)
 
     def shift_delay_check(self, node):
-        return False
+        return  self == node
 
     # def __key(self):
     #     return (tuple(self.start_state), tuple(self.end_state))
@@ -286,7 +286,7 @@ class Fork(DistributedStateNode):
         visitor.visit(self)
 
     def shift_delay_check(self, node):
-        return False
+        return  self == node
 
 
 class Join(DistributedStateNode):
@@ -308,7 +308,7 @@ class Join(DistributedStateNode):
         visitor.visit(self)
 
     def shift_delay_check(self, node):
-        return False
+        return  self == node
 
 
 class End(DistributedStateNode):
@@ -323,4 +323,4 @@ class End(DistributedStateNode):
         visitor.visit(self)
 
     def shift_delay_check(self, node):
-        return False
+        return  self == node
