@@ -24,14 +24,19 @@ class CompatibilityCheckTest(unittest.TestCase):
         parser = ChoreographyParser()
         tree = parser.parse(code)
         vectorize(parser.state_to_node, world)
-        checker = CompatibilityCheck(parser.state_to_node, parser.start_state, world)
+        checker = CompatibilityCheck(parser.state_to_node, tree, world)
         checker.localChoiceChecks()
+        # total guards
         checker.generateTotalGuardsChecks()
         self.assertEqual(len(checker.vcs), 2)
-        checker.computePreds()
+        for vc in checker.vcs:
+            self.assertEqual(vc.discharge(), True)
+        checker.vcs = []
+        # compat
+        checker.computePreds(False)
         checker.generateCompatibilityChecks()
-        #for v in checker.vcs:
-        #    print(str(v))
+        #for vc in checker.vcs:
+        #    self.assertEqual(vc.discharge(), True)
 
     def test_03(self):
         world = experiments_setups.binSortingWorld()
@@ -39,14 +44,19 @@ class CompatibilityCheckTest(unittest.TestCase):
         parser = ChoreographyParser()
         tree = parser.parse(code)
         vectorize(parser.state_to_node, world)
-        checker = CompatibilityCheck(parser.state_to_node, parser.start_state, world)
+        checker = CompatibilityCheck(parser.state_to_node, tree, world)
         checker.localChoiceChecks()
+        # total guards
         checker.generateTotalGuardsChecks()
         self.assertEqual(len(checker.vcs), 4)
-        checker.computePreds()
+        for vc in checker.vcs:
+            self.assertEqual(vc.discharge(), True)
+        checker.vcs = []
+        # compat
+        checker.computePreds(True)
         checker.generateCompatibilityChecks()
-        #for v in checker.vcs:
-        #    print(str(v))
+        for vc in checker.vcs:
+            self.assertEqual(vc.discharge(True), True)
 
 if __name__ == '__main__':
     unittest.main()

@@ -58,13 +58,13 @@ class Arm(Process):
         lowerFP = cylinder(self._lower, self.lowerArmRadius, self.lowerArmLength, point)
         return Or(baseFP, upperFP, lowerFP)
     
-    def abstractResources(self, point):
+    def abstractResources(self, point, delta = 0.0):
         f = self.frame()
         # that one is very abstract
         # r = self.baseHeight + self.upperArmLength + self.lowerArmLength + self.upperArmRadius
         r1 = sqrt( self.baseHeight**2 + self.upperArmLength**2 - 2 * self.baseHeight * self.upperArmLength * cos(mp.pi - self._b))
         r2 = sqrt( r1**2 + self.lowerArmLength**2 - 2 * r1 * self.lowerArmLength * cos(mp.pi - self._a))
-        r = r2 + self.upperArmRadius
+        r = r2 + self.upperArmRadius + delta
         return halfSphere(f, r, f.k, point)
     
     def mountingPoint(self, index):
@@ -108,13 +108,13 @@ class ArmFold(MotionPrimitive):
         return S.true
     
     def preFP(self, point):
-        return And(self._component.invariant(), self._component.abstractResources(point))
+        return self._component.abstractResources(point, 0.05)
     
     def postFP(self, point):
-        return And(self.post(), self._component.abstractResources(point))
+        return self._component.abstractResources(point, 0.05)
     
     def invFP(self, point):
-        i = And(self._component.invariant(), self._component.abstractResources(point))
+        i = self._component.abstractResources(point, 0.05)
         return self.timify(i)
 
 class Idle(MotionPrimitiveFactory):
@@ -147,13 +147,13 @@ class ArmIdle(MotionPrimitive):
         return S.true
     
     def preFP(self, point):
-        return And(self._component.invariant(), self._component.abstractResources(point))
+        return self._component.abstractResources(point, 0.05)
     
     def postFP(self, point):
-        return And(self.post(), self._component.abstractResources(point))
+        return self._component.abstractResources(point, 0.05)
     
     def invFP(self, point):
-        i = And(self._component.invariant(), self._component.abstractResources(point))
+        i = self._component.abstractResources(point, 0.05)
         return self.timify(i)
 
 class Grab(MotionPrimitiveFactory):
@@ -186,13 +186,13 @@ class ArmGrab(MotionPrimitive):
         return S.true
     
     def preFP(self, point):
-        return And(self._component.invariant(), self._component.abstractResources(point))
+        return self._component.abstractResources(point, 0.05)
     
     def postFP(self, point):
-        return And(self.post(), self._component.abstractResources(point))
+        return self._component.abstractResources(point, 0.05)
     
     def invFP(self, point):
-        i = And(self._component.invariant(), self._component.abstractResources(point))
+        i = self._component.abstractResources(point, 0.05)
         return self.timify(i)
 
 class PutInBin(MotionPrimitiveFactory):
@@ -201,7 +201,7 @@ class PutInBin(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ["bin number"]
+        return ["bin number"] #TODO this is an absolute 
 
     def setParameters(self, args):
         assert(len(args) == 1)
@@ -215,4 +215,3 @@ class ArmPutInBin(MotionPrimitive):
 
 #TODO motion primitives
 #-open/close gripper (preserve the rest)
-#-grab/put (move + gripper)

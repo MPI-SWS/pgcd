@@ -113,7 +113,7 @@ class Process(Component):
     
     def abstractResources(self, point):
         """an overapproximation of the resources, easier to solve"""
-        return S.true
+        return self.ownResources(point)
     
     def connect(self, index, component, connection = {}):
         self.addChildren(index, component)

@@ -26,7 +26,7 @@ def cartAndArmFetch():
             x15 = (C : MoveFromTo(Pnt(2, 0, 0), Pnt(0, 0, 0)), A : Idle()) ; x16
             x17 = C -> A : state(done) ; x18
             x18 = end
-        in [true]x0
+        in [ (C_x == 0) && (C_y == 0) ]x0
     '''
 
 
@@ -44,7 +44,7 @@ def armsHandover():
             x6 = A -> B : action(released); x7
             x7 = (A: MoveToOrigin(), B: MoveToOrigin()); x8
             x8 = end
-        in [true] x0
+        in [ (A_a == 0) && (A_b == 0) && (A_c == 0) && (B_a == 0) && (B_b == 0) && (B_c == 0) ] x0
     '''
 
 
@@ -67,14 +67,14 @@ def binSorting():
         def x0 = (A: Idle(), B: Idle()); x1         # because we cannot loop to x0 (is that restriction really needed?)
             x1 + x31 + x32 + x33 + x34 + x35 = x2
 
-            x2 = [B_dummy >= 0] x3 + [B_dummy <= 0]x4 + [B_dummy >= 0]x5   # B makes a choice whether is it going to put an object in a bin (B_dummy is a dummy variable to track the choice back to B)
+            x2 = [B_dummy >= 0] x3 + [B_dummy <= 1]x4 + [B_dummy >= 0]x5   # B makes a choice whether is it going to put an object in a bin (B_dummy is a dummy variable to track the choice back to B)
             x3 = B -> A : useBin(0); x6
             x4 = B -> A : useBin(1); x7
             x5 = B -> A : useBin(2); x8
 
-            x6 = [A_dummy >= 0]x10 + [A_dummy <= 0]x11 + [A_dummy >= 0]x12    # choice at A
-            x7 = [A_dummy >= 0]x13 + [A_dummy <= 0]x14 + [A_dummy >= 0]x15    # choice at A
-            x8 = [A_dummy >= 0]x16 + [A_dummy <= 0]x17 + [A_dummy >= 0]x18    # choice at A
+            x6 = [A_dummy >= 0]x10 + [A_dummy <= 1]x11 + [A_dummy >= 0]x12    # choice at A
+            x7 = [A_dummy >= 0]x13 + [A_dummy <= 1]x14 + [A_dummy >= 0]x15    # choice at A
+            x8 = [A_dummy >= 0]x16 + [A_dummy <= 1]x17 + [A_dummy >= 0]x18    # choice at A
 
             x11 + x14 = _x11
             x12 + x15 + x18 = _x12
@@ -93,7 +93,7 @@ def binSorting():
             x24 = (A: Idle(), B: PutInBin(2)); x34
             x25 = (A: PutInBin(1), B: PutInBin(2)); x35
 
-        in [true] x0
+        in [(A_a == 0) && (A_b == 0) && (A_c == 0) && (B_a == 0) && (B_b == 0) && (B_c == 0)] x0
     '''
 
 

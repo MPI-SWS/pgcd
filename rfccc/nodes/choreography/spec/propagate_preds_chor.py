@@ -5,6 +5,7 @@ from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
 import copy
 import logging
 import functools
+from DrealInterface import DrealInterface
 
 # need to traverse the choreo, collect the init/pre/post/guard and propagate ...
 # For each process we keep a formula in DNF
@@ -70,11 +71,45 @@ class VC:
             sat = "unsat"
         return "VC(" + self.title + ", " + str(self.formulas) + "," + sat + ")"
 
+    def discharge(self, debug = False):
+        if debug:
+            sat = ""
+            if self.sat:
+                sat = " (sat)"
+            else:
+                sat = " (unsat)"
+            print("VC: " + self.title + sat)
+        for f in self.formulas:
+            f2 = to_cnf(f)
+            f3 = getConjuncts(f2)
+            if debug:
+                for f in f3:
+                    print(f)
+            dr = DrealInterface(debug = debug)
+            res, model = dr.run(f3)
+            if debug:
+                print(res)
+                print(model)
+            if res == None:
+                return False
+            elif res == self.sat:
+                return True
+        return False
+
 class ProcessPredicatesTracker:
 
-    def __init__(self, process):
+    def __init__(self, process, value = S.true):
         self._process = process
-        self._pred = S.true
+        self._pred = S.false
+        for d in getDisjuncts(value):
+            accC = S.true 
+            for c in getConjuncts(d):
+                if all([s in process.variables() for s in c.free_symbols]):
+                    #print('keep ' + str(c))
+                    accC = And(accC, c)
+                #else:
+                    #print('drop ' + str(c))
+            self._pred = Or(self._pred, accC)
     
     def copy(self):
         return copy.copy(self)
@@ -90,6 +125,7 @@ class ProcessPredicatesTracker:
     
     def relaxVariables(self, variables):
         #print('relaxVariables ' + str(variables))
+        #print('for ' + str(self._pred))
         assert(all(variable in self._process.ownVariables() for variable in variables))
         accD = S.false
         for d in getDisjuncts(self.pred()):
@@ -136,9 +172,9 @@ class ProcessPredicatesTracker:
 # everything is in place, the idea is to make a copy and apply the operation
 class ProcessesPredicatesTracker:
 
-    def __init__(self, process_set):
+    def __init__(self, process_set, value = S.true):
         self._process_set = process_set
-        self._process_to_pred = { p : ProcessPredicatesTracker(p) for p in self._process_set }
+        self._process_to_pred = { p : ProcessPredicatesTracker(p, value) for p in self._process_set }
         self._var_to_process = {}
         for p in self._process_set:
             for v in p.ownVariables():
@@ -205,21 +241,28 @@ class ProcessesPredicatesTracker:
 
 class CompatibilityCheck:
 
-    def __init__(self, state_to_node, start_state, world):
-        self.start_state = start_state
+    def __init__(self, state_to_node, chor, world):
+        self.start_state = chor.start_state
+        self.start_pred = chor.predicate
         self.state_to_node = state_to_node
         self.world = world
         self.processes = world.allProcesses()
         self.node_to_pred = {}
         self._mergeMap = {}
-        for n in state_to_node.values():
-            self.node_to_pred[n] = ProcessesPredicatesTracker(self.processes)
+        #TODO get initial pred for start_state
+        for s in state_to_node.keys():
+            n = state_to_node[s]
+            if s == self.start_state:
+                self.node_to_pred[n] = ProcessesPredicatesTracker(self.processes, self.start_pred)
+            else:
+                self.node_to_pred[n] = ProcessesPredicatesTracker(self.processes, S.false)
             self._mergeMap[n] = []
         self.predComputed = False
         self.vcs = []
 
     def _goesInto(self, tracker, succ):
         if isinstance(succ, Merge) or isinstance(succ, Join):
+            succ = self.state_to_node[succ.end_state[0]]
             self._mergeMap[succ].append(tracker)
         else:
             trackerOld = self.node_to_pred[succ]
@@ -251,7 +294,7 @@ class CompatibilityCheck:
         return self._goesInto(tracker, succ)
 
     def _merge(self, node):
-        tracker = ProcessesPredicatesTracker(self.processes)
+        tracker = ProcessesPredicatesTracker(self.processes, S.false)
         for t in self._mergeMap[node]:
             tracker.merge(t)
         self._mergeMap[node] = []
@@ -272,21 +315,22 @@ class CompatibilityCheck:
                 print("")
                 print("==========================")
                 print("==========================")
-                print("==========================")
                 print("iteration " + str(counter))
                 for node in self.state_to_node.values():
                     print(node)
                     print(self.node_to_pred[node])
+                print("==========================")
             changed = False
             # first the non-merge
             for node in self.state_to_node.values():
+                if debug:
+                    print("processing " + str(node))
                 if isinstance(node, Message):
                     succ = self.state_to_node[node.end_state[0]]
-                    if not isinstance(succ, Merge) and not isinstance(succ, Join):
-                        res = self._transfer(node, succ)
-                        if debug and res:
-                            print("changed: " + str(node))
-                        changed = changed or res
+                    res = self._transfer(node, succ)
+                    if debug and res:
+                        print("changed: " + str(node))
+                    changed = changed or res
                 elif isinstance(node, GuardedChoice):
                     for gs in node.guarded_states:
                         guard = gs.expression
@@ -319,14 +363,17 @@ class CompatibilityCheck:
                         print("changed: " + str(node))
                     changed = changed or res
             #TODO finish the merge/join
+            merged = set()
             for node in self.state_to_node.values():
                 if isinstance(node, Merge) or isinstance(node, Join):
                     # TODO probably not the best for Join
                     succ = self.state_to_node[node.end_state[0]]
-                    res = self._merge(succ)
-                    if res:
-                        print("changed: " + str(node))
-                    changed = changed or res
+                    if not succ in merged:
+                        merged.add(succ)
+                        res = self._merge(succ)
+                        if debug and res:
+                            print("changed: " + str(node))
+                        changed = changed or res
         self.predComputed = True
 
     def isTimeInvariant(self, formula):
@@ -360,8 +407,8 @@ class CompatibilityCheck:
                         if p.name() < p2.name():
                             motion2 = motionForProcess(node.motions, p2)
                             mp2 = p2.motionPrimitive(motion2.mp_name, *motion2.mp_args)
-                            fs = [And(assumptions, preState, mp.preFP(point), mp.preFP(point))]
-                            self.vcs.append( VC("no collision in precondition  for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs) )
+                            fs = [And(assumptions, preState, mp.preFP(point), mp2.preFP(point))]
+                            self.vcs.append( VC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs) )
                 #invariant
                 invLst = []
                 for p in self.processes:
@@ -395,7 +442,7 @@ class CompatibilityCheck:
                             self.vcs.append( VC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs) )
                     #process resources are included in invFP
                     fs = [And(assumptions, inv, p.abstractResources(point), Not(f1)), And(assumptions, inv, p.ownResources(point), Not(f1))]
-                    self.vcs.append( VC("inv resources of " + motion.id + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
+                    self.vcs.append( VC("inv resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
                 #post:
                 post = True
                 for p in self.processes:

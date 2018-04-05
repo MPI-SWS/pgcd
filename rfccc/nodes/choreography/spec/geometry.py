@@ -19,21 +19,21 @@ def halfSphere(frame, radius, direction, p):
 def cylinder(frame, radius, height, p):
     v = p.position_wrt(frame.origin)
     proj = frame.k.projection(v, scalar=True)
-    return And(proj <= height, (v - frame.k.projection(v)).magnitude() <= radius)
+    return And(proj >= 0, proj <= height, (v - frame.k.projection(v)).magnitude() <= radius)
 
-def cube(frame, lowerBackLeft, upperFrontRight, p, maxError = 0.0):
+def cube(frame, lowerBackLeft, upperFrontRight, p, maxErrorX = 0.0, maxErrorY = 0.0, maxErrorZ = 0.0):
     (px,py,pz) = p.express_coordinates(frame)
     (lx,ly,lz) = lowerBackLeft.express_coordinates(frame)
     (ux,uy,uz) = upperFrontRight.express_coordinates(frame)
     dx = (ux - lx)/2
     mx = lx + dx
-    inX = And(px - mx <= Abs(dx) + maxError, px - mx >= -Abs(dx) - maxError)
+    inX = And(px - mx <= Abs(dx) + maxErrorX, px - mx >= -Abs(dx) - maxErrorX)
     dy = (uy - ly)/2
     my = ly + dy
-    inY = And(py - my <= Abs(dy) + maxError, py - my >= -Abs(dy) - maxError)
+    inY = And(py - my <= Abs(dy) + maxErrorY, py - my >= -Abs(dy) - maxErrorY)
     dz = (uz - lz)/2
     mz = lz + dz
-    inZ = And(pz - mz <= Abs(dz) + maxError, pz - mz >= -Abs(dz) - maxError)
+    inZ = And(pz - mz <= Abs(dz) + maxErrorZ, pz - mz >= -Abs(dz) - maxErrorZ)
     return And(inX, inY, inZ)
 
 def halfSpace(frame, normal, p, offset = 0.0):
