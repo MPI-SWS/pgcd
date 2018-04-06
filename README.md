@@ -48,7 +48,11 @@ $ pip install catkin_pkg pyyaml empy rospkg ply enum34 defusedxml # if it isn't 
 pip install  z3-solver arpeggio numpy sympy
 ```
 
-* make sure you have installed bullet library:
+* make sure you have installed eigen3 and bullet library:
+
+```
+$ sudo apt install libeigen3-dev
+```
 
 ```
 $ sudo apt-get install libbullet-dev
