@@ -409,8 +409,15 @@ class CompatibilityCheck:
                             mp2 = p2.motionPrimitive(motion2.mp_name, *motion2.mp_args)
                             fs = [And(assumptions, preState, mp.preFP(point), mp2.preFP(point))]
                             self.vcs.append( VC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs) )
+                #frame
+                tracker2 = tracker.copy()
+                for p in self.processes:
+                    motion = motionForProcess(node.motions, p)
+                    mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
+                    tracker2.relaxVariables(mp.modifies())
+                frame = tracker2.pred()
                 #invariant
-                invLst = []
+                inv = frame
                 for p in self.processes:
                     if debug:
                         print("invariant (1) for process " + str(p))
@@ -418,8 +425,7 @@ class CompatibilityCheck:
                     mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
                     f = mp.inv()
                     assert(self.isTimeInvariant(f))
-                    invLst.append(deTimifyFormula(p.variables(), f))
-                inv = And(*invLst)
+                    inv = And(inv, deTimifyFormula(p.variables(), f))
                 #mp.inv is sat
                 self.vcs.append( VC("inv is sat @ " + str(node.start_state[0]), [And(assumptions, inv)], True) )
                 #mp.invFP are disjoint
@@ -444,7 +450,7 @@ class CompatibilityCheck:
                     fs = [And(assumptions, inv, p.abstractResources(point), Not(f1)), And(assumptions, inv, p.ownResources(point), Not(f1))]
                     self.vcs.append( VC("inv resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
                 #post:
-                post = True
+                post = frame
                 for p in self.processes:
                     if debug:
                         print("post (1) for process " + str(p))
