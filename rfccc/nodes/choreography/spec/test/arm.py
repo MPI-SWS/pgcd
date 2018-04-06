@@ -214,4 +214,28 @@ class ArmPutInBin(MotionPrimitive):
         self._bin = binNumber
 
 #TODO motion primitives
-#-open/close gripper (preserve the rest)
+
+class CloseGripper(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+    
+    def setParameters(self, args):
+        assert(len(args) == 0)
+        return ArmIdle(self.name(), self._component)
+
+class OpenGripper(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+    
+    def setParameters(self, args):
+        assert(len(args) == 0)
+        return ArmIdle(self.name(), self._component)
+
