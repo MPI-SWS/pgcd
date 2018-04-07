@@ -201,20 +201,69 @@ class PutInBin(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ["bin number"] #TODO this is an absolute 
+        return ["bin location"]
 
     def setParameters(self, args):
         assert(len(args) == 1)
         return ArmPutInBin(self.name(), self._component, args[0])
 
+# assume one bin in front then move to the loc and then move back
 class ArmPutInBin(MotionPrimitive):
 
-    def __init__(self, name, component, binNumber):
+    def __init__(self, name, component, target):
         super().__init__(name, component)
-        self._bin = binNumber
+        self._target = target
+        (x, y, z) = target.express_coordinates(component.frame())
+        angle = atan2(y, x)
+        self._minGamma = Min(angle, 0).evalf()
+        self._maxGamma = Max(angle, 0).evalf()
 
-#TODO motion primitives
+    def neutral(self, maxError = 0.0):
+        if maxError <= 0.0:
+            a = Eq(self._component.alpha(), mp.pi/2)
+            b = Eq(self._component.beta(), mp.pi/2)
+            c = Eq(self._component.gamma(), 0.0)
+            return And(a,b,c)
+        else:
+            a = And(self._component.alpha() >= mp.pi/2 - maxError, self._component.alpha() <= mp.pi/2 + maxError)
+            b = And(self._component.beta() >= mp.pi/2 - maxError, self._component.beta() <= mp.pi/2 + maxError)
+            c = And(self._component.gamma() >= -maxError, self._component.gamma() <= maxError)
+            return And(a,b,c)
 
+    def pre(self):
+        maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.gripperReach
+        maxDist = distance(self._component._upper.origin, self._target) <= maxRadius
+        #TODO min distance
+        return And(self.neutral(0.1), maxDist)
+
+    def post(self):
+        return self.neutral()
+    
+    def inv(self):
+        return And(self._component.gamma() >= self._minGamma, self._component.gamma() <= self._maxGamma)
+    
+    def preFP(self, point):
+        withoutGamma = self._component.abstractResources(point, 0.05)
+        f = self._component.frame()
+        gMin = halfSpace(f,  f.j, point, self._component.baseRadius + 0.05)
+        gMax = halfSpace(f, -f.j, point, self._component.baseRadius + 0.05)
+        return And(withoutGamma, gMin, gMax)
+    
+    def postFP(self, point):
+        withoutGamma = self._component.abstractResources(point, 0.05)
+        f = self._component.frame()
+        gMin = halfSpace(f,  f.j, point, self._component.baseRadius + 0.05)
+        gMax = halfSpace(f, -f.j, point, self._component.baseRadius + 0.05)
+        return And(withoutGamma, gMin, gMax)
+    
+    def invFP(self, point):
+        withoutGamma = self._component.abstractResources(point, 0.05)
+        f = self._component.frame()
+        gMin = halfSpace(f,  f.orient_new_axis("minGammaBound", self._minGamma, f.k).j, point, self._component.baseRadius + 0.05)
+        gMax = halfSpace(f, -f.orient_new_axis("maxGammaBound", self._maxGamma, f.k).j, point, self._component.baseRadius + 0.05)
+        return self.timify(And(withoutGamma, gMin, gMax))
+
+# since we don't preciely model the gripper, it is like idle
 class CloseGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -227,6 +276,7 @@ class CloseGripper(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return ArmIdle(self.name(), self._component)
 
+# since we don't preciely model the gripper, it is like idle
 class OpenGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):

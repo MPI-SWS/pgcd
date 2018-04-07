@@ -80,16 +80,13 @@ class VC:
                 sat = " (unsat)"
             print("VC: " + self.title + sat)
         for f in self.formulas:
-            f2 = to_cnf(f)
-            f3 = getConjuncts(f2)
+            #f2 = to_cnf(f)
+            f3 = getConjuncts(f)
             if debug:
                 for f in f3:
                     print(f)
             dr = DrealInterface(debug = debug)
             res, model = dr.run(f3)
-            if debug:
-                print(res)
-                print(model)
             if res == None:
                 return False
             elif res == self.sat:
@@ -241,10 +238,16 @@ class ProcessesPredicatesTracker:
 
 class CompatibilityCheck:
 
-    def __init__(self, state_to_node, chor, world):
+    def __init__(self, state_to_node, chor, world, minX = -10, maxX = 10, minY = 10, maxY = 10, minZ = 0, maxZ = 2):
         self.start_state = chor.start_state
         self.start_pred = chor.predicate
         self.state_to_node = state_to_node
+        self.minX = minX
+        self.maxX = maxX
+        self.minY = minY
+        self.maxY = maxY
+        self.minZ = minZ
+        self.maxZ = maxZ
         self.world = world
         self.processes = world.allProcesses()
         self.node_to_pred = {}
@@ -362,7 +365,7 @@ class CompatibilityCheck:
                     if debug and res:
                         print("changed: " + str(node))
                     changed = changed or res
-            #TODO finish the merge/join
+            #finish the merge/join
             merged = set()
             for node in self.state_to_node.values():
                 if isinstance(node, Merge) or isinstance(node, Join):
@@ -393,6 +396,7 @@ class CompatibilityCheck:
                 # a point for the footprint
                 px, py, pz = symbols('inFpX inFpY inFpZ')
                 point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
+                pointDomain = And(px >= self.minX, px <= self.maxX, py >= self.minY, py <= self.maxY, pz >= self.minZ, pz <= self.maxZ)
                 # make the VCs
                 # precondition
                 for p in self.processes:
@@ -401,13 +405,13 @@ class CompatibilityCheck:
                     motion = motionForProcess(node.motions, p)
                     mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
                     self.vcs.append( VC("precondition of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), [And(assumptions, preState, Not(mp.pre()))]) )
-                    fs = [And(assumptions, preState, p.abstractResources(point), Not(mp.preFP(point))), And(assumptions, preState, p.ownResources(point), Not(mp.preFP(point)))]
+                    fs = [And(assumptions, preState, pointDomain, p.abstractResources(point), Not(mp.preFP(point))), And(assumptions, preState, pointDomain, p.ownResources(point), Not(mp.preFP(point)))]
                     self.vcs.append( VC("pre resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
                     for p2 in self.processes:
                         if p.name() < p2.name():
                             motion2 = motionForProcess(node.motions, p2)
                             mp2 = p2.motionPrimitive(motion2.mp_name, *motion2.mp_args)
-                            fs = [And(assumptions, preState, mp.preFP(point), mp2.preFP(point))]
+                            fs = [And(assumptions, preState, pointDomain, mp.preFP(point), mp2.preFP(point))]
                             self.vcs.append( VC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs) )
                 #frame
                 tracker2 = tracker.copy()
@@ -444,10 +448,10 @@ class CompatibilityCheck:
                             f2 = mp2.invFP(point)
                             assert(self.isTimeInvariant(f2))
                             f2 = deTimifyFormula(p2.variables(), f2)
-                            fs = [And(assumptions, inv, f1, f2)]
+                            fs = [And(assumptions, inv, pointDomain, f1, f2)]
                             self.vcs.append( VC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs) )
                     #process resources are included in invFP
-                    fs = [And(assumptions, inv, p.abstractResources(point), Not(f1)), And(assumptions, inv, p.ownResources(point), Not(f1))]
+                    fs = [And(assumptions, inv, pointDomain, p.abstractResources(point), Not(f1)), And(assumptions, inv, pointDomain, p.ownResources(point), Not(f1))]
                     self.vcs.append( VC("inv resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
                 #post:
                 post = frame
@@ -470,10 +474,10 @@ class CompatibilityCheck:
                             motion2 = motionForProcess(node.motions, p2)
                             mp2 = p2.motionPrimitive(motion2.mp_name, *motion2.mp_args)
                             f2 = mp2.postFP(point)
-                            fs = [And(assumptions, post, f1, f2)]
+                            fs = [And(assumptions, post, pointDomain, f1, f2)]
                             self.vcs.append( VC("no collision in post for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs) )
                     #process resources are included in postFP
-                    fs = [And(assumptions, post, p.abstractResources(point), Not(f1)), And(assumptions, post, p.ownResources(point), Not(f1))]
+                    fs = [And(assumptions, post, pointDomain, p.abstractResources(point), Not(f1)), And(assumptions, post, pointDomain, p.ownResources(point), Not(f1))]
                     self.vcs.append( VC("post resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
 
     def localChoiceChecks(self):
