@@ -27,6 +27,32 @@ class ChoreographyExecutor:
         projection, state_to_node = CreateProjectionFromChoreography(self.choreography, proj_name, process)
         return self.normalize_projection(projection.start_state[0], state_to_node)
 
+    # for the normalization
+    def removeIndirections(self, choreography, state_to_node):
+        removedStates = set()
+        substitution = {}
+        # first scan to figure out what to remove
+        for node in state_to_node.values():
+            if isinstance(node, Indirection):
+                src = node.start_state[0]
+                trg = node.end_state[0]
+                removedStates.add(src)
+                substitution = { k : (trg if v == src else v)  for k, v in substitution }
+        # now do the remove
+        for s in removedStates:
+            state_to_node.pop(s)
+            choreography.start_state = substitution.get(choreography.start_state, choreography.start_state)
+        for node in state_to_node.values:
+            node.start_state = [ substitution.get(s, s) for s in node.start_state ]
+            node.end_state = [ substitution.get(s, s) for s in node.end_state ]
+            if isinstance(node, GuardedChoice):
+                for g in node.guarded_states:
+                    g.id = substitution.get(g.id, g.id)
+
+    # for the normalization
+    def removeForkJoin(self, state_to_node):
+        raise NotImplementedError
+
     def normalize_projection(self, state, state_to_node, fork_nodes=None):
 
         node = state_to_node[state]
