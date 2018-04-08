@@ -38,6 +38,7 @@ class ChoreographyExecutor:
                 trg = node.end_state[0]
                 removedStates.add(src)
                 substitution = { k : (trg if v == src else v)  for k, v in substitution }
+                substitution[src] = trg
         # now do the remove
         for s in removedStates:
             state_to_node.pop(s)
@@ -50,8 +51,75 @@ class ChoreographyExecutor:
                     g.id = substitution.get(g.id, g.id)
 
     # for the normalization
-    def removeForkJoin(self, state_to_node):
-        raise NotImplementedError
+    def removeForkJoin(self, choreography, state_to_node):
+        # if there are nested forks then we should work inside out
+        def noForkBeforeJoin(state):
+            node = state_to_node[state]
+            if isinstance(node, GuardedChoice):
+                return all([noForkBeforeJoin(g.id) for g in node.guarded_states])
+            elif isinstance(node, Fork):
+                return False
+            elif isinstance(node, Join):
+                return True
+            else:
+                return all([noForkBeforeJoin(s) for s in node.end_state])
+        #find the predecessor of a state
+        def findPred(state):
+            for node in state_to_node.values():
+                if isinstance(node, GuardedChoice):
+                    for i, val in enumerate(node.guarded_states):
+                        if val.id == state:
+                            return node, i
+                else:
+                    for i, val in enumerate(node.end_state):
+                        if val == state:
+                            return node, i
+        # takes a list of threads and generate the permutation of events
+        def mergeThread(pred, pred_index, states):
+            #first step categorise the next event
+            internal = []
+            external = []
+            merge = []
+            motion = []
+            send = []
+            receive = []
+            join = []
+            for s in states:
+                node = state_to_node[s]
+                if isinstance(node, GuardedChoice):
+                    internal.add(s)
+                elif isinstance(node, ExternalChoice):
+                    external.add(s)
+                elif isinstance(node, Motion):
+                    motion.add(s)
+                elif isinstance(node, SendMessage):
+                    send.add(s)
+                elif isinstance(node, ReceiveMessage):
+                    receive.add(s)
+                elif isinstance(node, Merge):
+                    merge.add(s)
+                elif isinstance(node, Join):
+                    join.add(s)
+                else:
+                    raise Exception("mergeThread: " + str(node))
+            #then check for conflicts
+            if len(send) > 0 and len(receive) > 0:
+                raise Exception("mergeThread, send/receive conflit: " + send + ", " + receive)
+            #...
+            raise NotImplementedError
+        # get the fork we need to remove
+        forks = [ state for state, node in state_to_node if isinstance(node, Fork) ]
+        # the non-nested ones
+        nonNestedFork = [ s for s in forks if noForkBeforeJoin(s) ]
+        while len(forks) > 0:
+            assert len(nonNestedFork) > 0
+            for s in nonNestedFork:
+                pres, idx = findPred(s)
+                path = mergeThreads(pred, idx, state_to_node[s].end_state)
+                raise NotImplementedError("connect back the merged paths")
+            # update work list
+            forks = [ s for s in forks if not s in nonNestedFork ]
+            nonNestedFork = []
 
     def normalize_projection(self, state, state_to_node, fork_nodes=None):
 
