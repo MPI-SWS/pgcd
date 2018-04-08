@@ -1,6 +1,6 @@
 # receive(m_Idle){ (msg_Rotate, angles, { m_Rotate(angles) }) };
 
-
+# RECEIVING DATA WILL HAVE NAME: givenDataName + _ + messagePartName
 
 angles = {"yaw": 0, "pitch": -3.14159/3, "roll": 0};
 

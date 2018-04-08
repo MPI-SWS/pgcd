@@ -26,6 +26,12 @@ class Executor:
     def execute(self, code):
         self.parser.parse(code).accept(self)
 
+    def calculate_sympy_exp(self, sympy_exp):
+        subs = {}
+        for fs in sympy_exp.free_symbols:
+            subs[fs] = self.__getattribute__(fs)
+        return sympy_exp.evalf(subs=subs)
+
     def visit(self, node):
 
         if node.tip == Type.statement:
@@ -52,18 +58,6 @@ class Executor:
         elif node.tip == Type.assign:
             self.visit_assign(node)
 
-        elif node.tip == Type._tuple:
-            return self.visit_tuple(node)
-
-        elif isinstance(node, BinOp):
-            return self.visit_bin_op(node)
-
-        elif isinstance(node, UnOp):
-            return self.visit_un_op(node)
-
-        elif isinstance(node, Constant):
-            return node.value
-
         elif isinstance(node, Motion):
             self.visit_motion(node)
 
@@ -72,10 +66,11 @@ class Executor:
             stmt.accept(self)
 
     def visit_send(self, node):
-        component, msg_type, value = node.comp, self.msg_types[node.msg_type], node.value.accept(self)
+        component, msg_type = node.comp, self.msg_types[node.msg_type]
+        values = [self.calculate_sympy_exp(val) for val in node.args]
         message = msg_type()
-        for name in message.__slots__:
-            setattr(message, name, value[name])
+        for name, val in zip(message.__slots__, values):
+            setattr(message, name, val)
 
         print("/" + component,)
         self.pub = rospy.Publisher("/" + component, msg_type, queue_size=3)
@@ -110,111 +105,28 @@ class Executor:
                     self.subs[key].unregister()
                 data = {}
                 for name in msg.__slots__:
-                    data[name] = getattr(msg, name)
-                self.variables[args['data_name']] = data
+                    self.__setattr__(args['data_name'] + '_' + name, getattr(msg, name))
                 args['program'].accept(self)
                 self.waiting_msg = False
 
     def visit_action(self, node):
-        self.variables[node.data_name] = {}
-        assert node.str_msg_type in self.msg_types
         return {'msg_type': self.msg_types[node.str_msg_type], 'data_name': node.data_name, 'program': node.program}
 
     def visit_if(self, node):
-        cond = node.condition.accept(self)
-        if cond:
-            node.ifCode.accept(self)
-        else:
-            node.elseCode.accept(self)
+        for if_stmt in node.if_list:
+            val = self.calculate_sympy_exp(if_stmt.condition)
+            if val:
+                if_stmt.program.accept(self)
+                break
 
     def visit_while(self, node):
-        cond = node.condition.accept(self)
-        while cond:
+        val = self.calculate_sympy_exp(node.condition)
+        while val:
             node.code.accept(self)
-            cond = node.condition.accept(self)
+            val = self.calculate_sympy_exp(node.condition)
 
     def visit_assign(self, node):
-        exp = node.value.accept(self)
-        if node.property is None:
-            self.variables[node.id] = exp
-        else:
-            self.variables[node.id][node.property] = exp
-
-    def visit_tuple(self, node):
-        dic = {}
-        for key, value in node.tup.items():
-            v = value.accept(self)
-            dic[key] = v
-        return dic
-
-    def visit_bin_op(self, node):
-        if node.tip == Type.dot:
-            if node.exp1 not in self.variables.keys():
-                self.variables[node.exp1] = getattr(self, node.exp1)
-            return self.variables[node.exp1][node.exp2]
-        else:
-            var1 = node.exp1.accept(self)
-            var2 = node.exp2.accept(self)
-            if isinstance(var1, str) or isinstance(var2, str):
-                var1 = '"' + str(var1) + '"'
-                var2 = '"' + str(var2) + '"'
-            return eval(str(var1) + ' ' + str(node.sign) + ' ' + str(var2))
-
-    def visit_un_op(self, node):
-        if node.tip == Type.id:
-            if node.exp in self.variables.keys():
-                return self.variables[node.exp]
-            else:
-                return getattr(self, node.exp1)
-        if node.tip == Type._print:
-            for item in node.exp:
-                var1 = item.accept(self)
-                print(var1, end='')
-            print()
-            return None
-        var1 = node.exp.accept(self)
-        if isinstance(var1, str):
-            var1 = '"' + str(var1) + '"'
-        return eval(str(node.sign) + ' (' + str(var1) + ') ')
+        self.__setattr__(node.id, node.value)
 
     def visit_motion(self, node):
-
-        class Msg(object):
-            pass
-
-        value = node.value
-        if len(node.exps) == 0:
-            pass
-
-        exps = [x.accept(self) for x in node.exps]
-        k = 20
-        if value == 'set_angle_base':
-            yaw = pitch = roll = 0
-            print(exps[0]['yaw'], exps[0]['pitch'], exps[0]['roll'])
-            for i in range(k):
-                yaw += exps[0]['yaw']/k
-                pitch += exps[0]['pitch'] / k
-                roll += exps[0]['roll'] /k
-                self.robot.set_angle_base(yaw, pitch, roll)
-                #self.robot.calculateEndPosition()
-                rospy.sleep(0.2)
-        elif value == 'set_angle_elbow':
-            yaw = pitch = roll = 0
-            for i in range(k):
-                yaw += exps[0]['yaw']/k
-                pitch += exps[0]['pitch'] / k
-                roll += exps[0]['roll'] / k
-                self.robot.set_angle_elbow(yaw, pitch, roll)
-                #self.robot.calculateEndPosition()
-                rospy.sleep(0.2)
-        # if value == 'MoveToPosition':
-        #     a = Msg()
-        #     a.x = exps[0]['x']
-        #     a.y = exps[0]['y']
-        #     self.move_to_pos(a)
-        # elif value == 'Rotate':
-        #     for i in range(0, 10):
-        #         self.yaw += exps[0]['yaw'] / 10
-        #         self.pitch += exps[0]['pitch'] / 10
-        #         self.roll += exps[0]['roll'] / 10
-        #         rospy.sleep(0.5)
+        pass

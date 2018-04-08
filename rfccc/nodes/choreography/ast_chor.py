@@ -222,6 +222,7 @@ class GuardArg(Node):
         Node.__init__(self, Type.guard_arg)
         self.id = id
         self.expression = expression
+        self.has_motion = None # for normalization projection
 
     def __str__(self):
         string = '['

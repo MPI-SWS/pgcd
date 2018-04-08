@@ -1,5 +1,5 @@
 from enum import Enum
-
+from sympy import *
 
 class Type(Enum):
     statement = 1
@@ -10,41 +10,30 @@ class Type(Enum):
     _if = 6
     _while = 7
     assign = 8
-    _tuple = 9
     expression = 10
-    plus = 11
-    minus = 12
-    times = 13
-    divide = 14
-    mod = 15
-    _and = 16
-    _or = 17
-    gt = 18
-    ge = 19
-    lt = 20
-    le = 21
-    eq = 22
-    ne = 23
-    uminus = 24
-    _sin = 25
-    _cos = 26
-    _tan = 27
-    _abs = 28
-    _sqrt = 29
-    _not = 30
-    id = 31
-    dot = 32
     motion = 33
     _print = 34
 
 
+
 class Node:
+
+    label_num = -1
+
     def __init__(self, tip):
         self.tip = tip
 
     def __str__(self):
         return str(self.tip.value)
 
+    def get_label():
+        Node.label_num += 1
+        return 'X' + Node.label_num
+
+    def label_as_root(self):
+        label_to_node = {}
+        self.label(label_to_node)
+        return label_to_node
 
 class Statement(Node):
 
@@ -61,6 +50,10 @@ class Statement(Node):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()
+        for c in self.children:
+            c.label(label_to_node)
 
 class Skip(Node):
 
@@ -73,20 +66,25 @@ class Skip(Node):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()
 
 class Send(Node):
 
-    def __init__(self, comp, msg_type, value):
+    def __init__(self, comp, msg_type, args):
         Node.__init__(self, Type.send)
         self.comp = comp
         self.msg_type = msg_type
-        self.value = value
+        self.args = args
 
     def __str__(self):
-        return 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + str(self.value) + ')'
+        return 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + ''.join(self.args) + ')'
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()
 
 
 class Receive(Node):
@@ -101,6 +99,12 @@ class Receive(Node):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()
+        self.motion.label(label_to_node)
+        for c in self.actions:
+            c.label(label_to_node)
 
 
 class Action(Node):
@@ -117,133 +121,98 @@ class Action(Node):
     def accept(self, visitor):
         return visitor.visit(self)
 
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()
+        program.label(label_to_node)
 
 class If(Node):
 
     def __init__(self, condition, ifCode, elseCode):
         Node.__init__(self, Type._if)
-        self.condition = condition
-        self.ifCode = ifCode
-        self.elseCode = elseCode
+        self.if_list = []
+        self.if_list += self.flatten(condition, ifCode)
+        self.if_list += self.flatten(Not(condition), elseCode)
 
     def __str__(self):
-        return 'if ' + str(self.condition) + ' then {' + str(self.ifCode) + '} else {' + str(self.elseCode) + '}'
+        return ''.join(self.if_list)
 
     def accept(self, visitor):
         visitor.visit(self)
 
+    def label(self, label_to_node):
+        for if_stmt in self.if_list:
+            if_stmt.label(label_to_node)
+
+    def flatten(self, condition, program):
+        ft_child = program.children[0]
+        if not isinstance(ft_child, If):
+            return [IfComponent(condition, program)]
+        else:
+            program.children.pop(0)
+            ifs = []
+            for if_stmt in ft_child.if_list:
+                cond = And(condition, if_stmt.condition)
+                prog = if_stmt.program + program
+                ifs.append(IfComponent(cond, prog))
+            return ifs
+
+
+class IfComponent(Node):
+
+    def __init__(self, condition, program):
+        Node.__init__(self, Type._if)
+        self.condition = condition
+        self.program = program
+
+    def __str__(self):
+        return 'if ' + str(self.condition) + ' then {' + str(self.program) + '}'
+
+    def accept(self, visitor):
+        visitor.visit(self)
+
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()
+        program.label(label_to_node)
 
 class While(Node):
 
-    def __init__(self, condition, code):
+    def __init__(self, condition, program):
         Node.__init__(self, Type._while)
         self.condition = condition
-        self.code = code
+        self.program = program
 
     def __str__(self):
-        return 'while ' + str(self.condition) + ' do {' + str(self.code) + '}'
+        return 'while ' + str(self.condition) + ' do {' + str(self.program) + '}'
 
     def accept(self, visitor):
         visitor.visit(self)
 
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()
+        program.label(label_to_node)
 
 class Assign(Node):
 
-    def __init__(self, id, value, property=None):
+    def __init__(self, id, value):
         Node.__init__(self, Type.assign)
         self.id = id
         self.value = value
-        self.property = property
 
     def __str__(self):
-        if self.property is None:
-            return str(self.id) + ' := ' + str(self.value)
-        else:
-            return str(self.id) + '.' + str(self.property) + ' := ' + str(self.value)
+        return str(self.id) + ' := ' + str(self.value)
+
 
     def accept(self, visitor):
         visitor.visit(self)
 
-
-class Dict(Node):
-
-    def __init__(self, tup):
-        Node.__init__(self, Type._tuple)
-        self.tup = tup
-
-    def merge(self, t):
-        self.tup = self.merge_two_dicts(self.tup, t.tup)
-
-    def merge_two_dicts(self, x, y):
-        """Given two dicts, merge them into a new dict as a shallow copy."""
-        z = x.copy()
-        z.update(y)
-        return z
-
-    def __str__(self):
-        return str(self.tup)
-
-    def accept(self, visitor):
-        return visitor.visit(self)
-
-
-class BinOp(Node):
-
-    def __init__(self, operation, sign, exp1, exp2):
-        Node.__init__(self, operation)
-        self.exp1 = exp1
-        self.exp2 = exp2
-        self.sign = sign
-
-    def __str__(self):
-        return 'expr'
-
-    def __repr__(self):
-        return 'expr'
-
-    def accept(self, visitor):
-        return visitor.visit(self)
-
-
-class UnOp(Node):
-
-    def __init__(self, operation, sign, exp):
-        Node.__init__(self, operation)
-        self.exp = exp
-        self.sign = sign
-
-    def __str__(self):
-        return 'expr'
-
-    def __repr__(self):
-        return 'expr'
-
-    def accept(self, visitor):
-        return visitor.visit(self)
-
-
-class Constant(Node):
-
-    def __init__(self, value):
-        Node.__init__(self, Type.expression)
-        self.value = value
-
-    def __str__(self):
-        return 'expr'
-
-    def __repr__(self):
-        return 'expr'
-
-    def accept(self, visitor):
-        return visitor.visit(self)
+    def label(self, label_to_node):
+        pass
 
 
 class Motion(Node):
 
-    def __init__(self, value, exps=None):
+    def __init__(self, value, exps=[]):
         Node.__init__(self, Type.motion)
-        if exps is None:
-            exps = []
         self.value = value
         self.exps = exps
 
@@ -252,3 +221,6 @@ class Motion(Node):
 
     def accept(self, visitor):
         visitor.visit(self)
+
+    def label(self, label_to_node):
+        label_to_node[self] = self.get_label()

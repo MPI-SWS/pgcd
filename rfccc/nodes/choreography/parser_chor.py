@@ -64,8 +64,6 @@ class ChoreographyParser:
             assert not state == self.start_state, 'Start state "' + state + '" cannot appear on RHS.'
             self.right_states.add(state)
 
-    def track_down_states(self, list):
-        pass
 
     # ------------------------------------- STATEMENTS --------------------------------------
 
