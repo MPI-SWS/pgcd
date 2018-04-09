@@ -273,15 +273,12 @@ class ChoreographyParser:
 
     def p_expression_5th(self, p):
         '''expression : ID
-                      | ID DOT ID
                       | NOT expression
                       | MINUS expression %prec UMINUS'''
-        if len(p) == 4:
-            p[0] = str(p[1]) + '.' + str(p[3]) #?
-        elif p[1] == u'!':
+        if p[1] == u'!':
             p[0] = Not(p[2])
         elif len(p) == 3:
-            p[0] = str(p[1]) + str(p[2]) #?
+            p[0] = -p[2] #?
         else:
             p[0] = Symbol(p[1])
 

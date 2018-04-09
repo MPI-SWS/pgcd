@@ -14,6 +14,7 @@ class ChoreographyExecutor:
         self.parser = ChoreographyParser()
         self.choreography = None
         self.artificial_nodes_counter = -1
+        self.depth = 0
 
     def get_artificial_name(self):
         self.artificial_nodes_counter += 1
@@ -121,20 +122,36 @@ class ChoreographyExecutor:
             forks = [ s for s in forks if not s in nonNestedFork ]
             nonNestedFork = []
 
-    def normalize_projection(self, state, state_to_node, fork_nodes=None):
+    def normalize_projection(self, state, state_to_node, motion_cut_branch_container=None, current_cut = None, fork_motions=None):
 
         node = state_to_node[state]
-        if fork_nodes is not None and not (isinstance(node, Fork) or isinstance(node, Join) or isinstance(node, Merge)):
-            fork_nodes.append(node)
+        if isinstance(state_to_node[node.end_state[0]]):
+            pass
 
         if isinstance(node, Indirection):
             state_to_node[node.start_state[0]] = state_to_node[node.end_state[0]]
-            self.normalize_projection(node.end_state[0], state_to_node, fork_nodes)
+            self.normalize_projection(node.end_state[0], state_to_node, motion_cut_branch_container, current_cut, fork_motions)
+            return
+
+        elif isinstance(node, Motion):
+            if fork_motions is not None and node.motions[0].mp_name != 'wait':
+                fork_motions.append(node)
+            if current_cut is not None:
+                current_cut.append(node)
+                motion_cut_branch_container.append(current_cut)
+                current_cut = [state_to_node[node.end_state[0]]]
+                self.normalize_projection(node.end_state[0], state_to_node, motion_cut_branch_container, [], fork_motions)
+            else:
+                self.normalize_projection(node.end_state[0], state_to_node)
             return
 
         elif isinstance(node, GuardedChoice):
             for st in node.end_state:
-                self.normalize_projection(st, state_to_node, fork_nodes)
+                self.normalize_projection(st, state_to_node, motion_cut_branch_container, current_cut, fork_motions)
+            return
+
+        elif isinstance(node, Merge):
+            self.normalize_projection(node.end_state[0], state_to_node, motion_cut_branch_container, current_cut, fork_motions)
             return
 
 
@@ -169,30 +186,28 @@ class ChoreographyExecutor:
                 ex_choice.start_state = modif.end_state  # x1 = x3 & x4
                 state_to_node[modif.end_state[0]] = ex_choice  # x1 -> x1 = x3 & x4
             for st in modif.end_state:
-                self.normalize_projection(st, state_to_node, fork_nodes)
+                self.normalize_projection(st, state_to_node, motion_cut_branch_container, current_cut, fork_motions)
             return
 
         elif isinstance(node, Fork):
-            branches = []  # array of array of nodes in each branch
-            for fork in node.end_state:  # traverse the tree and get all nodes before join
+            branches = []  # array motion cut branches (start_node and end_nodes)
+            motions = [] # motions that cut the branches (only one is valid for one process)
+            for st in node.end_state:  # traverse the tree and get all nodes before join
                 branch = []
-                self.normalize_projection(fork, state_to_node, branch)
+                self.normalize_projection(st, state_to_node, branch, [state_to_node[st]], motions)
                 branches.append(branch)
 
             possible_segments = []  # array of segments of each branch before/with motion primitive
             is_same_node = type(branches[0][0])
-            motion = None
-            occured_motions = []
             for branch in branches:
                 segment = []  # array of nodes occured before motion primitive
                 types_before_motion = set()  # check for errors
                 for curr_node in branch:
                     if isinstance(curr_node, Motion):
-                        occured_motions.append(curr_node)
                         break
                     types_before_motion(type())
                     segment.append(curr_node)
-                branch = [x for x in branch if x not in segment and x not in occured_motions]
+                branch = [x for x in branch if x not in segment]
                 if len(segment) > 0:
                     possible_segments.append(segment)
 
@@ -209,10 +224,9 @@ class ChoreographyExecutor:
                 combination = list(itertools.chain.from_iterable(perm))
                 guard_args.append(GuardArg(sympify('True'), self.artificial_nodes_counter())) # TODO DZ: put some predicate instead of true?
 
-
-
         elif isinstance(node, Join):
             return
+
 
 
 

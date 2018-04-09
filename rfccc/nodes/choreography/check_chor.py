@@ -15,7 +15,6 @@ class ChoreographyCheck:
         self.motion_check = {}
         self.looped_states = set()
         self.loop_has_motion = False
-        self.end = False
         self.comps = set(Choreography.initialized_components)
         self.causality = CausalityTracker(Choreography.initialized_components)
 
@@ -42,7 +41,6 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, GuardedChoice):
-            # TODO here I assume the end path is last state...
             self.check_same_path_twice(node, visited, process, causality)
             return
 
@@ -60,7 +58,6 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, End):
-            self.end = True
             return
 
         self.check_all_threads_joined()
@@ -74,10 +71,10 @@ class ChoreographyCheck:
             if not visited.__contains__(s):
                 self.traverse_graph(s, visited, process, causality)
                 break
+            # If state occurred again see if loop has necessary things
             elif not self.looped_states.__contains__(s):
                 self.looped_states.add(s)
                 self.traverse_graph(s, visited, process, causality)
-                self.end = False
                 break
         return
 

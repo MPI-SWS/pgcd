@@ -30,7 +30,7 @@ class Parser:
         self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
 
     def parse(self, text):
-        return self.parser.parse(text, self.lexer.lexer)
+        return Statement(self.parser.parse(text, self.lexer.lexer))
 
     # ------------------------------------- STATEMENT --------------------------------------
 
@@ -45,9 +45,9 @@ class Parser:
                       | print
                       | skip '''
         if len(p) > 2:
-            p[0] = Statement([p[1], p[3]])
+            p[0] = p[1] + p[3]
         else:
-            p[0] = p[1]
+            p[0] = [p[1]]
 
     def p_receive_msg(self, p):
         'receive   : RECEIVE LPAREN motion RPAREN  LBRACE actions RBRACE'
@@ -59,11 +59,11 @@ class Parser:
 
     def p_if_code(self, p):
         'if : IF LPAREN expression RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE'
-        p[0] = If(sympify(p[3]), p[6], p[10])
+        p[0] = If(sympify(p[3]), Statement(p[6]), Statement(p[10]))
 
     def p_while_code(self, p):
         'while : WHILE LPAREN expression RPAREN LBRACE statement RBRACE'
-        p[0] = While(sympify(p[3]), p[6])
+        p[0] = While(sympify(p[3]), Statement(p[6]))
 
     def p_assign_code(self, p):
         ''' assign : ID EQUALS expression '''
@@ -78,8 +78,8 @@ class Parser:
             p[0] = Motion(p[1])
 
     def p_print_function(self, p):
-        'print : PRINT LPAREN args RPAREN'
-        p[0] = UnOp(Type._print, 'print', p[3])
+        'print : PRINT LPAREN SCONST RPAREN'
+        p[0]= Print(p[3])
 
     def p_skip_function(self, p):
         'skip : SKIP'
@@ -91,17 +91,17 @@ class Parser:
         ''' actions : actions COMMA actions
                     | LPAREN MSGTYPE COMMA ID COMMA LBRACE statement RBRACE RPAREN '''
         if p[1] == u'(':
-            p[0] = [Action(p[2], p[4], p[7])]
+            p[0] = [Action(p[2], p[4], Statement(p[7]))]
         else:
             p[0] = p[1] + p[3]
 
     def p_args_tuple(self, p):
-        '''args : args COMMA args
+        '''args : expression COMMA args
                 | expression'''
         if len(p) > 2:
-            p[0] = p[1] + p[3]
+            p[0] = [sympify(p[1])] + p[3]
         else:
-            p[0] = [sympify([1])]
+            p[0] = [sympify(p[1])]
 
     # ------------------------------------EXPRESSIONS--------------------------------------
 
@@ -157,7 +157,7 @@ class Parser:
                       | TAN LPAREN expression RPAREN
                       | ABS LPAREN expression RPAREN
                       | SQRT LPAREN expression RPAREN
-                      | ID LPAREN funcargs RPAREN'''
+                      | ID LPAREN args RPAREN'''
         # p[1] = symbols('f g h', cls=Function)
         p[0] = str(p[1]) + str(p[2]) + str(p[3]) + str(p[4])
         if p[1] == 'sin':
@@ -191,12 +191,12 @@ class Parser:
         if p[1] == u'!':
             p[0] = Not(p[2])
         elif len(p) == 3:
-            p[0] = "(-" + str(p[2]) + ")"
+            p[0] = -p[2]
         else:
             p[0] = Symbol(p[1])
 
     def p_error(self, p):
         if p:
-            print("Line " + str(self.lexer.lexer.lineno) + ". : syntax error at: '{0}'...".format(p.value))
+            print("Line " + str(self.lexer.lexer.lineno) + ". : syntax error at: '{0}' in '{1}'...".format(p.value, p.lexer.lexdata.split('\n')[self.lexer.lexer.lineno-1].strip()))
         else:
             print("Syntax error at EOF")

@@ -4,8 +4,6 @@ import threading
 import rfccc.msg
 import rospy
 
-import math
-
 from parser import *
 
 
@@ -28,9 +26,15 @@ class Executor:
 
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
+
         for fs in sympy_exp.free_symbols:
-            subs[fs] = self.__getattribute__(fs)
-        return sympy_exp.evalf(subs=subs)
+            subs[fs] = self.__getattribute__(str(fs))
+        expr2 = sympy_exp.subs(subs)
+        if expr2 == S.true or expr2 == S.false:
+            return expr2
+        else:
+            evaluated = N(expr2)
+            return evaluated
 
     def visit(self, node):
 
@@ -52,6 +56,9 @@ class Executor:
         elif node.tip == Type._if:
             self.visit_if(node)
 
+        elif node.tip == Type._print:
+            self.visit_print(node)
+
         elif node.tip == Type._while:
             self.visit_while(node)
 
@@ -62,6 +69,7 @@ class Executor:
             self.visit_motion(node)
 
     def visit_statement(self, node):
+        #print('\n'.join(str(c) for c in node.children))
         for stmt in node.children:
             stmt.accept(self)
 
@@ -70,6 +78,7 @@ class Executor:
         values = [self.calculate_sympy_exp(val) for val in node.args]
         message = msg_type()
         for name, val in zip(message.__slots__, values):
+            print(val, type(val))
             setattr(message, name, val)
 
         print("/" + component,)
@@ -122,11 +131,14 @@ class Executor:
     def visit_while(self, node):
         val = self.calculate_sympy_exp(node.condition)
         while val:
-            node.code.accept(self)
+            node.program.accept(self)
             val = self.calculate_sympy_exp(node.condition)
 
     def visit_assign(self, node):
-        self.__setattr__(node.id, node.value)
+        self.__setattr__(node.id, self.calculate_sympy_exp(node.value))
 
     def visit_motion(self, node):
         pass
+
+    def visit_print(self, node):
+        print("Output:" , node.arg)

@@ -35,7 +35,7 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
 
         elif isinstance(node, GuardedChoice):
             if set(node.guarded_states.expression.free_symbols) | \
-                    set(node.guarded_states.expression.atoms(Function)) <= process.ownVariables():
+                    set(node.guarded_states.expression.atoms(Function)) <= process.ownVariables(): # TODO is this good?
                 chor_proj.statements.append(node)
             else:
                 chor_proj.statements.append(ExternalChoice(node.start_state, [x.id for x in node.end_state]))

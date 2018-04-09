@@ -69,6 +69,21 @@ class Skip(Node):
     def label(self, label_to_node):
         label_to_node[self] = self.get_label()
 
+class Print(Node):
+
+    def __init__(self, arg):
+        Node.__init__(self, Type._print)
+        self.arg = arg
+
+    def __str__(self):
+        return 'Print' + str(arg)
+
+    def accept(self, visitor):
+        visitor.visit(self)
+
+    def label(self, label_to_node):
+        pass
+
 class Send(Node):
 
     def __init__(self, comp, msg_type, args):
@@ -78,7 +93,7 @@ class Send(Node):
         self.args = args
 
     def __str__(self):
-        return 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + ''.join(self.args) + ')'
+        return 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + ''.join([str(a) for a in self.args]) + ')'
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -134,7 +149,7 @@ class If(Node):
         self.if_list += self.flatten(Not(condition), elseCode)
 
     def __str__(self):
-        return ''.join(self.if_list)
+        return ''.join([str(a) for a in self.if_list])
 
     def accept(self, visitor):
         visitor.visit(self)
@@ -143,18 +158,19 @@ class If(Node):
         for if_stmt in self.if_list:
             if_stmt.label(label_to_node)
 
-    def flatten(self, condition, program):
-        ft_child = program.children[0]
-        if not isinstance(ft_child, If):
-            return [IfComponent(condition, program)]
-        else:
-            program.children.pop(0)
-            ifs = []
-            for if_stmt in ft_child.if_list:
-                cond = And(condition, if_stmt.condition)
-                prog = if_stmt.program + program
-                ifs.append(IfComponent(cond, prog))
-            return ifs
+    def flatten(self, condition, statement):
+        node = statement.children[0]
+        if not isinstance(node, If):
+            return [IfComponent(condition, statement)]
+
+        statement.children.pop(0)
+        ifs = []
+        for if_stmt in statement.if_list:
+            cond = And(condition, if_stmt.condition)
+            prog = Statement(if_stmt.program.children + statement.children)
+            ifs.append(IfComponent(cond, prog))
+        return ifs
+
 
 
 class IfComponent(Node):

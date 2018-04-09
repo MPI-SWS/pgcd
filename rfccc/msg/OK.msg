@@ -1,1 +1,1 @@
-string ok
+float32 ok

@@ -22,7 +22,7 @@ class Lexer:
         'ID', 'MOTION', 'COMPONENT_ID', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
 
         # OPERATORS
-        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
+        'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'POW',
 
         # OTHER
         'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'DOT'
@@ -32,6 +32,7 @@ class Lexer:
     t_PLUS = r'\+'
     t_MINUS = r'-'
     t_TIMES = r'\*'
+    t_POW = r'\*\*'
     t_DIVIDE = r'/'
     t_MOD = r'%'
     t_OR = r'\|\|'
@@ -101,8 +102,8 @@ class Lexer:
 
     # String literal
     def t_SCONST(self, t):
-        r'\"([^\\\n]|(\\.))*?\"'
-        t.value = str(t.value)[1:-1]
+        r'\".*?\"'
+        t.value = str(t.value)
         return t
 
     # Comments

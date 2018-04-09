@@ -1,7 +1,17 @@
-#angles = {"yaw": 3.14159/7, "pitch":0, "roll":3.14159};
-# send(id_tool, msg_Rotate, angles);
 
 
-receive(m_Idle){(msg_Rotate, angles, { m_set_angle_base(angles)})};
+curr_angle_pitch = 0;
 
-print("GOOD")
+# RECEIVING DATA WILL HAVE NAME: givenDataName + _ + messagePartName
+# got parameters: angles_yaw, angles_pitch, angles_roll
+receive(m_Idle){(msg_Rotate, angles, { curr_angle_pitch = curr_angle_pitch + angles_pitch })};
+
+while( curr_angle_pitch > -3)
+{
+    # ID, MSG, msg_param1, msg_param2, ...
+    send(id_arm, msg_OK, curr_angle_pitch);
+    receive(m_Idle){(msg_Rotate, angles, { curr_angle_pitch = curr_angle_pitch + angles_pitch })};
+    print("curr_angle_pitch")
+};
+
+print("FINISHED TOOL")

@@ -12,13 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   tf2
   tf2_ros
-  turtlesim
   std_msgs
   message_generation
-  gazebo_ros
 )
-
-find_package(gazebo REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

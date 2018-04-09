@@ -1,14 +1,33 @@
-# receive(m_Idle){ (msg_Rotate, angles, { m_Rotate(angles) }) };
 
-# RECEIVING DATA WILL HAVE NAME: givenDataName + _ + messagePartName
+state = 10;
 
-angles = {"yaw": 0, "pitch": -3.14159/3, "roll": 0};
+if ( 5  > state )
+{
+    roll = 0;
+    pitch = 3.14159/3;
+    yaw = 0
+}
+else
+{
+    roll = 3.14159/3;
+    pitch = -1;
+    yaw = 0
+};
 
-m_set_angle_base(angles);
-m_set_angle_elbow(angles);
 
-angles.pitch = angles.pitch + 0.2;
-angles.roll = angles.roll + 0.3;
+loop = 0;
+while( loop  != -3)
+{
+    # ID, MSG, msg_param1, msg_param2, ...
+    send(id_tool, msg_Rotate, yaw, pitch, roll);
+    # RECEIVING DATA WILL HAVE NAME
+    # -> givenDataName + _ + messagePartName = reply_ok
+    receive(m_Idle){(msg_OK, reply, { skip })};
+    print("replied");
+    loop = loop + reply_ok
+};
 
-send(id_tool, msg_Rotate, angles)
+send(id_tool, msg_Rotate, yaw, pitch, roll);
+print("FINISHED ARM")
+
 
