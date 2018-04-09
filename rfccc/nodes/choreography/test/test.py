@@ -38,6 +38,20 @@ def cartAndArmFetch():
 # `delta` is a positive offset which is roughly the reach/length of the gripper also is has to be aligned with the position of A and B
 def armsHandover():
     return ''' Handover =
+        def x0 = A1 -> A2 : meetAt(Pnt(0,0,0)); x1
+            x1 = (A1: MoveTo(Pnt(-0.05,0,0)), A2: MoveTo(Pnt(0.05,0,0))); x2
+            x2 = A1 -> A2 : holding(); x3
+            x3 = (A1: Idle(), A2: CloseGripper()); x4
+            x4 = A2 -> A1 : holding(); x5
+            x5 = (A1: OpenGripper(), A2: Idle()); x6
+            x6 = A1 -> A2 : action(released); x7
+            x7 = (A1: Fold(), A2: Fold()); x8
+            x8 = end
+        in [ (A1_a == 1.5707963267949) && (A1_b == 1.5707963267949) && (A1_c == 0) && (A2_a == 1.5707963267949) && (A2_b == 1.5707963267949) && (A2_c == 0) ] x0
+    '''
+
+def armsHandover1():
+    return ''' Handover =
         def x0 = A -> B : meetAt(loc); x1
             x1 = (A: MoveTo(loc - delta), B: MoveTo(loc + delta)); x2
             x2 = A -> B : holding(); x3
@@ -49,7 +63,6 @@ def armsHandover():
             x8 = end
         in [ (A_a == 1.5707963267949) && (A_b == 1.5707963267949) && (A_c == 0) && (B_a == 1.5707963267949) && (B_b == 1.5707963267949) && (B_c == 0) ] x0
     '''
-
 
 # A sightly more complicated example with two arm sitting on one table with two bins between them.
 # They need to put objects in the bin without crossing.
@@ -112,6 +125,21 @@ def binSorting():
 # - while the cart is busy with A/B then B/A can do something else
 def ferry():
     return ''' Ferry =
+        def x0 = (A1: Idle(), A2: Idle(), C: Idle()); ca3
+            ca3 = C -> A1 : rdy(); ca4
+            ca4 = (A2: Idle(), A1: PutOnCart(), C: Idle()); ca5
+            ca5 = A1 -> C : done(); ca2b
+            ca2b = (A1: Idle(), A2: Idle(), C: MoveFromTo(Pnt(-1,0,0), Pnt(1,0,0))); cb3
+            cb3 = C -> A2 : rdy(); cb4
+            cb4 = (A1: Idle(), A2: GetFromCart(), C: Idle()); cb5
+            cb5 = A2 -> C : done(); cb2a
+            cb2a = (A1: Idle(), A2: Idle(), C: MoveFromTo(Pnt(1,0,0), Pnt(-1,0,0))); ca2b1
+            ca2b1 = end
+        in [true] x0
+    '''
+
+def ferry1():
+    return ''' Ferry =
         def x0 = (A1: Idle(), A2: Idle(), C: Idle()); ca
             ca = ca1 || ca3
             ca1 = (A2: Idle()); ca2
@@ -121,7 +149,7 @@ def ferry():
             ca2 || ca6 = ca2b
             ca2b = (A1: Idle(), A2: Idle(), C: MoveFromTo(Pnt(-1,0,0), Pnt(1,0,0))); cb
             cb = cb1 || cb3
-            cb1 = (A1: idle()); cb2
+            cb1 = (A1: Idle()); cb2
             cb3 = C -> A2 : rdy(); cb4
             cb4 = (A2: GetFromCart(), C: Idle()); cb5
             cb5 = A2 -> C : done(); cb6
@@ -130,7 +158,6 @@ def ferry():
             ca2b1 = end
         in [true] x0
     '''
-
 
 def funny_thread_partition():
     return ''' G =

@@ -31,9 +31,9 @@ def cartAndArmWorld():
     c = Cart("C", w)
     a = Arm("A", c)
     return w
- 
+
 def armsHandoverWorld():
-    w = World( (0,0,0,0), (1,0,0,mp.pi) )
+    w = World( (-0.4,0,0,0), (0.4,0,0,mp.pi) )
     a1 = Arm("A1", w, 0)
     a2 = Arm("A2", w, 1)
     return w

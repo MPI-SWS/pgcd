@@ -62,7 +62,7 @@ class VC:
         #self.formulas = [ simplify_logic(f) for f in formulas ] # a list of formula from imprecise (easy to solve) to precise (hard to solve)
         self.formulas = formulas
         self.sat = shouldBeSat
-    
+
     def __str__(self):
         sat = ""
         if self.sat:
@@ -99,7 +99,7 @@ class ProcessPredicatesTracker:
         self._process = process
         self._pred = S.false
         for d in getDisjuncts(value):
-            accC = S.true 
+            accC = S.true
             for c in getConjuncts(d):
                 if all([s in process.variables() for s in c.free_symbols]):
                     #print('keep ' + str(c))
@@ -107,7 +107,7 @@ class ProcessPredicatesTracker:
                 #else:
                     #print('drop ' + str(c))
             self._pred = Or(self._pred, accC)
-    
+
     def copy(self):
         return copy.copy(self)
 
@@ -119,14 +119,14 @@ class ProcessPredicatesTracker:
         disj2 = [And(pred, d) for d in disj1]
         res =  Or(*disj2)
         self._pred = res
-    
+
     def relaxVariables(self, variables):
         #print('relaxVariables ' + str(variables))
         #print('for ' + str(self._pred))
         assert(all(variable in self._process.ownVariables() for variable in variables))
         accD = S.false
         for d in getDisjuncts(self.pred()):
-            accC = S.true 
+            accC = S.true
             for c in getConjuncts(d):
                 if all([not s in variables for s in c.free_symbols]):
                     #print('keep ' + str(c))
@@ -139,7 +139,7 @@ class ProcessPredicatesTracker:
     def merge(self, tracker):
         assert(self._process == tracker._process)
         self._pred = Or(self._pred, tracker._pred)
-        
+
     # syntactic, not semantic!
     # contains tracker of all the pred in tracker are in self
     def contains(self, tracker):
@@ -157,7 +157,7 @@ class ProcessPredicatesTracker:
             if notFound:
                 return False
         return True
-    
+
     def equals(self, tracker):
         return self.contains(tracker) and tracker.contains(self)
 
@@ -184,7 +184,7 @@ class ProcessesPredicatesTracker:
         for p in self._process_set:
             cpy._process_to_pred[p] = self._process_to_pred[p].copy()
         return cpy
-    
+
     def pred(self, process = None):
         if process != None:
             return self._process_to_pred[process].pred()
@@ -206,15 +206,15 @@ class ProcessesPredicatesTracker:
     def addPred(self, pred):
         p = self._findProcess(pred)
         if p == None:
-            logging.warning('ignoring predicate without process "%s": make sure it is not false.', str(pred))   
+            logging.warning('ignoring predicate without process "%s": make sure it is not false.', str(pred))
         else:
             self._process_to_pred[p].addPred(pred)
-    
+
     def addFormula(self, formula):
         assert(len(getDisjuncts(formula)) == 1)
         for c in getConjuncts(formula):
             self.addPred(c)
-    
+
     def relaxVariables(self, variables):
         for p in self._process_set:
             vs = [ v for v in variables if v in p.ownVariables() ]
@@ -226,7 +226,7 @@ class ProcessesPredicatesTracker:
 
     def contains(self, tracker):
         return all([ self._process_to_pred[p].contains(tracker._process_to_pred[p]) for p in self._process_set])
-    
+
     def equals(self, tracker):
         return all([ self._process_to_pred[p].equals(tracker._process_to_pred[p]) for p in self._process_set])
 
@@ -290,7 +290,7 @@ class CompatibilityCheck:
         for mp in motions:
             tracker.addFormula(mp.post())
         return self._goesInto(tracker, succ)
-    
+
     # for operation that do not change the predicates
     def _transfer(self, pred, succ):
         tracker = self.node_to_pred[pred]

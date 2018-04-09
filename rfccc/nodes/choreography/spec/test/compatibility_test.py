@@ -8,7 +8,7 @@ from vectorize_spec import *
 import unittest
 
 class CompatibilityCheckTest(unittest.TestCase):
-    
+
     def test_fetch(self):
         world = experiments_setups.cartAndArmWorld()
         code = cartAndArmFetch()
