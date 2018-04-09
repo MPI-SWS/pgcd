@@ -1,6 +1,7 @@
 from email.policy import strict
 from enum import Enum
 from interpreter.ast_inter import Node
+from sympy import And
 
 
 class Type(Enum):
@@ -56,6 +57,7 @@ class Choreography(DistributedStateNode):
         self.statements = statements
         self.predicate = predicate
         self.start_state = start_state
+        self.world = None # world is a spec.Component
 
     def __str__(self):
         string = "def " + self.id + " \n"
@@ -214,6 +216,20 @@ class GuardedChoice(DistributedStateNode):
     #
     # def __hash__(self) -> int:
     #     return hash(self.__key())
+
+    def get_successors(self, state_to_node):
+        '''get first non guarded successors (accumulate the guards)'''
+        acc = []
+        for g in self.guarded_states:
+            node = state_to_node[g.id]
+            if isinstance(node, GuardedChoice):
+                successors = node.get_successors(state_to_node)
+                for s in successors:
+                    new_guard = GuardArg(And(g.expression, s.expression), s.id)
+                    acc.append(new_guard)
+            else:
+                acc.append(g)
+        return acc
 
 
 class GuardArg(Node):

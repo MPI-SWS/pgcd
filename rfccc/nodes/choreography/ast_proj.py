@@ -150,3 +150,6 @@ class ExternalChoice(DistributedStateNode):
     def shift_delay_check(self, node):
         return self == node
 
+    def merge(self, new_start_state, nodes):
+        assert(all([isinstance(node, ExternalChoice) for node in nodes]))
+        new_node = ExternalChoice([new_start_state], self.end_state + node.end_state)
