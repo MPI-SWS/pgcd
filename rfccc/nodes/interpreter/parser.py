@@ -78,7 +78,8 @@ class Parser:
             p[0] = Motion(p[1])
 
     def p_print_function(self, p):
-        'print : PRINT LPAREN SCONST RPAREN'
+        '''print : PRINT LPAREN SCONST RPAREN
+                 | PRINT LPAREN args RPAREN'''
         p[0]= Print(p[3])
 
     def p_skip_function(self, p):

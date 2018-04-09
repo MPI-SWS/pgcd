@@ -1,17 +1,17 @@
 
 
-curr_angle_pitch = 0;
+point_sum = 0;
 
 # RECEIVING DATA WILL HAVE NAME: givenDataName + _ + messagePartName
 # got parameters: angles_yaw, angles_pitch, angles_roll
-receive(m_Idle){(msg_Rotate, angles, { curr_angle_pitch = curr_angle_pitch + angles_pitch })};
+receive(m_Idle){(msg_Point, point, { point_sum = point_sum + point_y })};
 
-while( curr_angle_pitch > -3)
+while( point_sum > -3)
 {
     # ID, MSG, msg_param1, msg_param2, ...
     send(id_arm, msg_OK, curr_angle_pitch);
-    receive(m_Idle){(msg_Rotate, angles, { curr_angle_pitch = curr_angle_pitch + angles_pitch })};
-    print("curr_angle_pitch")
+    receive(m_Idle){(msg_Point, point, { point_sum = point_sum + point_x })};
+    print(id, pont_x, point_y, point_z)
 };
 
 print("FINISHED TOOL")

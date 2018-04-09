@@ -3,18 +3,42 @@ import geometry_msgs.msg
 import rospy
 import tf
 import tf2_msgs.msg
+import random
+import numpy as np
 
 
 class TFUpdater:
 
-    def __init__(self, id, parent, component, acts):
+    def __init__(self, id, parent, component = None):
         self.id = id
-        self.acts = acts
         self.parent = parent
         self.debug = True
         self.component = component
         self.pub_tf = rospy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=1)
-        self.timer = rospy.Timer(rospy.Duration(nsecs=5), self.set_up_broadcaster)
+        if component is not None:
+            self.timer = rospy.Timer(rospy.Duration(nsecs=5), self.set_up_broadcaster)
+        else:
+            self.timer = rospy.Timer(rospy.Duration(nsecs=5), self.set_up_default_broadcaster)
+
+    def set_up_default_broadcaster(self, _):
+        t = geometry_msgs.msg.TransformStamped()
+        t.header.frame_id = self.parent
+        t.header.stamp = rospy.Time.now()
+        t.child_frame_id = self.id
+
+        t.transform.translation.x = random.randint(2, 5) * 0.1
+        t.transform.translation.y = 2 - 0.3 * random.randint(1, 4) * 0.2
+        t.transform.translation.z = random.randint(1, 3) * 0.5
+        # print(x)
+        # q = tf.transformations.quaternion_from_euler(yaw, pitch, roll, 'rzyx') RADIANS
+        q = tf.transformations.quaternion_from_matrix(np.ones([4, 4]))
+
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]
+        tfm = tf2_msgs.msg.TFMessage([t])
+        self.pub_tf.publish(tfm)
 
 
     def set_up_broadcaster(self, _):

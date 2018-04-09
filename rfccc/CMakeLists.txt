@@ -52,8 +52,9 @@ find_package(catkin REQUIRED COMPONENTS
 # Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  MoveToPosition.msg
+  Move.msg
   Rotate.msg
+  Point.msg
   OK.msg
 )
 
@@ -111,7 +112,6 @@ catkin_package(
 #  LIBRARIES rfccc
 #  CATKIN_DEPENDS roscpp rospy tf2 tf2_ros turtlesim
   CATKIN_DEPENDS message_runtime
-  DEPENDS gazebo_ros
 )
 
 ###########

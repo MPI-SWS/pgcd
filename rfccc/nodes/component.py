@@ -36,6 +36,7 @@ class Component(Executor):
         # self.robot.set_angle_elbow(0, 0, 0)
         # self.robot.calculateEndPosition()
         # self.init_parts()
+        self.tf_updater = tf_updater.TFUpdater(self.id, self.parent)
         self.execute_prog()
 
     # def init_parts(self):

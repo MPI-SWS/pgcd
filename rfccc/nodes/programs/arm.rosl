@@ -3,15 +3,15 @@ state = 10;
 
 if ( 5  > state )
 {
-    roll = 0;
-    pitch = 3.14159/3;
-    yaw = 0
+    x = 0;
+    y = 3.14159/3;
+    z = 0
 }
 else
 {
-    roll = 3.14159/3;
-    pitch = -1;
-    yaw = 0
+    x = 3.14159/3;
+    y = -1;
+    z = 0
 };
 
 
@@ -19,11 +19,12 @@ loop = 0;
 while( loop  != -3)
 {
     # ID, MSG, msg_param1, msg_param2, ...
-    send(id_tool, msg_Rotate, yaw, pitch, roll);
+    send(id_tool, msg_Point, x, y, z);
     # RECEIVING DATA WILL HAVE NAME
     # -> givenDataName + _ + messagePartName = reply_ok
     receive(m_Idle){(msg_OK, reply, { skip })};
     print("replied");
+    print(id, x, y, z);
     loop = loop + reply_ok
 };
 

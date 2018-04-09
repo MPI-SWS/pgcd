@@ -1,1 +1,1 @@
-float32 ok
+string message
