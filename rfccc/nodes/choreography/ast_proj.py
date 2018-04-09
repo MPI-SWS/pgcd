@@ -12,7 +12,6 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
         if set(c.free_symbols) <=  set(process.variables()):
             pred = And(pred, c)
     chor_proj = ChoreographyProjection(projection_name, [], pred, choreography.start_state, process.name())
-    state_to_node = {}
 
     for node in choreography.statements:
 
@@ -45,11 +44,7 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
         else:
             chor_proj.statements.append(copy(node))
 
-        last = chor_proj.statements[-1]
-        for state in last.start_state:
-            state_to_node[state] = last
-
-    return chor_proj, state_to_node
+    return chor_proj
 
 
 class ChoreographyProjection(DistributedStateNode):
@@ -72,6 +67,13 @@ class ChoreographyProjection(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def mk_state_to_node(self):
+        state_to_node = {}
+        for s in self.statements:
+            for pre in s.start_state:
+                assert not pre in state_to_node
+                state_to_node[pre] = s
+        return state_to_node
 
 class SendMessage(DistributedStateNode):
 

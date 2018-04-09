@@ -359,7 +359,7 @@ class CompatibilityCheck:
                         mp = proc.motionPrimitive(mpName, *mpArgs)
                         processes.append(proc)
                         mps.append(mp)
-                    assert(set(processes) == set(self.processes))
+                    assert set(processes) == set(self.processes), str(processes) + " != " + str(set(self.processes))
                     succ = self.state_to_node[node.end_state[0]]
                     res = self._motion(node, mps, succ)
                     if debug and res:

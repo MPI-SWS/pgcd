@@ -69,6 +69,14 @@ class Choreography(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def mk_state_to_node(self):
+        state_to_node = {}
+        for s in self.statements:
+            for pre in s.start_state:
+                assert not pre in state_to_node
+                state_to_node[pre] = s
+        return state_to_node
+
     # def __eq__(self, o: Node) -> bool:
     #     if super().__eq__(o):
     #         for first, second in zip(self.statements, o.statements):

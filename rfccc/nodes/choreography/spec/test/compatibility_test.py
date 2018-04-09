@@ -14,7 +14,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         code = cartAndArmFetch()
         parser = ChoreographyParser()
         tree = parser.parse(code)
-        vectorize(parser.state_to_node, world)
+        vectorize(tree, world)
         checker = CompatibilityCheck(parser.state_to_node, tree, world)
         checker.localChoiceChecks()
         # total guards
@@ -35,7 +35,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         code = binSorting()
         parser = ChoreographyParser()
         tree = parser.parse(code)
-        vectorize(parser.state_to_node, world)
+        vectorize(tree, world)
         checker = CompatibilityCheck(parser.state_to_node, tree, world)
         checker.localChoiceChecks()
         # total guards
@@ -55,7 +55,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         code = armsHandover()
         parser = ChoreographyParser()
         tree = parser.parse(code)
-        vectorize(parser.state_to_node, world)
+        vectorize(tree, world)
         checker = CompatibilityCheck(parser.state_to_node, tree, world)
         checker.localChoiceChecks()
         # total guards
@@ -75,7 +75,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         code = ferry()
         parser = ChoreographyParser()
         tree = parser.parse(code)
-        vectorize(parser.state_to_node, world)
+        vectorize(tree, world)
         checker = CompatibilityCheck(parser.state_to_node, tree, world)
         checker.localChoiceChecks()
         # total guards

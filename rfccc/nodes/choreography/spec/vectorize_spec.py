@@ -2,7 +2,7 @@
 from ast_chor import *
 from sympy import *
 
-def vectorize(state_to_node, world):
+def vectorize(choreography, world):
     '''replace variables by vectors in the world's frame'''
     #interpret function Vec(x,y,z) as constructor for vectors
     #interpret function Pnt(x,y,z) as constructor for point
@@ -61,7 +61,7 @@ def vectorize(state_to_node, world):
             #print(type(expr))
             return expr
 
-    for node in state_to_node.values():
+    for node in choreography.statements:
         if isinstance(node, Message):
             expressions2 = [ updateSympyExpr(e) for e in node.expressions ]
             node.expressions = expressions2

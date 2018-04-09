@@ -30,7 +30,8 @@ class ChoreographyExecutor:
         if debug:
             print("== Global ==")
             print(self.choreography)
-        projection, state_to_node = CreateProjectionFromChoreography(self.choreography, proj_name, process)
+        projection = CreateProjectionFromChoreography(self.choreography, proj_name, process)
+        state_to_node = projection.mk_state_to_node()
         if debug:
             print("-- Raw projection (before normalization) --")
             print(projection)
@@ -41,7 +42,7 @@ class ChoreographyExecutor:
             for v in state_to_node.values():
                 print(v)
             raise
-        return projection, state_to_node
+        return projection
 
     def removeUnreachable(self, choreography, state_to_node):
         visited = set()
@@ -93,7 +94,7 @@ class ChoreographyExecutor:
         self.removeIndirections(choreography, state_to_node)
 
     # for the normalization
-    def removeForkJoin(self, choreography, state_to_node, debug = True):
+    def removeForkJoin(self, choreography, state_to_node, debug = False):
         # if there are nested forks then we should work inside out
         def noForkBeforeJoin(state, first = True):
             node = state_to_node[state]
@@ -334,7 +335,7 @@ class ChoreographyExecutor:
                                 pre.guarded_states[i].id = post
         self.removeUnreachable(choreography, state_to_node)
 
-    def minimize(self, choreography, state_to_node, debug = True):
+    def minimize(self, choreography, state_to_node, debug = False):
         self.removeMerge(choreography, state_to_node)
         #states that can be similar
         compatible = {}
@@ -348,7 +349,6 @@ class ChoreographyExecutor:
             node1 = state_to_node[s1]
             node2 = state_to_node[s2]
             if type(node1) != type(node2) or len(node1.end_state) != len(node2.end_state):
-                #print("not same(1)", node1, node2)
                 return False
             #TODO should be up to permutation ...
             for i,e1 in enumerate(node1.end_state):
@@ -362,7 +362,11 @@ class ChoreographyExecutor:
             elif isinstance(node1, ReceiveMessage):
                 return node1.msg_type == node2.msg_type and node1.expressions == node2.expressions
             elif isinstance(node1, Motion):
-                return node1.motions == node2.motions
+                for i, m1 in enumerate(node1.motions):
+                    m2 = node2.motions[i]
+                    if not m1.shift_delay_check(m2):
+                        return False
+                return True
             else:
                 return True
         #pruning
@@ -370,7 +374,6 @@ class ChoreographyExecutor:
         while changed:
             changed = False
             for s1 in allStates:
-                print(s1, "==>", compatible[s1])
                 for s2 in copy(compatible[s1]):
                     if not same(s1, s2):
                         changed = True
@@ -395,12 +398,12 @@ class ChoreographyExecutor:
         visited = set()
         choreography.start_state = findRep(choreography.start_state)
         frontier = { choreography.start_state }
-        while len(frontier) > 1:
+        while len(frontier) > 0:
             state = frontier.pop()
             if not state in visited:
                 visited.add(state)
                 node = state_to_node[state]
-                for i,e in end_state(node.end_state):
+                for i,e in enumerate(node.end_state):
                     r = findRep(e)
                     frontier.add(r)
                     node.end_state[i] = r
@@ -449,11 +452,11 @@ class ChoreographyExecutor:
         if debug:
             print("-- after remove indirections --")
             print(choreography)
-        self.removeForkJoin(choreography, state_to_node)
+        self.removeForkJoin(choreography, state_to_node, debug)
         if debug:
             print("-- after remove fork/join --")
             print(choreography)
-        self.minimize(choreography, state_to_node)
+        self.minimize(choreography, state_to_node, debug)
         if debug:
             print("-- after minimize --")
             print(choreography)
