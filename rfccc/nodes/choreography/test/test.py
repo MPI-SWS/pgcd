@@ -3,6 +3,8 @@ import sys
 import parser as rp
 import choreography.executor_chor as exec
 import unittest
+from experiments_setups import *
+from vectorize_spec import *
 
 
 # The example from the paper
@@ -15,8 +17,8 @@ def cartAndArmFetch():
             x3 + x6 = x4
             x4 = [sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1] x5 + [sqrt((C_x - 2)**2 + (C_y - 0)**2) <= 0.1] x7
             x5 = (C : MoveFromTo(Pnt(0,0,0), Pnt(2,0,0)), A : Idle()) ; x6
-            x7 = C -> A : action(grab) ; x8
-            x8 = ( C : Idle(), A : Grab(target)) ; x9
+            x7 = C -> A : Grab(Pnt(2.2,0,0)) ; x8
+            x8 = ( C : Idle(), A : Grab(Pnt(2.2,0,0))) ; x9
             x9 = A -> C : state(grabbed) ; x10
             x10 = C -> A : action(fold) ; x11
             x11 = (C : Idle(), A : Fold()) ; x12
@@ -70,9 +72,9 @@ def binSorting():
 
             # B makes a choice whether is it going to put an object in a bin (B_dummy is a dummy variable to track the choice back to B)
             x2 = [B_dummy >= 0] x3 + [B_dummy <= 1]x4 + [B_dummy >= 0]x5
-            x3 = B -> A : useBin(0); x6
-            x4 = B -> A : useBin(1); x7
-            x5 = B -> A : useBin(2); x8
+            x3 = B -> A : none(); x6
+            x4 = B -> A : useBin1(); x7
+            x5 = B -> A : useBin2(); x8
 
             # choice at A
             x6 = [A_dummy >= 0]x10 + [A_dummy <= 1]x11 + [A_dummy >= 0]x12
@@ -109,22 +111,21 @@ def binSorting():
 # - while the cart is busy with A/B then B/A can do something else
 def ferry():
     return ''' Ferry =
-        def x0 = (A: idle(), B: idle(), C: idle()); ca
-            # x1 + cb2a1 = ca
+        def x0 = (A1: idle(), A2: idle(), C: idle()); ca
             ca = ca1 || ca3
-            ca1 = (B: idle()); ca2
-            ca3 = C -> A : rdy(); ca4
-            ca4 = (A: putOnCart(), C: idle()); ca5
-            ca5 = A -> C : done(); ca6
+            ca1 = (A2: idle()); ca2
+            ca3 = C -> A1 : rdy(); ca4
+            ca4 = (A1: putOnCart(), C: idle()); ca5
+            ca5 = A1 -> C : done(); ca6
             ca2 || ca6 = ca2b
-            ca2b = (A: idle(), B: idle(), C: moveToB()); cb
+            ca2b = (A1: idle(), A2: idle(), C: moveFromTo(Pnt(-1,0,0), Pnt(1,0,0))); cb
             cb = cb1 || cb3
-            cb1 = (A: idle()); cb2
-            cb3 = C -> B : rdy(); cb4
-            cb4 = (A: getFromCart(), C: idle()); cb5
-            cb5 = B -> C : done(); cb6
+            cb1 = (A1: idle()); cb2
+            cb3 = C -> A2 : rdy(); cb4
+            cb4 = (A2: getFromCart(), C: idle()); cb5
+            cb5 = A2 -> C : done(); cb6
             cb2 || cb6 = cb2a
-            cb2a = (A: idle(), B: idle(), C: moveToA()); ca2b1
+            cb2a = (A1: idle(), A2: idle(), C: moveFromTo(Pnt(1,0,0), Pnt(-1,0,0))); ca2b1
             ca2b1 = end
         in [true] x0
     '''
@@ -215,10 +216,17 @@ def nomraliztion_err():
         in [true] x0
     '''
 
-def run(ch, shouldSucceed = True):
+def run(ch, components = None, shouldSucceed = True):
     try:
         visitor = exec.ChoreographyExecutor()
         visitor.execute(ch)
+        if (components != None):
+            vectorize(visitor.parser.state_to_node, components)
+            processes = components.allProcesses()
+            for p in processes:
+                proj, state_to_node = visitor.project(p.name(), p, True)
+                print("== Projection ==")
+                print(proj)
         passed = True
     except Exception as e:
         passed = False
@@ -232,35 +240,35 @@ class ChoreograhyTests(unittest.TestCase):
     if len(exec.Choreography.initialized_components) == 0:
         print('WARNING: no components initialized, this is only for debugging purposes...')
 
-    def test_fetch(self):
-        run(cartAndArmFetch())
+#   def test_fetch(self):
+#       run(cartAndArmFetch(), cartAndArmWorld())
 
-    def test_handover(self):
-        run(armsHandover())
+#   def test_handover(self):
+#       run(armsHandover(), armsHandoverWorld())
 
     def test_sorting(self):
-        run(binSorting())
+        run(binSorting(), binSortingWorld())
 
-    def test_ferry(self):
-        run(ferry())
+#   def test_ferry(self):
+#       run(ferry(), ferryWorld())
 
     def test_err1(self):
-        run(funny_thread_partition(), False)
+        run(funny_thread_partition(), shouldSucceed = False)
 
     def test_ok1(self):
         run(causal_ok())
 
     def test_err2(self):
-        run(causal_err(), False)
+        run(causal_err(), shouldSucceed = False)
 
     def test_err4(self):
-        run(causal_loop_err(), False)
+        run(causal_loop_err(), shouldSucceed = False)
 
     def test_err3(self):
-        run(causal_independent_err(), False)
+        run(causal_independent_err(), shouldSucceed = False)
 
     def test_funny_causal(self):
-        run(funny_fine_but_not_causal(), False)
+        run(funny_fine_but_not_causal(), shouldSucceed = False)
 
 
 if __name__ == '__main__':

@@ -1,24 +1,28 @@
 from ast_chor import *
 from sympy import *
 from spec import *
+from copy import *
 
 
 
 def CreateProjectionFromChoreography(choreography, projection_name, process):
     ''' Creates a projection of a choreography on process '''
-    chor_proj = ChoreographyProjection(projection_name, [], choreography.start_state, choreography.end_state,
-                                       process.name())
+    pred = True
+    for c in And.make_args(choreography.predicate):
+        if set(c.free_symbols) <=  set(process.variables()):
+            pred = And(pred, c)
+    chor_proj = ChoreographyProjection(projection_name, [], pred, choreography.start_state, process.name())
     state_to_node = {}
 
     for node in choreography.statements:
 
         if isinstance(node, Message):
             if node.comp1 == process.name():
-                chor_proj.statements.append(
-                    SendMessage(node.start_state, node.comp2, node.msg_type, node.expressions, node.end_state))
+                node2 = SendMessage(node.start_state, node.comp2, node.msg_type, node.expressions, node.end_state)
+                chor_proj.statements.append(node2)
             elif node.comp2 == process.name():
-                chor_proj.statements.append(
-                    ReceiveMessage(node.start_state, node.msg_type, node.expressions, node.end_state))
+                node2 = ReceiveMessage(node.start_state, node.msg_type, node.expressions, node.end_state)
+                chor_proj.statements.append(node2)
             else:
                 chor_proj.statements.append(Indirection(node.start_state, node.end_state))
 
@@ -26,21 +30,20 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
             motions = []
             for x in node.motions:
                 if x.id == process.name():
-                    chor_proj.statements.append(node)
-                    continue
-                motions.append(x.mp_name)
-            chor_proj.statements.append(
-                Motion(node.start_state, [MotionArg(process, "wait", sympify(1))],  # TODO DZ: fix that later
-                       node.end_state))
+                    motions.append(x)
+            if motions == []:
+                motions.append(MotionArg(process.name(), "wait", [sympify(1)])) # TODO DZ: fix the duration later
+            n2 = Motion(node.start_state, motions, node.end_state)
+            chor_proj.statements.append(n2)
 
         elif isinstance(node, GuardedChoice):
-            if set(node.guarded_states.expression.free_symbols) | \
-                    set(node.guarded_states.expression.atoms(Function)) <= process.ownVariables(): # TODO is this good?
+            if all([set(g.expression.free_symbols) <= set(process.variables()) for g in node.guarded_states]):
                 chor_proj.statements.append(node)
             else:
-                chor_proj.statements.append(ExternalChoice(node.start_state, [x.id for x in node.end_state]))
+                chor_proj.statements.append(ExternalChoice(node.start_state, [x.id for x in node.guarded_states]))
+
         else:
-            chor_proj.statements.append(node)
+            chor_proj.statements.append(copy(node))
 
         last = chor_proj.statements[-1]
         for state in last.start_state:
@@ -79,11 +82,10 @@ class SendMessage(DistributedStateNode):
         self.expressions = exps
 
     def __str__(self):
-        string = 'Message'
-        string += self.start_state[0] + '=' + self.receiver + '!' + self.msg_type + '('
+        string = self.start_state[0] + ' = ' + self.receiver + '!' + self.msg_type + '('
         for x in self.expressions:
             string += str(x)
-        string += ');' + self.end_state[0]
+        string += '); ' + self.end_state[0]
         return string
 
     def accept(self, visitor):
@@ -101,11 +103,9 @@ class ReceiveMessage(DistributedStateNode):
         self.expressions = expressions
 
     def __str__(self):
-        string = 'Message'
-        string += self.start_state[0] + '= ?' + self.msg_type + '('
-        for x in self.expressions:
-            string += str(x)
-        string += ');' + self.end_state[0]
+        string = self.start_state[0] + ' = ?' + self.msg_type + '('
+        string += ', '.join([str(x) for x in self.expressions])
+        string += '); ' + self.end_state[0]
         return string
 
     def accept(self, visitor):
@@ -137,7 +137,7 @@ class ExternalChoice(DistributedStateNode):
         DistributedStateNode.__init__(self, Type.external_choice, start_state, end_state)
 
     def __str__(self):
-        string = ''.join(self.start_state) + '='
+        string = ''.join(self.start_state) + ' = '
         for x in self.end_state:
             string += str(x)
             if x != self.end_state[-1]:
