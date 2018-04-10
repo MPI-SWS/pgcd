@@ -69,6 +69,14 @@ class Choreography(DistributedStateNode):
     def accept(self, visitor):
         visitor.visit(self)
 
+    def mk_state_to_node(self):
+        state_to_node = {}
+        for s in self.statements:
+            for pre in s.start_state:
+                assert not pre in state_to_node
+                state_to_node[pre] = s
+        return state_to_node
+
     # def __eq__(self, o: Node) -> bool:
     #     if super().__eq__(o):
     #         for first, second in zip(self.statements, o.statements):
@@ -133,7 +141,7 @@ class Motion(DistributedStateNode):
         self.motions = motions
 
     def __str__(self):
-        string = ''.join(self.start_state) + '= ('
+        string = ''.join(self.start_state) + ' = ('
         for x in self.motions:
             string += str(x)
             if x != self.motions[-1]:
@@ -172,7 +180,7 @@ class MotionArg(Node):
         Choreography.initialized_components.add(id)
 
     def __str__(self):
-        string = self.id + ': ' + self.mp_name + "("
+        string = str(self.id) + ': ' + self.mp_name + "("
         string += ", ".join([str(a) for a in self.mp_args]) + ')'
         return string
 
@@ -196,11 +204,11 @@ class GuardedChoice(DistributedStateNode):
         self.guarded_states = continue_state
 
     def __str__(self):
-        string = ''.join(self.start_state) + '='
+        string = ''.join(self.start_state) + ' = '
         for x in self.guarded_states:
             string += str(x)
             if x != self.guarded_states[-1]:
-                string += '+'
+                string += ' + '
         return string
 
     def accept(self, visitor):
@@ -243,7 +251,7 @@ class GuardArg(Node):
     def __str__(self):
         string = '['
         string += str(self.expression)
-        string += ']' + str(self.id)
+        string += '] ' + str(self.id)
         return string
 
     def accept(self, visitor):
@@ -270,7 +278,7 @@ class Merge(DistributedStateNode):
             string += str(x)
             if x != self.start_state[-1]:
                 string += ' + '
-        string += '=' + ''.join(self.end_state)
+        string += ' = ' + ''.join(self.end_state)
         return string
 
     def accept(self, visitor):
@@ -292,7 +300,7 @@ class Fork(DistributedStateNode):
         DistributedStateNode.__init__(self, Type.fork, start_state, continue_state)
 
     def __str__(self):
-        string = ''.join(self.start_state) + '='
+        string = ''.join(self.start_state) + ' = '
         for x in self.end_state:
             string += str(x)
             if x != self.end_state[-1]:
@@ -318,7 +326,7 @@ class Join(DistributedStateNode):
             string += str(x)
             if x != self.start_state[-1]:
                 string += '||'
-        string += '=' + ''.join(self.end_state)
+        string += ' = ' + ''.join(self.end_state)
         return string
 
     def accept(self, visitor):
@@ -334,7 +342,7 @@ class End(DistributedStateNode):
         DistributedStateNode.__init__(self, Type.end, start_state, [])
 
     def __str__(self):
-        return ''.join(self.start_state) + '=' + 'end'
+        return ''.join(self.start_state) + ' = end'
 
     def accept(self, visitor):
         visitor.visit(self)

@@ -2,7 +2,7 @@
 from ast_chor import *
 from sympy import *
 
-def vectorize(state_to_node, world):
+def vectorize(choreography, world):
     '''replace variables by vectors in the world's frame'''
     #interpret function Vec(x,y,z) as constructor for vectors
     #interpret function Pnt(x,y,z) as constructor for point
@@ -41,11 +41,11 @@ def vectorize(state_to_node, world):
                 return pt
         elif isinstance(expr, Function) and str(expr.func) == "Vec":
             assert len(expr.args) == 3
-            name = "Vector_"+str(expr.args[0])+"_"+str(expr.args[2])+"_"+str(expr.args[2])
+            name = "Vector_"+str(expr.args[0])+"_"+str(expr.args[1])+"_"+str(expr.args[2])
             return f.locate_new(name, expr.args[0] * f.i + expr.args[1] * f.j + expr.args[2] * f.k)
         elif isinstance(expr, Function) and str(expr.func) == "Pnt":
             assert len(expr.args) == 3
-            name = "point_"+str(expr.args[0])+"_"+str(expr.args[2])+"_"+str(expr.args[2])
+            name = "point_"+str(expr.args[0])+"_"+str(expr.args[1])+"_"+str(expr.args[2])
             return f.origin.locate_new(name, expr.args[0] * f.i + expr.args[1] * f.j + expr.args[2] * f.k)
         elif isinstance(expr, AtomicExpr):
             return expr
@@ -57,19 +57,13 @@ def vectorize(state_to_node, world):
             #print(args2)
             return expr.func(*args2)
         else:
-            print(expr)
-            print(type(expr))
+            #print(expr)
+            #print(type(expr))
             return expr
 
-    def updateMessage(msg):
-        try:
-            msg.func(*[updateSympyExpr(a) for a in msg.args])
-        except:
-            return msg
-
-    for node in state_to_node.values():
+    for node in choreography.statements:
         if isinstance(node, Message):
-            expressions2 = [ updateMessage(e) for e in node.expressions ]
+            expressions2 = [ updateSympyExpr(e) for e in node.expressions ]
             node.expressions = expressions2
         elif isinstance(node, GuardedChoice):
             for gs in node.guarded_states:

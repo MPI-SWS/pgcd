@@ -32,7 +32,7 @@ class PredTrackerTests(unittest.TestCase):
         w = experiments_setups.cartAndArmWorld()
         t = ProcessesPredicatesTracker(w.allProcesses())
         self.assertEqual(t.equals(t), True)
-    
+
     def test_05(self):
         w = experiments_setups.cartAndArmWorld()
         t1 = ProcessesPredicatesTracker(w.allProcesses())
@@ -57,7 +57,7 @@ class PredTrackerTests(unittest.TestCase):
         pred = And(pred1, pred2)
         t.addFormula(pred)
         self.assertEqual(t.pred(), pred)
-    
+
     def test_07(self):
         w = experiments_setups.cartAndArmWorld()
         t1 = ProcessesPredicatesTracker(w.allProcesses())

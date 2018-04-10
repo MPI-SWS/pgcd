@@ -6,7 +6,7 @@ from geometry import *
 
 # model for a generic arm as 3 linkage connected by revolute actuators
 class Arm(Process):
-    
+
     def __init__(self, name, parent, index = 0):
         super().__init__(name, parent, index)
         # default dimensions
@@ -33,7 +33,10 @@ class Arm(Process):
         Idle(self)
         Grab(self)
         PutInBin(self)
-    
+        MoveTo(self)
+        OpenGripper(self)
+        CloseGripper(self)
+
     def frame(self):
         return self._frame
 
@@ -48,16 +51,16 @@ class Arm(Process):
     def gamma(self):
         '''rotation along the Z-axis (base)'''
         return self._c
-    
+
     def internalVariables(self):
         return [self._a, self._b, self._c, Symbol(self._name + '_dummy')]
-    
+
     def ownResources(self, point):
         baseFP = cylinder(self._base, self.baseRadius, self.baseHeight, point)
         upperFP = cylinder(self._upper, self.upperArmRadius, self.upperArmLength, point)
         lowerFP = cylinder(self._lower, self.lowerArmRadius, self.lowerArmLength, point)
         return Or(baseFP, upperFP, lowerFP)
-    
+
     def abstractResources(self, point, delta = 0.0):
         f = self.frame()
         # that one is very abstract
@@ -66,7 +69,7 @@ class Arm(Process):
         r2 = sqrt( r1**2 + self.lowerArmLength**2 - 2 * r1 * self.lowerArmLength * cos(mp.pi - self._a))
         r = r2 + self.upperArmRadius + delta
         return halfSphere(f, r, f.k, point)
-    
+
     def mountingPoint(self, index):
         assert(index == 0)
         return self._effector
@@ -79,20 +82,20 @@ class Arm(Process):
         return And(domain_a, domain_b, domain_c)
 
 class Fold(MotionPrimitiveFactory):
-    
+
     def __init__(self, component):
         super().__init__(component)
 
     def parameters(self):
         return []
-    
+
     def setParameters(self, args):
         assert(len(args) == 0)
         return ArmFold(self.name(), self._component)
 
 
 class ArmFold(MotionPrimitive):
-    
+
     def __init__(self, name, component):
         super().__init__(name, component)
 
@@ -103,16 +106,16 @@ class ArmFold(MotionPrimitive):
         a = Eq(self._component.alpha(), mp.pi/2)
         b = Eq(self._component.beta(), mp.pi/2)
         return And(a, b)
-    
+
     def inv(self):
         return S.true
-    
+
     def preFP(self, point):
         return self._component.abstractResources(point, 0.05)
-    
+
     def postFP(self, point):
         return self._component.abstractResources(point, 0.05)
-    
+
     def invFP(self, point):
         i = self._component.abstractResources(point, 0.05)
         return self.timify(i)
@@ -124,13 +127,13 @@ class Idle(MotionPrimitiveFactory):
 
     def parameters(self):
         return []
-    
+
     def setParameters(self, args):
         assert(len(args) == 0)
         return ArmIdle(self.name(), self._component)
 
 class ArmIdle(MotionPrimitive):
-    
+
     def __init__(self, name, component):
         super().__init__(name, component)
 
@@ -142,22 +145,22 @@ class ArmIdle(MotionPrimitive):
 
     def post(self):
         return S.true
-    
+
     def inv(self):
         return S.true
-    
+
     def preFP(self, point):
         return self._component.abstractResources(point, 0.05)
-    
+
     def postFP(self, point):
         return self._component.abstractResources(point, 0.05)
-    
+
     def invFP(self, point):
         i = self._component.abstractResources(point, 0.05)
         return self.timify(i)
 
 class Grab(MotionPrimitiveFactory):
-    
+
     def __init__(self, component):
         super().__init__(component)
 
@@ -181,22 +184,22 @@ class ArmGrab(MotionPrimitive):
 
     def post(self):
         return S.true
-    
+
     def inv(self):
         return S.true
-    
+
     def preFP(self, point):
         return self._component.abstractResources(point, 0.05)
-    
+
     def postFP(self, point):
         return self._component.abstractResources(point, 0.05)
-    
+
     def invFP(self, point):
         i = self._component.abstractResources(point, 0.05)
         return self.timify(i)
 
 class PutInBin(MotionPrimitiveFactory):
-    
+
     def __init__(self, component):
         super().__init__(component)
 
@@ -238,24 +241,24 @@ class ArmPutInBin(MotionPrimitive):
 
     def post(self):
         return self.neutral()
-    
+
     def inv(self):
         return And(self._component.gamma() >= self._minGamma, self._component.gamma() <= self._maxGamma)
-    
+
     def preFP(self, point):
         withoutGamma = self._component.abstractResources(point, 0.05)
         f = self._component.frame()
         gMin = halfSpace(f,  f.j, point, self._component.baseRadius + 0.05)
         gMax = halfSpace(f, -f.j, point, self._component.baseRadius + 0.05)
         return And(withoutGamma, gMin, gMax)
-    
+
     def postFP(self, point):
         withoutGamma = self._component.abstractResources(point, 0.05)
         f = self._component.frame()
         gMin = halfSpace(f,  f.j, point, self._component.baseRadius + 0.05)
         gMax = halfSpace(f, -f.j, point, self._component.baseRadius + 0.05)
         return And(withoutGamma, gMin, gMax)
-    
+
     def invFP(self, point):
         withoutGamma = self._component.abstractResources(point, 0.05)
         f = self._component.frame()
@@ -263,7 +266,7 @@ class ArmPutInBin(MotionPrimitive):
         gMax = halfSpace(f, -f.orient_new_axis("maxGammaBound", self._maxGamma, f.k).j, point, self._component.baseRadius + 0.05)
         return self.timify(And(withoutGamma, gMin, gMax))
 
-# since we don't preciely model the gripper, it is like idle
+# since we don't precisely model the gripper, it is like idle
 class CloseGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -271,12 +274,12 @@ class CloseGripper(MotionPrimitiveFactory):
 
     def parameters(self):
         return []
-    
+
     def setParameters(self, args):
         assert(len(args) == 0)
         return ArmIdle(self.name(), self._component)
 
-# since we don't preciely model the gripper, it is like idle
+# since we don't precisely model the gripper, it is like idle
 class OpenGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -284,8 +287,51 @@ class OpenGripper(MotionPrimitiveFactory):
 
     def parameters(self):
         return []
-    
+
     def setParameters(self, args):
         assert(len(args) == 0)
         return ArmIdle(self.name(), self._component)
 
+class MoveTo(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ["target"]
+
+    def setParameters(self, args):
+        assert(len(args) == 1)
+        return ArmMoveTo(self.name(), self._component, args[0])
+
+class ArmMoveTo(MotionPrimitive):
+
+    def __init__(self, name, component, target):
+        super().__init__(name, component)
+        self._target = target
+
+    def pre(self):
+        maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.gripperReach
+        #TODO min distance
+        dist = distance(self._component._upper.origin, self._target)
+        pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
+        return And(pos <= dist, dist <= maxRadius)
+
+    def post(self):
+        effector = self._component.mountingPoint(0).origin
+        return distance(effector, self._target) <= 0.01
+
+    def inv(self):
+        dist = distance(self._component._upper.origin, self._target)
+        pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
+        return pos <= dist
+
+    def preFP(self, point):
+        return self._component.abstractResources(point, 0.05)
+
+    def postFP(self, point):
+        return self._component.abstractResources(point, 0.05)
+
+    def invFP(self, point):
+        i = self._component.abstractResources(point, 0.05)
+        return self.timify(i)

@@ -6,7 +6,7 @@ from geometry import *
 
 # cart
 class Cart(Process):
-    
+
     def __init__(self, name, world, index = 0):
         super().__init__(name, world, index)
         # dimensions
@@ -23,7 +23,7 @@ class Cart(Process):
         # motion primitives
         MoveFromTo(self)
         Idle(self)
-    
+
     def position(self):
         f = self.frame()
         return f.orient_new_axis(self._name + '_position', self._theta, f.k, location = self._position)
@@ -31,40 +31,40 @@ class Cart(Process):
     def frame(self):
         # reuse the parent's position
         return self._parent.frame()
-    
+
     def invariant(self):
         rng = 0.01 #bound on the space in which the cart travel around the origin FIXME dreal get slow...
         return And(self._theta >= -mp.pi, self._theta <= mp.pi, self._x <= rng, self._x >= -rng, self._y <= rng, self._y >= -rng)
 
     def outputVariables(self):
         return [self._x, self._y, self._theta]
-    
+
     def mountingPoint(self, index):
         assert(index == 0)
         return self._mount
-    
+
     def ownResources(self, point):
         return cylinder(self.position(), self.radius, self.height, point)
-    
+
     def abstractResources(self, point, deltaXY = 0.0, deltaXYZ = 0.0):
         return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
 
 
 class MoveFromTo(MotionPrimitiveFactory):
-    
+
     def __init__(self, component):
         super().__init__(component)
 
     def parameters(self):
         return ['source', 'target']
-    
+
     def setParameters(self, args):
         assert(len(args) == 2)
         return CartMove(self.name(), self._component, args[0], args[1])
 
 
 class CartMove(MotionPrimitive):
-    
+
     def __init__(self, name, component, src, dst):
         super().__init__(name, component)
         self._frame = self._component.frame()
@@ -82,7 +82,7 @@ class CartMove(MotionPrimitive):
 
     def _srcFrame(self):
         return self._frame.locate_new("src", self._locAsVec(self._src))
-    
+
     def _dstFrame(self):
         return self._frame.locate_new("dst", self._locAsVec(self._dst))
 
@@ -95,18 +95,18 @@ class CartMove(MotionPrimitive):
         onGround = self._onGround(self._component.position())
         workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxError, self._maxError, 0.0)
         return And(onGround, workSpace)
-    
+
     def inv(self):
         onGround = self._onGround(self._component.position())
         workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxError)
         return self.timify(And(onGround, workSpace))
-    
+
     def preFP(self, point):
         return self._component.abstractResources(point, self._maxError, 0.005)
-    
+
     def postFP(self, point):
         return self._component.abstractResources(point, self._maxError, 0.005)
-    
+
     def invFP(self, point):
         dst_height = self._dst.locate_new('dsth', self._frame.k * self._height)
         i = cube(self._frame, self._src, dst_height, point, self._maxError + self._radius, self._maxError + self._radius, 0.005)
@@ -119,13 +119,13 @@ class Idle(MotionPrimitiveFactory):
 
     def parameters(self):
         return []
-    
+
     def setParameters(self, args):
         assert(len(args) == 0)
         return CartIdle(self.name(), self._component)
 
 class CartIdle(MotionPrimitive):
-    
+
     def __init__(self, name, component):
         super().__init__(name, component)
 
@@ -137,16 +137,16 @@ class CartIdle(MotionPrimitive):
 
     def post(self):
         return S.true
-    
+
     def inv(self):
         return S.true
-    
+
     def preFP(self, point):
         return self._component.abstractResources(point, 0.0, 0.005)
-    
+
     def postFP(self, point):
         return self._component.abstractResources(point, 0.0, 0.005)
-    
+
     def invFP(self, point):
         i = self._component.abstractResources(point, 0.0, 0.005)
         return self.timify(i)
