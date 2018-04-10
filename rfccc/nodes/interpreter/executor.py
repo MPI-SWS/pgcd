@@ -95,9 +95,11 @@ class Executor:
         self.pub = rospy.Publisher("/" + component, msg_type, queue_size=1)
         print(self.id + ' ', end='')
         while self.pub.get_num_connections() == 0:
+            #print('visit_send wait connect')
             pass
         print('sent> ' + component)
         while self.pub.get_num_connections() != 0:
+            #print('visit_send wait disconnect')
             self.pub.publish(message)
         print('stop sending> ' + self.id)
         self.pub.unregister()
@@ -113,6 +115,7 @@ class Executor:
                                  callback_args=action,
                                  queue_size=1)
         while self.waiting_msg:
+            #print('visit_rceive wait')
             self.visit_motion(node.motion)
 
     def process_msg(self, msg, args):
@@ -142,7 +145,8 @@ class Executor:
         listener = tf2_ros.TransformListener(tfBuffer)
         # print("-----> 3")
         print("Waiting transformation between: ", getattr(msg, 'source_frame'), self.id, end='')
-        while true:
+        while True:
+            #print('transform_slots transform')
             try:
 
                 trans = tfBuffer.lookup_transform(getattr(msg, 'source_frame'), self.id, rospy.Time())
@@ -187,6 +191,7 @@ class Executor:
         while val:
             node.program.accept(self)
             val = self.calculate_sympy_exp(node.condition)
+            #print('visit_while transform')
 
     def visit_assign(self, node):
         self.__setattr__(node.id, self.calculate_sympy_exp(node.value))

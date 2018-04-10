@@ -16,11 +16,10 @@ class TFUpdater:
         self.component = component
         self.pub_tf = rospy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=1)
         if component is not None:
-            self.timer = rospy.Timer(rospy.Duration(nsecs=50), self.set_up_broadcaster)
+            self.timer = rospy.Timer(rospy.Duration(nsecs=1000000), self.set_up_broadcaster)
         else:
             self.rand = random.randint(2, 5)
-            self.timer = rospy.Timer(rospy.Duration(nsecs=50), self.set_up_default_broadcaster)
-
+            self.timer = rospy.Timer(rospy.Duration(nsecs=1000000), self.set_up_default_broadcaster)
 
     def set_up_default_broadcaster(self, _):
         t = geometry_msgs.msg.TransformStamped()
