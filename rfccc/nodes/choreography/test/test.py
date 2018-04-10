@@ -281,7 +281,7 @@ class ChoreograhyTests(unittest.TestCase):
         run(binSorting(), binSortingWorld())
 
     def test_ferry(self):
-        run(ferry(), ferryWorld())
+        run(ferry(), ferryWorld(), debug = False)
 
     def test_err1(self):
         run(funny_thread_partition(), shouldSucceed = False)

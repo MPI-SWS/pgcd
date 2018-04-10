@@ -2,13 +2,10 @@ from spec import *
 from ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
+from vc import *
 import copy
 import logging
 import functools
-from DrealInterface import DrealInterface
-
-# need to traverse the choreo, collect the init/pre/post/guard and propagate ...
-# For each process we keep a formula in DNF
 
 def getConjuncts(expr):
     return list(And.make_args(expr))
@@ -54,44 +51,6 @@ def processForMotion(processes, motion):
         return candidates.pop()
     else:
         raise Exception("more than one process for motion primitive " + motion.id + " -> " + str(candidates))
-
-class VC:
-
-    def __init__(self, title, formulas, shouldBeSat = False):
-        self.title = title
-        #self.formulas = [ simplify_logic(f) for f in formulas ] # a list of formula from imprecise (easy to solve) to precise (hard to solve)
-        self.formulas = formulas
-        self.sat = shouldBeSat
-
-    def __str__(self):
-        sat = ""
-        if self.sat:
-            sat = "sat"
-        else:
-            sat = "unsat"
-        return "VC(" + self.title + ", " + str(self.formulas) + "," + sat + ")"
-
-    def discharge(self, debug = False):
-        if debug:
-            sat = ""
-            if self.sat:
-                sat = " (sat)"
-            else:
-                sat = " (unsat)"
-            print("VC: " + self.title + sat)
-        for f in self.formulas:
-            #f2 = to_cnf(f)
-            f3 = getConjuncts(f)
-            if debug:
-                for f in f3:
-                    print(f)
-            dr = DrealInterface(debug = debug)
-            res, model = dr.run(f3)
-            if res == None:
-                return False
-            elif res == self.sat:
-                return True
-        return False
 
 class ProcessPredicatesTracker:
 
