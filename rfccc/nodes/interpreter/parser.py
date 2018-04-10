@@ -54,7 +54,7 @@ class Parser:
         p[0] = Receive(p[3], p[6])
 
     def p_send_msg(self, p):
-        'send : SEND LPAREN COMPONENT_ID COMMA MSGTYPE COMMA args RPAREN'
+        '''send : SEND LPAREN COMPONENT_ID COMMA MSGTYPE COMMA args RPAREN'''
         p[0] = Send(p[3], p[5], p[7])
 
     def p_if_code(self, p):

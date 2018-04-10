@@ -5,13 +5,15 @@ point_sum = 0;
 # RECEIVING DATA WILL HAVE NAME: givenDataName + _ + messagePartName
 # got parameters: angles_yaw, angles_pitch, angles_roll
 receive(m_Idle){(msg_Point, point, { point_sum = point_sum + point_y })};
-
+print("Checkpoint t1 ->");
 while( point_sum > -3)
 {
     # ID, MSG, msg_param1, msg_param2, ...
-    send(id_arm, msg_OK, curr_angle_pitch);
+    send(id_arm, msg_OK, 1);
+    print("Checkpoint t2 -> ");
     receive(m_Idle){(msg_Point, point, { point_sum = point_sum + point_x })};
-    print(id, pont_x, point_y, point_z)
+    print("Checkpoint t3");
+    print(id, point_x, point_y, point_z)
 };
 
 print("FINISHED TOOL")

@@ -1,1 +1,1 @@
-string message
+float32 message

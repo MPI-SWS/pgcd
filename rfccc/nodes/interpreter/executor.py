@@ -9,6 +9,8 @@ import geometry_msgs.msg as geom
 import tf2_geometry_msgs
 from std_msgs.msg import Header
 import tf
+import time
+
 import numpy as np
 import tf2_ros.buffer_interface
 
@@ -34,7 +36,6 @@ class Executor:
 
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
-
         for fs in sympy_exp.free_symbols:
             subs[fs] = self.__getattribute__(str(fs))
         expr2 = sympy_exp.subs(subs)
@@ -90,81 +91,86 @@ class Executor:
         for name, val in zip(message.__slots__, values):
             setattr(message, name, val)
 
-        print("/" + component, )
-        self.pub = rospy.Publisher("/" + component, msg_type, queue_size=3)
+        # print("/" + component, )
+        self.pub = rospy.Publisher("/" + component, msg_type, queue_size=1)
         print(self.id + ' ', end='')
         while self.pub.get_num_connections() == 0:
-            print('-', end='')
-            rospy.sleep(0.2)
-        print('> ' + component)
-        self.pub.publish(message)
+            pass
+        print('sent> ' + component)
         while self.pub.get_num_connections() != 0:
-            rospy.sleep(0.05)
+            self.pub.publish(message)
+        print('stop sending> ' + self.id)
         self.pub.unregister()
 
     def visit_receive(self, node):
         actions = [a.accept(self) for a in node.actions]
         self.waiting_msg = True
         for action in actions:
-            print("/" + self.id)
+            # print("/" + self.id)
             self.subs["/" + self.id + '/' + action['msg_type'].__name__] = \
                 rospy.Subscriber("/" + self.id, action['msg_type'],
                                  self.process_msg,
                                  callback_args=action,
-                                 queue_size=100)
+                                 queue_size=1)
         while self.waiting_msg:
             self.visit_motion(node.motion)
-            rospy.sleep(0.01)
 
     def process_msg(self, msg, args):
-        with self.lock:
-            if self.waiting_msg:
-                for key in self.subs.keys():
-                    self.subs[key].unregister()
+        if self.waiting_msg:
+            print('stop receiving> ' + self.id)
+            for key in self.subs.keys():
+                self.subs[key].unregister()
 
-                if type(msg) == rfccc.msg.Point or type(msg) == rfccc.msg.Move:
-                    self.transform_slots(msg, args)
-                else:
-                    for name in msg.__slots__:
-                        self.__setattr__(args['data_name'] + '_' + name, getattr(msg, name))
-                args['program'].accept(self)
-                self.waiting_msg = False
+            if 'source_frame' in msg.__slots__:
+                self.transform_slots(msg, args)
+            else:
+                for name in msg.__slots__:
+                    print("\nSetting:", args['data_name'] + '_' + name, getattr(msg, name))
+                    self.__setattr__(args['data_name'] + '_' + name, getattr(msg, name))
+            args['program'].accept(self)
+            self.waiting_msg = False
+
 
     def transform_slots(self, msg, args):
-        print("-----> 1")
+        # print("-----> 1")
+        a = time.time()
         source_pt = np.ones([4])
-        source_pt[0], source_pt[1], source_pt[2], source_pt[3] =getattr(msg, 'x'), getattr(msg, 'y'), getattr(msg, 'z'), 1
+        source_pt[0], source_pt[1], source_pt[2], source_pt[3] = getattr(msg, 'x'), getattr(msg, 'y'), getattr(msg,
+                                                                                                               'z'), 1
         tfBuffer = tf2_ros.Buffer()
-        print("-----> 2")
+        # print("-----> 2")
         listener = tf2_ros.TransformListener(tfBuffer)
-        print("-----> 3")
-        print("transforming", end='')
+        # print("-----> 3")
+        print("Waiting transformation between: ", getattr(msg, 'source_frame'), self.id, end='')
         while true:
             try:
+
                 trans = tfBuffer.lookup_transform(getattr(msg, 'source_frame'), self.id, rospy.Time())
-                print("-----> 3.5")
-                x =  tf.transformations.quaternion_matrix(np.array([trans.transform.rotation.x,
-                                                                    trans.transform.rotation.y,
-                                                                    trans.transform.rotation.z,
-                                                                    trans.transform.rotation.w]))
-                print("-----> 3.6")
+                x = tf.transformations.quaternion_matrix(np.array([trans.transform.rotation.x,
+                                                                   trans.transform.rotation.y,
+                                                                   trans.transform.rotation.z,
+                                                                   trans.transform.rotation.w]))
+                # print("-----> 3.6")
                 x[0, 3] = trans.transform.translation.x
-                print("-----> 3.7")
                 x[1, 3] = trans.transform.translation.y
                 x[2, 3] = trans.transform.translation.z
                 end_pt = np.dot(x, source_pt)
-                print(x)
-                print(source_pt)
-                print(end_pt)
-
-                # for name in msg.__slots__:
-                #     print("setting")
-                #     self.__setattr__(args['data_name'] + '_' + name, getattr(end_pt, name))
+                # print(x)
+                # print(source_pt)
+                # print(end_pt)
+                k = 0
+                for name in msg.__slots__:
+                    if name == 'source_frame':
+                        continue
+                    print("\nSetting:", args['data_name'] + '_' + name, end_pt[k])
+                    self.__setattr__(args['data_name'] + '_' + name, end_pt[k])
+                    k += 1
+                break
                 # print("-----> 5")
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                print(".", end='')
+                # print(".", end='')
                 continue
-            break
+        print("Transform took seconds: " + str(time.time() - a))
 
     def visit_action(self, node):
         return {'msg_type': self.msg_types[node.str_msg_type], 'data_name': node.data_name, 'program': node.program}
@@ -186,7 +192,14 @@ class Executor:
         self.__setattr__(node.id, self.calculate_sympy_exp(node.value))
 
     def visit_motion(self, node):
-        pass
+        if not hasattr(self, node.value): pass
+        try:
+            getattr(self, node.value)(self.calculate_sympy_exp(x) for x in node.exps)
+        except Exception:
+            pass
 
     def visit_print(self, node):
-        print("Output:", str(node.arg))
+        if isinstance(node.arg, str):
+            print("Output:", str(node.arg))
+        else:
+            print("Output:", ','.join(str(self.calculate_sympy_exp(x)) for x in node.arg))

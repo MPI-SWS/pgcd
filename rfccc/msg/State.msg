@@ -1,1 +1,1 @@
-string state
+float32 state
