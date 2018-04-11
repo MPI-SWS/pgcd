@@ -30,7 +30,7 @@ class Node:
     def get_label(self):
         if (self._label == None):
             Node.label_num += 1
-            self._label = 'L' + Node.label_num
+            self._label = 'L' + str(Node.label_num)
         return self._label
 
     def label_as_root(self):
@@ -59,7 +59,7 @@ class Statement(Node):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
+        super().label(label_to_node)
         for c in self.children:
             c.label(label_to_node)
 
@@ -131,7 +131,7 @@ class Receive(Node):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        super.label(self, label_to_node)
+        super().label(label_to_node)
         self.motion.label(label_to_node)
         for c in self.actions:
             c.label(label_to_node)
@@ -156,8 +156,8 @@ class Action(Node):
         return visitor.visit(self)
 
     def label(self, label_to_node):
-        super.label(self, label_to_node)
-        program.label(label_to_node)
+        super().label(label_to_node)
+        self.program.label(label_to_node)
 
 class If(Node):
 
@@ -178,7 +178,7 @@ class If(Node):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        super.label(self, label_to_node)
+        super().label(label_to_node)
         for if_stmt in self.if_list:
             if_stmt.label(label_to_node)
 
@@ -215,7 +215,7 @@ class IfComponent(Node):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        super.label(self, label_to_node)
+        super().label(label_to_node)
         program.label(label_to_node)
 
 class While(Node):
@@ -236,7 +236,7 @@ class While(Node):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        super.label(self, label_to_node)
+        super().label(label_to_node)
         program.label(label_to_node)
 
 class Assign(Node):

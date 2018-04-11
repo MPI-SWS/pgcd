@@ -11,10 +11,11 @@ from copy import *
 
 class Refinement():
 
-    def __init__(self, program, projection. debug = False):
+    def __init__(self, program, projection, debug = False):
         self.debug = debug
         self.program = program
         self.projection = projection
+        self.state_to_node = projection.mk_state_to_node()
         self.cachedImplication = {}
         self.programLabels = program.label_as_root()
         self.initLabel = program.get_label()
@@ -23,7 +24,7 @@ class Refinement():
             print(program)
             print("> starting with", self.initLabel)
         self.nextLabel = { l:set() for l in self.programLabels }
-        buildCFA([], program)
+        self.buildCFA([], program)
         if debug:
             print("= CFA =")
             for l, s in self.nextLabel.items():
@@ -47,7 +48,7 @@ class Refinement():
             lastLabel = self.buildCFA(lastLabel, statment.program)
         elif isinstance(statment, ast_inter.If):
             lastLabel = { l for i in statment.if_list for l in self.buildCFA(lastLabel, i) }
-        elif isinstance(statment, ast_inter.IfComp):
+        elif isinstance(statment, ast_inter.IfComponent):
             lastLabel = self.buildCFA(lastLabel, statment.program)
         elif isinstance(statment, ast_inter.While):
             ls2 = self.buildCFA([], statment.program) # trick: the next of a while is the else case
@@ -58,7 +59,7 @@ class Refinement():
     def implies(self, cond1, cond2):
         if (cond1,cond2) in self.cachedImplication:
             return self.cachedImplication[(cond1,cond2)]
-        else
+        else:
             vc = VC("implication", And(cond1, Not(cond2)))
             res = vc.discharge()
             self.cachedImplication[(cond1,cond2)] = res
@@ -77,11 +78,20 @@ class Refinement():
             for elt in n:
                 return elt
 
+    def sameMpName(self, n1, n2):
+        return n1 == n2 or n1 == ('m_' + n2)
+    
+    def sameMsgName(self, n1, n2):
+        return n1 == n2 or n1 == ('msg_' + n2)
+
     def compatible(self, statmentL, nodeL):
-        statment = self.label_to_node[statmentL]
+        statment = self.programLabels[statmentL]
         node = self.state_to_node[nodeL]
+        if self.debug:
+            print(">", statment)
+            print(">", node)
         if isinstance(statment, ast_inter.Motion):
-            return isinstance(node, Motion) and statment.Value == node.motions[0].mp_name #TODO check the args
+            return isinstance(node, Motion) and self.sameMpName(statment.value, node.motions[0].mp_name) #TODO check the args
         elif isinstance(statment, ast_inter.Assign):
             #TODO keep and enviromenent ...
             return self._refines(self.nextStatement(statmentL), nodeL)
@@ -112,7 +122,7 @@ class Refinement():
                 trivial = [ case.program for case in statment.if_list if case.condition == S.true ]
                 return any(self._refines(s.get_label(), nodeL) for s in trivial)
         elif isinstance(statment, ast_inter.Send):
-            return isinstance(node, SendMessage) and statment.comp == node.receiver and statment.msg_type == node.msg_type #TODO check the args
+            return isinstance(node, SendMessage) and statment.comp == node.receiver and self.sameMsgName(statment.msg_type, node.msg_type) #TODO check the args
         elif isinstance(statment, ast_inter.Receive):
             if not isinstance(node, ExternalChoice):
                 return False
@@ -130,13 +140,14 @@ class Refinement():
             raise Exception("unexpected: " + statment)
 
     def check(self):
-        allLabels = self.programLabels.keys()
-        allState = self.state_to_node.keys()
+        allLabels = set(self.programLabels.keys())
+        allState = set(self.state_to_node.keys())
         self.compat = { l: copy(allState) for l in allLabels }
         changed = True
         while changed:
+            changed = False
             for l in allLabels:
-                for s in copy(compatible[l]):
+                for s in copy(self.compat[l]):
                     if not self.compatible(l, s):
                         if self.debug:
                             print("not compatible", l, s)

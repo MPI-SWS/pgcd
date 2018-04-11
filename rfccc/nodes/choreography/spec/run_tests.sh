@@ -1,6 +1,7 @@
 #! /bin/sh
 
-export PYTHONPATH=$PYTHONPATH:.:..:../..:../../..:$HOME/work/projects/CableRobot/Utils
+export PYTHONPATH=$PYTHONPATH:.:..:../..:../../..:../../../interpreter:$HOME/work/projects/CableRobot/Utils
+
 if [ -f "$HOME/catkin_ws/venv2/bin/activate" ]; then
 	. "$HOME/catkin_ws/venv2/bin/activate"
 fi
