@@ -48,7 +48,9 @@ def run(ch, components, progs, shouldSucceed = True, debug = False):
             prser = parser.Parser()
             prog = prser.parse(progs[p.name()])
             ref = Refinement(prog, proj, debug = True)
-            return shouldSucceed == ref.check()
+            if not ref.check():
+                return not shouldSucceed
+        return shouldSucceed
     except Exception as e:
         if shouldSucceed:
             raise e
@@ -56,7 +58,7 @@ def run(ch, components, progs, shouldSucceed = True, debug = False):
 class RefinementTests(unittest.TestCase):
     
     def test_01(self):
-        run(chor1(), cartAndArmWorld(), { "A": prog1A(), "C": prog1C() })
+        self.assertTrue(run(chor1(), cartAndArmWorld(), { "A": prog1A(), "C": prog1C() }))
 
 if __name__ == '__main__':
     unittest.main()
