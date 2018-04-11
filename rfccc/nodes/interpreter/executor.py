@@ -16,6 +16,10 @@ import tf2_ros.buffer_interface
 
 from parser import *
 
+class Termination(Exception):
+    def __init__(self, value):
+        self.value = value
+
 
 class Executor:
 
@@ -32,7 +36,10 @@ class Executor:
                 self.msg_types[obj.__name__] = obj
 
     def execute(self, code):
-        self.parser.parse(code).accept(self)
+        try:
+            return self.parser.parse(code).accept(self)
+        except Termination as t:
+            return t.value
 
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
@@ -74,8 +81,11 @@ class Executor:
         elif node.tip == Type.assign:
             self.visit_assign(node)
 
-        elif isinstance(node, Motion):
+        elif node.tip == Type.motion
             self.visit_motion(node)
+        
+        elif node.tip == Type.exit
+            self.visit_exit(node)
 
     def visit_statement(self, node):
         # print('\n'.join(str(c) for c in node.children))
@@ -212,3 +222,7 @@ class Executor:
             print("Output:", str(node.arg))
         else:
             print("Output:", ','.join(str(self.calculate_sympy_exp(x)) for x in node.arg))
+    
+    def visit_exit(self, node):
+        res = self.calculate_sympy_exp(node.expr)
+        raise Termination(res)

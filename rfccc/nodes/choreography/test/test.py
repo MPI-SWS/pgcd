@@ -12,22 +12,22 @@ from copy import deepcopy
 # origin is (0,0), target is (2,0)
 def cartAndArmFetch():
     return ''' Fetch =
-        def x0 = C -> A : action(fold) ; x1
+        def x0 = C -> A : fold() ; x1
             x1 = (C : Idle(), A : Fold()) ; x2
-            x2 = A -> C : state(folded) ; x3
+            x2 = A -> C : folded() ; x3
             x3 + x6 = x4
             x4 = [sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1] x5 + [sqrt((C_x - 2)**2 + (C_y - 0)**2) <= 0.1] x7
             x5 = (C : MoveFromTo(Pnt(0,0,0), Pnt(2,0,0)), A : Idle()) ; x6
-            x7 = C -> A : Grab(Pnt(2.2,0,0)) ; x8
+            x7 = C -> A : grab(Pnt(2.2,0,0)) ; x8
             x8 = ( C : Idle(), A : Grab(Pnt(2.2,0,0))) ; x9
-            x9 = A -> C : state(grabbed) ; x10
-            x10 = C -> A : action(fold) ; x11
+            x9 = A -> C : grabbed() ; x10
+            x10 = C -> A : fold() ; x11
             x11 = (C : Idle(), A : Fold()) ; x12
-            x12 = A -> C : state(folded) ; x13
+            x12 = A -> C : folded() ; x13
             x13 + x16 = x14
             x14 = [sqrt((C_x - 0)**2 + (C_y - 0)**2) > 0.1] x15 + [sqrt((C_x - 0)**2 + (C_y - 0)**2) <= 0.1] x17
             x15 = (C : MoveFromTo(Pnt(2, 0, 0), Pnt(0, 0, 0)), A : Idle()) ; x16
-            x17 = C -> A : state(done) ; x18
+            x17 = C -> A : done() ; x18
             x18 = end
         in [ (C_x == 0) && (C_y == 0) ]x0
     '''
