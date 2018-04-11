@@ -3,7 +3,6 @@ print(sys.version)
 
 import parser as rp
 import executor as nv
-import encaps_2r2p
 
 
 def main():

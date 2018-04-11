@@ -1,34 +1,3 @@
-
-state = 10;
-
-if ( 5  > state )
-{
-    x = 0;
-    y = 3.14159/3;
-    z = 0
-}
-else
-{
-    x = 3.14159/3;
-    y = -1;
-    z = 0
-};
-
-print("Checkpoint a1 ->");
-loop = 0;
-while( loop  != -3)
-{
-    # ID, MSG, msg_param1, msg_param2, ...
-    send(id_tool, msg_Point, x, y, z);
-    print("Checkpoint a2 ->");
-    # RECEIVING DATA WILL HAVE NAME
-    # -> givenDataName + _ + messagePartName = reply_ok
-    receive(m_Idle){(msg_OK, reply, { skip })};
-    print("Checkpoint a3 ->");
-    loop = loop + reply_message
-};
-
-send(id_tool, msg_Rotate, yaw, pitch, roll);
-print("FINISHED ARM")
-
+receive( m_idle ){ (msg_OK, point, {skip}) };
+m_setAngleCantilever( 120 )
 

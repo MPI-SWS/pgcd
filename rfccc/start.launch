@@ -1,21 +1,21 @@
 <launch>
 
     <!--NAMES ARE GIVEN IN THE GRUOP TAG, ATTRIBUTE NS-->
-    <group ns="arm">
-        <param name="x" type="double" value="0.1"/>
-        <param name="y" type="double" value="0.1"/>
-        <param name="z" type="double" value="0"/>
-        <param name="program_location" type="string"
-               value="$(optenv RFCCC_ROS_PROGRAMS /home/gbbanusic/catkin_ws/src/rfccc/nodes/programs/)"/>
-    </group>
-
-    <group ns="tool">
+    <group ns="cart">
         <param name="parent" type="string" value="arm"/>
         <param name="x" type="double" value="0"/>
         <param name="y" type="double" value="0"/>
         <param name="z" type="double" value="0.3"/>
         <param name="program_location" type="string"
-               value="$(optenv RFCCC_ROS_PROGRAMS /home/gbbanusic/catkin_ws/src/rfccc/nodes/programs/)"/>
+               value="$(optenv RFCCC_ROS_PROGRAMS /home/pi/ros_catkin_ws/src/rfccc/nodes/programs/)"/>
     </group>
+    <group ns="arm">
+        <param name="x" type="double" value="0.1"/>
+        <param name="y" type="double" value="0.1"/>
+        <param name="z" type="double" value="0"/>
+        <param name="program_location" type="string"
+               value="$(optenv RFCCC_ROS_PROGRAMS /home/pi/ros_catkin_ws/src/rfccc/nodes/programs/)"/>
+    </group>
+
 
 </launch>

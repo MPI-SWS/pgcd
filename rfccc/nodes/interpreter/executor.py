@@ -197,11 +197,15 @@ class Executor:
         self.__setattr__(node.id, self.calculate_sympy_exp(node.value))
 
     def visit_motion(self, node):
-        if not hasattr(self, node.value): pass
+        if not hasattr(self.robot, node.value): pass
+        #print( "visit_motion node:",node )
         try:
-            getattr(self, node.value)(self.calculate_sympy_exp(x) for x in node.exps)
-        except Exception:
+            #print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
+            getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
+            #print( "success" )
+        except Exception as e:
             pass
+            #print( "visit_motion generated error", str(e) )
 
     def visit_print(self, node):
         if isinstance(node.arg, str):

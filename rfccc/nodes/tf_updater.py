@@ -9,17 +9,17 @@ import numpy as np
 
 class TFUpdater:
 
-    def __init__(self, id, parent, component = None):
+    def __init__(self, id, parent, matrix, id_matrix):
         self.id = id
         self.parent = parent
         self.debug = True
-        self.component = component
+        self.matrix = matrix
+        self.id_matrix = id_matrix
         self.pub_tf = rospy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=1)
-        if component is not None:
-            self.timer = rospy.Timer(rospy.Duration(nsecs=1000000), self.set_up_broadcaster)
-        else:
-            self.rand = random.randint(2, 5)
-            self.timer = rospy.Timer(rospy.Duration(nsecs=1000000), self.set_up_default_broadcaster)
+        self.timer = rospy.Timer(rospy.Duration(nsecs=10000000), self.set_up_broadcaster)
+        #else:
+        #    self.rand = random.randint(2, 5)
+        #    self.timer = rospy.Timer(rospy.Duration(nsecs=1000000), self.set_up_default_broadcaster)
 
     def set_up_default_broadcaster(self, _):
         t = geometry_msgs.msg.TransformStamped()
@@ -43,19 +43,27 @@ class TFUpdater:
 
 
     def set_up_broadcaster(self, _):
-        if self.debug:
-            print(self.component.getConfigurationMatrix())
-            self.debug = False
-
         t = geometry_msgs.msg.TransformStamped()
         t.header.frame_id = self.parent
         t.header.stamp = rospy.Time.now()
-        t.child_frame_id = self.id + "_" + self.component.getName()
-        matrix = self.component.getConfigurationMatrix()
+        t.child_frame_id = self.id + "_" + self.id
+        if self.id_matrix == 0:
+            matrix = self.matrix.getConfigurationMatrixTurntable()
+        elif self.id_matrix == 1:
+            matrix = self.matrix.getConfigurationMatrixCantilever()
+        elif self.id_matrix == 2:
+            matrix = self.matrix.getConfigurationMatrixAnchorPoint()
+        elif self.id_matrix == 3:
+            matrix = self.matrix.getConfigurationMatrixGripper()
+        elif self.id_matrix == 4:
+            matrix = self.matrix.getConfigurationMatrixCart()
+
         position = matrix
+
 
         x = [[matrix[j, i] for i in range(0, 4)] for j in range(0, 4)]
 
+        #print( "broadcaster:", x )
         t.transform.translation.x = position[0, 3]
         t.transform.translation.y = position[1, 3]
         t.transform.translation.z = position[2, 3]
