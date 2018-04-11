@@ -32,7 +32,6 @@ def choiceAt(node, process_set):
         return choiceCandidates.pop()
 
 def motionForProcess(motions, process):
-
     candidates = [ m for m in motions if m.id == process.name() ]
     assert(len(candidates) <= 1)
     if len(candidates) == 0:
@@ -345,6 +344,15 @@ class CompatibilityCheck:
     # compatibility of motion primitives
     def generateCompatibilityChecks(self, debug = False):
         assert(self.predComputed)
+        px, py, pz = symbols('inFpX inFpY inFpZ')
+        pointDomain = And(px >= self.minX, px <= self.maxX, py >= self.minY, py <= self.maxY, pz >= self.minZ, pz <= self.maxZ)
+        for p in self.processes:
+            if debug:
+                print("correctness of footprint abstraction for " + p.name())
+            point = p.frame().origin.locate_new("inFp", px * p.frame().i + py * p.frame().j + pz * p.frame().k )
+            hypotheses = And(p.invariant(), pointDomain, p.ownResources(point))
+            concl = p.abstractResources(point)
+            self.vcs.append( VC("correctness of footprint abstraction for " + p.name(), [And(hypotheses, Not(concl))]) )
         for node in self.state_to_node.values():
             if debug:
                 print("generateCompatibilityChecks for node " + str(node))
@@ -353,9 +361,7 @@ class CompatibilityCheck:
                 assumptions = And(*[ p.invariant() for p in self.processes ]) #TODO add the connection as ==
                 preState = tracker.pred()
                 # a point for the footprint
-                px, py, pz = symbols('inFpX inFpY inFpZ')
                 point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
-                pointDomain = And(px >= self.minX, px <= self.maxX, py >= self.minY, py <= self.maxY, pz >= self.minZ, pz <= self.maxZ)
                 # make the VCs
                 # precondition
                 for p in self.processes:

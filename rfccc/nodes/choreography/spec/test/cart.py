@@ -33,7 +33,7 @@ class Cart(Process):
         return self._parent.frame()
 
     def invariant(self):
-        rng = 0.01 #bound on the space in which the cart travel around the origin FIXME dreal get slow...
+        rng = 10 #bound on the space in which the cart travel around the origin FIXME dreal get slow...
         return And(self._theta >= -mp.pi, self._theta <= mp.pi, self._x <= rng, self._x >= -rng, self._y <= rng, self._y >= -rng)
 
     def outputVariables(self):
@@ -46,7 +46,7 @@ class Cart(Process):
     def ownResources(self, point):
         return cylinder(self.position(), self.radius, self.height, point)
 
-    def abstractResources(self, point, deltaXY = 0.0, deltaXYZ = 0.0):
+    def abstractResources(self, point, deltaXY = 0.01, deltaXYZ = 0.01):
         return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
 
 
@@ -72,7 +72,8 @@ class CartMove(MotionPrimitive):
         self._height = component.height
         self._src = src
         self._dst = dst
-        self._maxError = 0.1
+        self._maxErrorPre = 0.1
+        self._maxErrorPost = 0.01
 
     def _locAsVec(self, loc):
         return loc.position_wrt(self._frame)
@@ -88,28 +89,28 @@ class CartMove(MotionPrimitive):
 
     def pre(self):
         onGround = And(self._onGround(self._src), self._onGround(self._dst), self._onGround(self._component.position()))
-        near = distance(self._component.position(), self._src) <= self._maxError
-        return And(onGround, near)
+        workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxErrorPre, self._maxErrorPre, 0.0)
+        return And(onGround, workSpace)
 
     def post(self):
         onGround = self._onGround(self._component.position())
-        workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxError, self._maxError, 0.0)
+        workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxErrorPost, self._maxErrorPost, 0.0)
         return And(onGround, workSpace)
 
     def inv(self):
         onGround = self._onGround(self._component.position())
-        workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxError)
+        workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxErrorPost, self._maxErrorPost, 0.0)
         return self.timify(And(onGround, workSpace))
 
     def preFP(self, point):
-        return self._component.abstractResources(point, self._maxError, 0.005)
+        return self._component.abstractResources(point, self._maxErrorPre, 0.005)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, self._maxError, 0.005)
+        return self._component.abstractResources(point, self._maxErrorPost, 0.005)
 
     def invFP(self, point):
         dst_height = self._dst.locate_new('dsth', self._frame.k * self._height)
-        i = cube(self._frame, self._src, dst_height, point, self._maxError + self._radius, self._maxError + self._radius, 0.005)
+        i = cube(self._frame, self._src, dst_height, point, self._maxErrorPost + self._radius, self._maxErrorPost + self._radius, 0.005)
         return self.timify(i)
 
 class Idle(MotionPrimitiveFactory):

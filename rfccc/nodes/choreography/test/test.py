@@ -38,8 +38,8 @@ def cartAndArmFetch():
 # `delta` is a positive offset which is roughly the reach/length of the gripper also is has to be aligned with the position of A and B
 def armsHandover():
     return ''' Handover =
-        def x0 = A1 -> A2 : meetAt(Pnt(0,0,0)); x1
-            x1 = (A1: MoveTo(Pnt(-0.05,0,0)), A2: MoveTo(Pnt(0.05,0,0))); x2
+        def x0 = A1 -> A2 : meetAt(Pnt(0,0,0.1)); x1
+            x1 = (A1: MoveTo(Pnt(-0.05,0,0.1)), A2: MoveTo(Pnt(0.05,0,0.1))); x2
             x2 = A1 -> A2 : holding(); x3
             x3 = (A1: Idle(), A2: CloseGripper()); x4
             x4 = A2 -> A1 : holding(); x5
@@ -47,7 +47,7 @@ def armsHandover():
             x6 = A1 -> A2 : action(released); x7
             x7 = (A1: Fold(), A2: Fold()); x8
             x8 = end
-        in [ (A1_a == 1.5707963267949) && (A1_b == 1.5707963267949) && (A1_c == 0) && (A2_a == 1.5707963267949) && (A2_b == 1.5707963267949) && (A2_c == 0) ] x0
+        in [ (A1_a == 1.57079632679490) && (A1_b == 1.57079632679490) && (A1_c == 0) && (A2_a == 1.57079632679490) && (A2_b == 1.57079632679490) && (A2_c == 0) ] x0
     '''
 
 def armsHandover1():

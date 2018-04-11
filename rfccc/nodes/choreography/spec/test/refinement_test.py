@@ -89,7 +89,7 @@ def run(ch, components, progs, shouldSucceed = True, debug = False):
             proj = visitor.project(p.name(), p, debug)
             prser = parser.Parser()
             prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug = True)
+            ref = Refinement(prog, proj, debug)
             if not ref.check():
                 return not shouldSucceed
         return shouldSucceed

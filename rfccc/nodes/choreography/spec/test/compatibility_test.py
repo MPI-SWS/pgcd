@@ -9,7 +9,7 @@ import unittest
 
 class CompatibilityCheckTest(unittest.TestCase):
 
-    checkVCs = False
+    checkVCs = True
 
     def test_fetch(self):
         world = experiments_setups.cartAndArmWorld()
