@@ -9,6 +9,8 @@ import unittest
 
 class CompatibilityCheckTest(unittest.TestCase):
 
+    checkVCs = False
+
     def test_fetch(self):
         world = experiments_setups.cartAndArmWorld()
         code = cartAndArmFetch()
@@ -26,9 +28,9 @@ class CompatibilityCheckTest(unittest.TestCase):
         # compat
         checker.computePreds(False)
         checker.generateCompatibilityChecks()
-        #TODO that example with bound
-        #for vc in checker.vcs:
-        #    self.assertTrue(vc.discharge(True), str(vc))
+        if CompatibilityCheckTest.checkVCs:
+            for vc in checker.vcs:
+                self.assertTrue(vc.discharge(), str(vc))
 
     def test_binsort(self):
         world = experiments_setups.binSortingWorld()
@@ -47,8 +49,9 @@ class CompatibilityCheckTest(unittest.TestCase):
         # compat
         checker.computePreds(False)
         checker.generateCompatibilityChecks()
-        for vc in checker.vcs:
-            self.assertTrue(vc.discharge(), str(vc))
+        if CompatibilityCheckTest.checkVCs:
+            for vc in checker.vcs:
+                self.assertTrue(vc.discharge(), str(vc))
 
     def test_handover(self):
         world = experiments_setups.armsHandoverWorld()
@@ -67,8 +70,9 @@ class CompatibilityCheckTest(unittest.TestCase):
         # compat
         checker.computePreds(False)
         checker.generateCompatibilityChecks()
-        for vc in checker.vcs:
-            self.assertTrue(vc.discharge(), str(vc))
+        if CompatibilityCheckTest.checkVCs:
+            for vc in checker.vcs:
+                self.assertTrue(vc.discharge(), str(vc))
 
     def test_ferry(self):
         world = experiments_setups.ferryWorld()
@@ -87,8 +91,9 @@ class CompatibilityCheckTest(unittest.TestCase):
         # compat
         checker.computePreds(False)
         checker.generateCompatibilityChecks()
-        for vc in checker.vcs:
-            self.assertTrue(vc.discharge(), str(vc))
+        if CompatibilityCheckTest.checkVCs:
+            for vc in checker.vcs:
+                self.assertTrue(vc.discharge(), str(vc))
 
 if __name__ == '__main__':
     unittest.main()

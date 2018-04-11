@@ -22,18 +22,24 @@ class Node:
 
     def __init__(self, tip):
         self.tip = tip
+        self._label = None
 
     def __str__(self):
         return str(self.tip.value)
 
-    def get_label():
-        Node.label_num += 1
-        return 'X' + Node.label_num
+    def get_label(self):
+        if (self._label == None):
+            Node.label_num += 1
+            self._label = 'L' + str(Node.label_num)
+        return self._label
 
     def label_as_root(self):
         label_to_node = {}
         self.label(label_to_node)
         return label_to_node
+    
+    def label(self, label_to_node):
+        label_to_node[self.get_label()] = self
 
 class Statement(Node):
 
@@ -43,6 +49,8 @@ class Statement(Node):
 
     def __str__(self):
         string = ''
+        if self._label != None:
+            string += self._label + ": "
         for c in self.children:
             string += str(c) + '\n'
         return string
@@ -51,7 +59,7 @@ class Statement(Node):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
+        super().label(label_to_node)
         for c in self.children:
             c.label(label_to_node)
 
@@ -61,13 +69,14 @@ class Skip(Node):
         Node.__init__(self, Type.skip)
 
     def __str__(self):
-        return 'Skip'
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'Skip'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
-
-    def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
 
 class Print(Node):
 
@@ -76,13 +85,14 @@ class Print(Node):
         self.arg = arg
 
     def __str__(self):
-        return 'Print' + str(arg)
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'Print' + str(arg)
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
-
-    def label(self, label_to_node):
-        pass
 
 class Send(Node):
 
@@ -93,13 +103,14 @@ class Send(Node):
         self.args = args
 
     def __str__(self):
-        return 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + ''.join([str(a) for a in self.args]) + ')'
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + ''.join([str(a) for a in self.args]) + ')'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
-
-    def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
 
 
 class Receive(Node):
@@ -110,13 +121,17 @@ class Receive(Node):
         self.actions = actions
 
     def __str__(self):
-        return 'Receive(' + str(self.motion) + ') {' + ''.join(str(e) for e in self.actions) + '}'
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'Receive(' + str(self.motion) + ') {' + ''.join(str(e) for e in self.actions) + '}'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
+        super().label(label_to_node)
         self.motion.label(label_to_node)
         for c in self.actions:
             c.label(label_to_node)
@@ -131,14 +146,18 @@ class Action(Node):
         self.program = program
 
     def __str__(self):
-        return '(' + str(self.str_msg_type) + ',' + str(self.data_name) + ',' + str(self.program) + ')'
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += '(' + str(self.str_msg_type) + ',' + str(self.data_name) + ',' + str(self.program) + ')'
+        return string
 
     def accept(self, visitor):
         return visitor.visit(self)
 
     def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
-        program.label(label_to_node)
+        super().label(label_to_node)
+        self.program.label(label_to_node)
 
 class If(Node):
 
@@ -149,12 +168,17 @@ class If(Node):
         self.if_list += self.flatten(Not(condition), elseCode)
 
     def __str__(self):
-        return ''.join([str(a) for a in self.if_list])
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += '\n'.join([str(a) for a in self.if_list])
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
 
     def label(self, label_to_node):
+        super().label(label_to_node)
         for if_stmt in self.if_list:
             if_stmt.label(label_to_node)
 
@@ -181,13 +205,17 @@ class IfComponent(Node):
         self.program = program
 
     def __str__(self):
-        return 'if ' + str(self.condition) + ' then {' + str(self.program) + '}'
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'if ' + str(self.condition) + ' then {' + str(self.program) + '}'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
+        super().label(label_to_node)
         program.label(label_to_node)
 
 class While(Node):
@@ -198,13 +226,17 @@ class While(Node):
         self.program = program
 
     def __str__(self):
-        return 'while ' + str(self.condition) + ' do {' + str(self.program) + '}'
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'while ' + str(self.condition) + ' do {' + str(self.program) + '}'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
 
     def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
+        super().label(label_to_node)
         program.label(label_to_node)
 
 class Assign(Node):
@@ -215,14 +247,15 @@ class Assign(Node):
         self.value = value
 
     def __str__(self):
-        return str(self.id) + ' := ' + str(self.value)
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += str(self.id) + ' := ' + str(self.value)
+        return string
 
 
     def accept(self, visitor):
         visitor.visit(self)
-
-    def label(self, label_to_node):
-        pass
 
 
 class Motion(Node):
@@ -233,10 +266,12 @@ class Motion(Node):
         self.exps = exps
 
     def __str__(self):
-        return ''.join(str(m) for m in self.value)
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'm_' + self.value + '(' + ', '.join(str(e) for e in self.exps) + ')'
+        return string
 
     def accept(self, visitor):
         visitor.visit(self)
 
-    def label(self, label_to_node):
-        label_to_node[self] = self.get_label()
