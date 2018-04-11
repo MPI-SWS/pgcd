@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-
+import _thread
 import tf_updater
 from executor import Executor
 import cartandarm
@@ -39,15 +39,13 @@ class Component(Executor):
         # self.robot.calculateEndPosition()
         #self.init_parts()
         
+
         if self.id == "arm":
             self.robot = cartandarm.arm()
-            tf_updater.TFUpdater( "_frame_0", "cart_frame", self.robot, 0 )
-            tf_updater.TFUpdater( "_frame_1", "_frame_0", self.robot, 1 )
-            tf_updater.TFUpdater( "_frame_2", "_frame_1", self.robot, 2 )
-            tf_updater.TFUpdater( "_frame_3", "_frame_2", self.robot, 3 )
+            tf_updater.TFUpdater( "_frame_0", "cart_frame", self.robot )
         else:
             self.robot = cartandarm.cart()
-            tf_updater.TFUpdater( "cart_frame", "world", self.robot, 4 )
+            tf_updater.TFUpdater( "cart_frame", "world", self.robot )
         
         #self.tf_updater = tf_updater.TFUpdater(self.id, self.parent)
         self.execute_prog()
@@ -59,6 +57,9 @@ class Component(Executor):
     #         self.components[self.robot.list[i].getName()] = tf_updater.TFUpdater(self.id, parent,
     #                                                                             self.robot.list[i], self.robot.list)
 
+
+    
+    
     def execute_prog(self):
         # try:
             with open(self.prog_path, 'r') as content_file:

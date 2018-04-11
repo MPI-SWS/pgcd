@@ -7,7 +7,8 @@ Calibrate arm first!
 from __future__ import division
 import drv8825
 import RPi.GPIO as GPIO
-from time import sleep
+import rospy 
+from time import sleep, time
 
 import sympy as sp
 
@@ -49,7 +50,7 @@ class cart():
         GPIO.setup( self.pinMS3, GPIO.OUT )
         
         #self.offset = sp.Matrix( [[1,0,0,63], [0,1,0,0], [0,0,1,0], [0,0,0,1] ] )
-        self.offset = 63/100
+        self.offset = 63/200
 
         self.stepsCart = 0
         self.angleCart = 0
@@ -142,7 +143,7 @@ class cart():
     # 200 steps per fc * microstepping
 
     def setAngleCart( self, angle ):
-        self.__motors_start__()
+        #self.__motors_start__()
         assert( 0<=angle and angle<=360 )
 
         steps = (angle/360)*200*6.42*2.15*self.microstepping
@@ -157,7 +158,7 @@ class cart():
         
         #steps = (angle/360)*200*7.4626*1.85
 
-        print( "angle %d steps" %(steps) )
+        #print( "angle %d steps" %(steps) )
         if steps > self.angleCart:
             f = lambda: self.motor1.doStep( steps-self.angleCart, 1 )
             g = lambda: self.motor2.doStep( steps-self.angleCart, 1 )
@@ -174,16 +175,36 @@ class cart():
         p1.start()
         p2.start()
         p3.start()
+    
 
+        now = time()
+        future = now+angle/360*41.024
+
+
+        #print( "now, future, angle ", now, future, angle )
+    
+        cutoff = now
+        while now-cutoff < future-cutoff:
+            print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
+            self.angleCart = sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle))
+            now = time()
+            print( "loop", self.angleCart )
+
+
+        #print( "set angle cart to angle:", self.angleCart, angle )
         p1.join()
         p2.join()
         p3.join()
-    
+
+        
 
         #self.__compute_steps__( 0,0, steps-self.stepsCart )
         #self.stepsCart = steps
         
-        self.__motors_shutdown__()
+        #self.__motors_shutdown__()
+
+
+
     
     def moveCart( self, distance, direction ):
         assert( distance > 0 )
@@ -208,9 +229,9 @@ class cart():
 
 
     def getConfigurationMatrixCart( self ):
-        angle = self.angleCart/(200*6.42*self.microstepping)*360
-        M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, self.offset], [sp.sin(angle), sp.cos(angle), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1] ] )
-        print( "caa cart>>", M)
+        angle = self.angleCart
+        M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, 0], [sp.sin(angle), sp.cos(angle), 0, 0], [0, 0, 1, self.offset], [0, 0, 0, 1] ] )
+        #print( "caa cart>>", M)
         return M
 
 
@@ -220,9 +241,9 @@ class arm():
     """
 
     def __init__( self ):
-        self.turntable = drv8825.drv8825( pinDir =  38, pinStep = 40, pinEnable = 32  )
-        self.cantilever = drv8825.drv8825( pinDir = 29, pinStep = 31, pinEnable= 32 )
-        self.anchorpoint = drv8825.drv8825( pinDir = 33, pinStep = 35, pinEnable= 32 )
+        self.turntable = drv8825.drv8825( pinDir =  38, pinStep = 40, pinEnable = 32, waitingTime=0.002  )
+        self.cantilever = drv8825.drv8825( pinDir = 29, pinStep = 31, pinEnable= 32, waitingTime=0.002 )
+        self.anchorpoint = drv8825.drv8825( pinDir = 33, pinStep = 35, pinEnable= 32, waitingTime=0.002 )
 
         self.pinServo = 7 #bcm: 4
 
@@ -231,13 +252,38 @@ class arm():
         self.p = GPIO.PWM( self.pinServo, 50 )
         self.p.start( 2.5 )
 
-        self.offset = 63/100 #height of cart
+        self.offset = 63/200 #height of cart
 
         self.stepsTurnTable = 0
         self.stepsCantilever = 0
         self.stepsAnchorpoint = 0
+        
+        
+        self.angleTurnTable = 0
+        self.angleCantilever = 0
+        self.angleAnchorpoint = 0
+        self.angleGripper = 0
 
         print( "inititalized arm" )
+
+    def __updateAngleRos__( self, angleName, angle, maxAngle, timePerRev ):
+        """
+        Continuously updates the angles s.t. ros can turn the coordinate 
+        systems in real time.
+        """
+        now = time()
+        future = now+angle/maxAngle*timePerRev
+
+        cutoff = now
+        while now-cutoff < future-cutoff:
+            print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
+            setattr( self, angleName, sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ) )
+            print( "getAttr", getattr( self, angleName ) )
+            print( "------>", sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ))
+            rospy.sleep(0.1)
+
+            now = time()
+        #setattr( self, angleName, sp.N(sp.rad(angle)))
 
 
     #17300 steps over all
@@ -251,11 +297,14 @@ class arm():
         else:
             self.turntable.doStep( self.stepsTurnTable-steps, 0 )
             self.stepsTurnTable = steps
+        
+        self.__updateAngleRos__( "angleTurnTable", angle, 270, 10 )
 
     def getConfigurationMatrixTurntable( self ):
-        angle = 270*self.stepsTurnTable/17300
-        M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, self.offset], [sp.sin(angle), sp.cos(angle), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1] ] )
-        print( "caa turn>>", M)
+        #angle = sp.rad(270*self.stepsTurnTable/17300)
+        angle = self.angleTurnTable
+        M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, 0], [sp.sin(angle), sp.cos(angle), 0, 0], [0, 0, 1, self.offset], [0, 0, 0, 1] ] )
+        #print( "caa turn>>", M)
         return M
 
 
@@ -273,11 +322,13 @@ class arm():
             self.stepsCantilever = steps
         print( "set cantilever angle to", steps )
 
+        self.__updateAngleRos__( "angleCantilever", angle, 270, 10 )
 
     def getConfigurationMatrixCantilever( self ):
-        angle = 270*self.stepsCantilever/5400
-        M = sp.Matrix( [ [1, 0, 0, 144/100], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 0], [0, 0, 0, 1] ] )
-        print( "caa cant>>", M)
+        #angle = sp.rad(270*self.stepsCantilever/5400)
+        angle = self.angleCantilever-120
+        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 144/200], [0, 0, 0, 1] ] )
+        #print( "caa cant>>", M)
         return M
 
 
@@ -294,11 +345,14 @@ class arm():
             self.anchorpoint.doStep( self.stepsAnchorpoint-steps, 0 )
             self.stepsAnchorpoint = steps
         print( "set angle to", steps )
+        
+        self.__updateAngleRos__( "angleAnchorpoint", -angle, 300, 10 )
 
     def getConfigurationMatrixAnchorPoint( self ):
-        angle = 270*self.stepsAnchorpoint/5400
-        M = sp.Matrix( [ [1, 0, 0, 225/100], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 0], [0, 0, 0, 1] ] )
-        print( "caa ap>>", M)
+        #angle = sp.rad(270*self.stepsAnchorpoint/5400)
+        angle = self.angleAnchorpoint+120
+        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 225/200], [0, 0, 0, 1] ] )
+        #print( "caa ap>>", M)
         return M
 
 
@@ -306,11 +360,14 @@ class arm():
         assert( cycle > 5 and cycle < 12.5 )
         self.p.ChangeDutyCycle( cycle )
         sleep( 1 )
+        self.__updateAngleRos__( "angleGripper", -angle, 270, 10 )
 
     def getConfigurationMatrixGripper( self ):
-        angle = 270*self.stepsAnchorpoint/5400
-        M = sp.Matrix( [ [1, 0, 0, 200/100], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 0], [0, 0, 0, 1] ] )
-        print( "caa grip>>", M)
+        #angle = sp.rad(270*self.stepsAnchorpoint/5400)
+        #angle = self.angleGripper+120
+        angle=0
+        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 200/200], [0, 0, 0, 1] ] )
+        #print( "caa grip>>", M)
         return M
 
 

@@ -5,18 +5,18 @@ import tf
 import tf2_msgs.msg
 import random
 import numpy as np
+from cartandarm import cart, arm
 
 
 class TFUpdater:
 
-    def __init__(self, id, parent, matrix, id_matrix):
-        self.id = id
+    def __init__(self, _id, parent, robot):
+        self.id = _id
         self.parent = parent
         self.debug = True
-        self.matrix = matrix
-        self.id_matrix = id_matrix
+        self.robot = robot
         self.pub_tf = rospy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=1)
-        self.timer = rospy.Timer(rospy.Duration(nsecs=10000000), self.set_up_broadcaster)
+        self.timer = rospy.Timer(rospy.Duration(nsecs=100000000), self.set_up_broadcaster)
         #else:
         #    self.rand = random.randint(2, 5)
         #    self.timer = rospy.Timer(rospy.Duration(nsecs=1000000), self.set_up_default_broadcaster)
@@ -43,21 +43,33 @@ class TFUpdater:
 
 
     def set_up_broadcaster(self, _):
-        t = geometry_msgs.msg.TransformStamped()
-        t.header.frame_id = self.parent
-        t.header.stamp = rospy.Time.now()
-        t.child_frame_id = self.id + "_" + self.id
-        if self.id_matrix == 0:
-            matrix = self.matrix.getConfigurationMatrixTurntable()
-        elif self.id_matrix == 1:
-            matrix = self.matrix.getConfigurationMatrixCantilever()
-        elif self.id_matrix == 2:
-            matrix = self.matrix.getConfigurationMatrixAnchorPoint()
-        elif self.id_matrix == 3:
-            matrix = self.matrix.getConfigurationMatrixGripper()
-        elif self.id_matrix == 4:
-            matrix = self.matrix.getConfigurationMatrixCart()
+        #if self.id_matrix == 0:
+        #    matrix = self.matrix.getConfigurationMatrixTurntable()
+        #elif self.id_matrix == 1:
+        #    matrix = self.matrix.getConfigurationMatrixCantilever()
+        #elif self.id_matrix == 2:
+        #    matrix = self.matrix.getConfigurationMatrixAnchorPoint()
+        #elif self.id_matrix == 3:
+        #    matrix = self.matrix.getConfigurationMatrixGripper()
+        #elif self.id_matrix == 4:
+        #    matrix = self.matrix.getConfigurationMatrixCart()
 
+        print( "broadcaster: type=", type(self.robot) )
+        if type( self.robot ) == cart:
+            self.updateMatrix( self.robot.getConfigurationMatrixCart(), "cart_frame", "world" )
+        else:
+            self.updateMatrix( self.robot.getConfigurationMatrixTurntable(), "frame_turntable", "cart_frame" )
+            self.updateMatrix( self.robot.getConfigurationMatrixCantilever(), "frame_cantilever", "frame_turntable" )
+            self.updateMatrix( self.robot.getConfigurationMatrixAnchorPoint(), "frame_anchorpoint", "frame_cantilever" )
+            self.updateMatrix( self.robot.getConfigurationMatrixGripper(), "frame_gripper", "frame_anchorpoint" )
+
+    def updateMatrix( self, matrix, id_frame, parent_frame ):
+        t = geometry_msgs.msg.TransformStamped()
+        t.header.frame_id = parent_frame
+
+        t.header.stamp = rospy.Time.now()
+        t.child_frame_id = id_frame
+        
         position = matrix
 
 

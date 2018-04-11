@@ -1,5 +1,6 @@
 import inspect
 import threading
+import _thread
 
 import rfccc.msg
 import rospy
@@ -198,14 +199,19 @@ class Executor:
 
     def visit_motion(self, node):
         if not hasattr(self.robot, node.value): pass
-        #print( "visit_motion node:",node )
+        print( "visit_motion node:",node )
         try:
-            #print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
+            print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
+
+            #_thread.start_new_thread( getattr(self.robot, node.value), (*list(self.calculate_sympy_exp(x) for x in node.exps), ))
+
+
             getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
-            #print( "success" )
+            print( "success" )
         except Exception as e:
             pass
-            #print( "visit_motion generated error", str(e) )
+            print( "visit_motion generated error", str(e) )
+        #rospy.sleep( 10 ) 
 
     def visit_print(self, node):
         if isinstance(node.arg, str):
