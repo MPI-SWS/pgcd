@@ -192,7 +192,6 @@ class carrier():
         Distance in mm
         wheel radius = 50mm
         """
-        assert( distance > 0 )
 
         self.__motors_start__()
         
