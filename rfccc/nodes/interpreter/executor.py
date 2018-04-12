@@ -45,7 +45,10 @@ class Executor:
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
         for fs in sympy_exp.free_symbols:
-            subs[fs] = self.__getattribute__(str(fs))
+            try:
+                subs[fs] = self.__getattribute__(str(fs))
+            except AttributeError:
+                subs[fs] = self.robot.__getattribute__(str(fs))
         expr2 = sympy_exp.subs(subs)
         if expr2 == S.true or expr2 == S.false:
             return expr2
