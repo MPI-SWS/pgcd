@@ -30,7 +30,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         checker.generateCompatibilityChecks()
         if CompatibilityCheckTest.checkVCs:
             for vc in checker.vcs:
-                self.assertTrue(vc.discharge(), str(vc))
+                self.assertTrue(vc.discharge(debug=True), str(vc))
 
     def test_binsort(self):
         world = experiments_setups.binSortingWorld()

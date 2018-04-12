@@ -39,7 +39,7 @@ def armsHandoverWorld():
     return w
 
 def binSortingWorld():
-    w = World( (0,0,0,mp.pi/2), (0.8,0,0,-mp.pi/2) )
+    w = World( (0,0,0,mp.pi/2), (0.3,0,0,-mp.pi/2) )
     a1 = Arm("A", w, 0)
     a2 = Arm("B", w, 1)
     return w

@@ -40,3 +40,12 @@ def halfSpace(frame, normal, p, offset = 0.0):
     '''on the "positive" side of the plane which goes through frame.origin and oriented by a normal (unit vector)'''
     v = p.position_wrt(frame.origin)
     return normal.dot(v) >= offset
+
+def triangle(frame, centerToSide, height, p, maxError = 0.0):
+    side1 = halfSpace(frame, -0.5 * frame.i - 0.866 * frame.j, p, -centerToSide - maxError)
+    side2 = halfSpace(frame, -0.5 * frame.i + 0.866 * frame.j, p, -centerToSide - maxError)
+    side3 = halfSpace(frame, frame.i, p, -centerToSide - maxError)
+    v = p.position_wrt(frame.origin)
+    projZ = frame.k.projection(v, scalar=True)
+    z = And(projZ >= -maxError, projZ <= height + maxError)
+    return And(side1, side2, side3, z)

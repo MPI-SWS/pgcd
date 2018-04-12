@@ -106,11 +106,11 @@ def binSorting():
             x17 = A -> B : ok(); x25
 
             x20 = end
-            x21 = (A: PutInBin(Pnt(0.4,0.2,0)), B: Idle()); x31
-            x22 = (A: PutInBin(Pnt(0.4,-0.2,0)), B: Idle()); x32
-            x23 = (A: Idle(), B: PutInBin(Pnt(0.4,0.2,0))); x33
-            x24 = (A: Idle(), B: PutInBin(Pnt(0.4,-0.2,0))); x34
-            x25 = (A: PutInBin(Pnt(0.4,0.2,0)), B: PutInBin(Pnt(0.4,-0.2,0))); x35
+            x21 = (A: PutInBin(Pnt(0.3,0.2,0.2)), B: Idle()); x31
+            x22 = (A: PutInBin(Pnt(0.3,-0.2,0.2)), B: Idle()); x32
+            x23 = (A: Idle(), B: PutInBin(Pnt(0.3,0.2,0.2))); x33
+            x24 = (A: Idle(), B: PutInBin(Pnt(0.3,-0.2,0.2))); x34
+            x25 = (A: PutInBin(Pnt(0.3,0.2,0.2)), B: PutInBin(Pnt(0.3,-0.2,0.2))); x35
 
         in [(A_a == 1.5707963267949) && (A_b == 1.5707963267949) && (A_c == 0) && (B_a == 1.5707963267949) && (B_b == 1.5707963267949) && (B_c == 0)] x0
     '''

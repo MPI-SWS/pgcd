@@ -4,14 +4,18 @@ from mpmath import mp
 from spec import *
 from geometry import *
 
+#TODO the 2nd cart of a cube 0.18 wide, 0.17 long, 0.16 high
+#when modeled as triangle then center 2 side is about 0.16
+
 # cart
 class Cart(Process):
 
     def __init__(self, name, world, index = 0):
         super().__init__(name, world, index)
         # dimensions
-        self.height = 0.1
-        self.radius = 0.2
+        self.height = 0.08
+        self.radius = 0.30
+        self.minRadius = 0.15
         # variables
         self._x = symbols(name + '_x')
         self._y = symbols(name + '_y')
@@ -19,7 +23,7 @@ class Cart(Process):
         f = world.frame()
         self._position = self._x * f.i + self._y * f.j
         # mount is 11cm above the ground
-        self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + 0.11 * f.k)
+        self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + 0.09 * f.k)
         # motion primitives
         MoveFromTo(self)
         Idle(self)
@@ -33,7 +37,7 @@ class Cart(Process):
         return self._parent.frame()
 
     def invariant(self):
-        rng = 10 #bound on the space in which the cart travel around the origin FIXME dreal get slow...
+        rng = 10 #bound on the space in which the cart travel around the origin, FIXME dreal does not like unbounded variables
         return And(self._theta >= -mp.pi, self._theta <= mp.pi, self._x <= rng, self._x >= -rng, self._y <= rng, self._y >= -rng)
 
     def outputVariables(self):
@@ -44,11 +48,34 @@ class Cart(Process):
         return self._mount
 
     def ownResources(self, point):
-        return cylinder(self.position(), self.radius, self.height, point)
+        return triangle(self.position(), self.minRadius, self.height, point)
 
     def abstractResources(self, point, deltaXY = 0.01, deltaXYZ = 0.01):
         return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
 
+class CartSquare(Cart):
+
+    def __init__(self, name, world, index = 0):
+        super().__init__(name, world, index)
+        # dimensions
+        self.height = 0.16
+        self.width = 0.18
+        self.length = 0.17
+        self.radius = 0.125
+        # motion primitives
+        MoveFromTo(self)
+        Idle(self)
+
+    def mountingPoint(self, index):
+        assert False
+
+    def ownResources(self, point):
+        pos = self.position()
+        o = pos.origin
+        return cube(pos, o.locate_new(-l2 * pos.i - w2 * pos.j), o.locate_new(l2 * pos.i + w2 * pos.j + self.height * pos.k), p)
+
+    def abstractResources(self, point, deltaXY = 0.01, deltaXYZ = 0.01):
+        return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
 
 class MoveFromTo(MotionPrimitiveFactory):
 

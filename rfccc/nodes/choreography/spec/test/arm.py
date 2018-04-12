@@ -10,13 +10,13 @@ class Arm(Process):
     def __init__(self, name, parent, index = 0):
         super().__init__(name, parent, index)
         # default dimensions
-        self.baseHeight = 0.1
-        self.baseRadius = 0.15
-        self.upperArmLength = 0.2
-        self.upperArmRadius = 0.05
-        self.lowerArmLength = 0.05
-        self.lowerArmRadius = 0.05
-        self.gripperReach = 0.5
+        self.baseHeight = 0.23
+        self.baseRadius = 0.13
+        self.upperArmLength = 0.22
+        self.upperArmRadius = 0.08
+        self.lowerArmLength = 0.10
+        self.lowerArmRadius = 0.04
+        self.gripperReach = 0.08
         # variables
         self._a = symbols(name + '_a') # rotation along the Y-axis (upper arm to lower arm)
         self._b = symbols(name + '_b') # rotation along the Y-axis (base to upper arm)
