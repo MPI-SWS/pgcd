@@ -24,7 +24,7 @@ def start_ros_nodes():
     for atype in e.findall('group'):
         node = roslaunch.core.Node(package, broadcaster_comp, name=atype.get('ns'), respawn=False, output="screen")
         launch.launch(node)
-        Choreography.initialized_components.add(atype.get('ns'))
+        #Choreography.initialized_components.add(atype.get('ns'))
 
     print( "Now leaving for loop" )
 

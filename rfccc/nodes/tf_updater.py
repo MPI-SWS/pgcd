@@ -28,7 +28,7 @@ class TFUpdater:
                 self.frames_ids.append(frame_name)
                 self.updater_func_names.append(getattr(self.robot, updt_func_name))
         except Exception as e:
-            print(str(e))
+            pass
 
         self.pub_tf = rospy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=4)
         self.timer = rospy.Timer(rospy.Duration(nsecs=100000000), self.set_up_broadcaster)
