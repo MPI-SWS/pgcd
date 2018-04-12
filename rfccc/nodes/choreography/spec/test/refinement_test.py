@@ -35,6 +35,48 @@ def chor1():
         in [ True ] x0
     '''
 
+def progFetchA():
+    return '''
+        while( true ) {
+            receive(m_Idle) {
+                (msg_fold, dummy, {
+                    m_Fold;
+                    send(id_C, msg_folded, 0)
+                }),
+                (msg_grab, loc, {
+                    m_Grab(loc);
+                    send(id_C, msg_grabbed, 0)
+                }),
+                (msg_done, dummy, {
+                    exit(0) 
+                })
+            }
+        }
+    '''
+
+def progFetchC():
+    return '''
+        send(id_A, msg_fold, 0);
+        receive(m_Idle){
+            (msg_folded, dummy, { skip })
+        };
+        while (sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1) {
+            m_MoveFromTo(Pnt(0,0,0), Pnt(2,0,0))
+        };
+        send(id_A, msg_grab, Pnt(2.2,0,0));
+        receive(m_Idle){
+            (msg_grabbed, dummy, { skip })
+        };
+        send(id_A, msg_fold, 0);
+        receive(m_Idle){
+            (msg_folded, dummy, { skip })
+        };
+        while (sqrt((C_x)**2 + (C_y - 0)**2) > 0.1) {
+            m_MoveFromTo(Pnt(2,0,0), Pnt(0,0,0))
+        };
+        send(id_A, msg_done, 0)
+    '''
+
 def run(ch, components, progs, shouldSucceed = True, debug = False):
     try:
         visitor = exec.ChoreographyExecutor()
@@ -47,7 +89,7 @@ def run(ch, components, progs, shouldSucceed = True, debug = False):
             proj = visitor.project(p.name(), p, debug)
             prser = parser.Parser()
             prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug = True)
+            ref = Refinement(prog, proj, debug)
             if not ref.check():
                 return not shouldSucceed
         return shouldSucceed
@@ -59,6 +101,9 @@ class RefinementTests(unittest.TestCase):
     
     def test_01(self):
         self.assertTrue(run(chor1(), cartAndArmWorld(), { "A": prog1A(), "C": prog1C() }))
+
+    def test_02(self):
+        self.assertTrue(run(cartAndArmFetch(), cartAndArmWorld(), { "A": progFetchA(), "C": progFetchC() }))
 
 if __name__ == '__main__':
     unittest.main()

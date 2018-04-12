@@ -13,6 +13,7 @@ class Type(Enum):
     expression = 10
     motion = 33
     _print = 34
+    exit = 35
 
 
 
@@ -237,7 +238,7 @@ class While(Node):
 
     def label(self, label_to_node):
         super().label(label_to_node)
-        program.label(label_to_node)
+        self.program.label(label_to_node)
 
 class Assign(Node):
 
@@ -275,3 +276,18 @@ class Motion(Node):
     def accept(self, visitor):
         visitor.visit(self)
 
+class Exit(Node):
+
+    def __init__(self, expr):
+        Node.__init__(self, Type.exit)
+        self.expr = expr
+
+    def __str__(self):
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'exit(' + str(self.expr) + ')'
+        return string
+
+    def accept(self, visitor):
+        visitor.visit(self)

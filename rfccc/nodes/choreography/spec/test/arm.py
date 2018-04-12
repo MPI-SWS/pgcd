@@ -14,7 +14,7 @@ class Arm(Process):
         self.baseRadius = 0.15
         self.upperArmLength = 0.2
         self.upperArmRadius = 0.05
-        self.lowerArmLength = 0.2
+        self.lowerArmLength = 0.05
         self.lowerArmRadius = 0.05
         self.gripperReach = 0.5
         # variables

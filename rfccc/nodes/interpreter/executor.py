@@ -1,5 +1,6 @@
 import inspect
 import threading
+import _thread
 
 import rfccc.msg
 import rospy
@@ -15,6 +16,10 @@ import numpy as np
 import tf2_ros.buffer_interface
 
 from parser import *
+
+class Termination(Exception):
+    def __init__(self, value):
+        self.value = value
 
 
 class Executor:
@@ -32,7 +37,10 @@ class Executor:
                 self.msg_types[obj.__name__] = obj
 
     def execute(self, code):
-        self.parser.parse(code).accept(self)
+        try:
+            return self.parser.parse(code).accept(self)
+        except Termination as t:
+            return t.value
 
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
@@ -74,8 +82,11 @@ class Executor:
         elif node.tip == Type.assign:
             self.visit_assign(node)
 
-        elif isinstance(node, Motion):
+        elif node.tip == Type.motion:
             self.visit_motion(node)
+        
+        elif node.tip == Type.exit:
+            self.visit_exit(node)
 
     def visit_statement(self, node):
         # print('\n'.join(str(c) for c in node.children))
@@ -198,17 +209,26 @@ class Executor:
 
     def visit_motion(self, node):
         if not hasattr(self.robot, node.value): pass
-        #print( "visit_motion node:",node )
+        print( "visit_motion node:",node )
         try:
-            #print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
+            print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
+
+            #_thread.start_new_thread( getattr(self.robot, node.value), (*list(self.calculate_sympy_exp(x) for x in node.exps), ))
+
+
             getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
-            #print( "success" )
+            print( "success" )
         except Exception as e:
             pass
-            #print( "visit_motion generated error", str(e) )
+            print( "visit_motion generated error", str(e) )
+        #rospy.sleep( 10 ) 
 
     def visit_print(self, node):
         if isinstance(node.arg, str):
             print("Output:", str(node.arg))
         else:
             print("Output:", ','.join(str(self.calculate_sympy_exp(x)) for x in node.arg))
+    
+    def visit_exit(self, node):
+        res = self.calculate_sympy_exp(node.expr)
+        raise Termination(res)

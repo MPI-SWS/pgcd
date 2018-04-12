@@ -17,7 +17,7 @@ class VC:
             sat = "unsat"
         return "VC(" + self.title + ", " + str(self.formulas) + "," + sat + ")"
 
-    def discharge(self, debug = False):
+    def discharge(self, timeout = 120, debug = False):
         if debug:
             sat = ""
             if self.sat:
@@ -31,7 +31,7 @@ class VC:
             if debug:
                 for f in f3:
                     print(f)
-            dr = DrealInterface(debug = debug)
+            dr = DrealInterface(timeout = timeout, debug = debug)
             res, model = dr.run(f3)
             if res == None:
                 return False

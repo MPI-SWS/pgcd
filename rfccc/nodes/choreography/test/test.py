@@ -12,22 +12,22 @@ from copy import deepcopy
 # origin is (0,0), target is (2,0)
 def cartAndArmFetch():
     return ''' Fetch =
-        def x0 = C -> A : action(fold) ; x1
+        def x0 = C -> A : fold() ; x1
             x1 = (C : Idle(), A : Fold()) ; x2
-            x2 = A -> C : state(folded) ; x3
+            x2 = A -> C : folded() ; x3
             x3 + x6 = x4
             x4 = [sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1] x5 + [sqrt((C_x - 2)**2 + (C_y - 0)**2) <= 0.1] x7
             x5 = (C : MoveFromTo(Pnt(0,0,0), Pnt(2,0,0)), A : Idle()) ; x6
-            x7 = C -> A : Grab(Pnt(2.2,0,0)) ; x8
+            x7 = C -> A : grab(Pnt(2.2,0,0)) ; x8
             x8 = ( C : Idle(), A : Grab(Pnt(2.2,0,0))) ; x9
-            x9 = A -> C : state(grabbed) ; x10
-            x10 = C -> A : action(fold) ; x11
+            x9 = A -> C : grabbed() ; x10
+            x10 = C -> A : fold() ; x11
             x11 = (C : Idle(), A : Fold()) ; x12
-            x12 = A -> C : state(folded) ; x13
+            x12 = A -> C : folded() ; x13
             x13 + x16 = x14
             x14 = [sqrt((C_x - 0)**2 + (C_y - 0)**2) > 0.1] x15 + [sqrt((C_x - 0)**2 + (C_y - 0)**2) <= 0.1] x17
             x15 = (C : MoveFromTo(Pnt(2, 0, 0), Pnt(0, 0, 0)), A : Idle()) ; x16
-            x17 = C -> A : state(done) ; x18
+            x17 = C -> A : done() ; x18
             x18 = end
         in [ (C_x == 0) && (C_y == 0) ]x0
     '''
@@ -38,8 +38,8 @@ def cartAndArmFetch():
 # `delta` is a positive offset which is roughly the reach/length of the gripper also is has to be aligned with the position of A and B
 def armsHandover():
     return ''' Handover =
-        def x0 = A1 -> A2 : meetAt(Pnt(0,0,0)); x1
-            x1 = (A1: MoveTo(Pnt(-0.05,0,0)), A2: MoveTo(Pnt(0.05,0,0))); x2
+        def x0 = A1 -> A2 : meetAt(Pnt(0,0,0.1)); x1
+            x1 = (A1: MoveTo(Pnt(-0.05,0,0.1)), A2: MoveTo(Pnt(0.05,0,0.1))); x2
             x2 = A1 -> A2 : holding(); x3
             x3 = (A1: Idle(), A2: CloseGripper()); x4
             x4 = A2 -> A1 : holding(); x5
@@ -47,7 +47,7 @@ def armsHandover():
             x6 = A1 -> A2 : action(released); x7
             x7 = (A1: Fold(), A2: Fold()); x8
             x8 = end
-        in [ (A1_a == 1.5707963267949) && (A1_b == 1.5707963267949) && (A1_c == 0) && (A2_a == 1.5707963267949) && (A2_b == 1.5707963267949) && (A2_c == 0) ] x0
+        in [ (A1_a == 1.57079632679490) && (A1_b == 1.57079632679490) && (A1_c == 0) && (A2_a == 1.57079632679490) && (A2_b == 1.57079632679490) && (A2_c == 0) ] x0
     '''
 
 def armsHandover1():
@@ -195,9 +195,7 @@ def causal_err():
         in [true] x0
     '''
 
-def funny_fine_but_not_causal():
-    # DZ: our definition of causality is a bit too strong and we reject example like this which are fine
-    # DZ: need to think about something better
+def funny_fine():
     # needs processes C, A
     return ''' G =
         def x0 = C -> A: msg(); x1
@@ -247,7 +245,7 @@ def nomraliztion_err():
 def run(ch, components = None, shouldSucceed = True, debug = False):
     try:
         visitor = exec.ChoreographyExecutor()
-        visitor.execute(ch)
+        visitor.execute(ch, components)
         if (components != None):
             chor = visitor.choreography
             vectorize(chor, components)
@@ -267,9 +265,6 @@ def run(ch, components = None, shouldSucceed = True, debug = False):
         raise Exception("test passed but should have failed")
 
 class ChoreograhyTests(unittest.TestCase):
-
-    if len(exec.Choreography.initialized_components) == 0:
-        print('WARNING: no components initialized, this is only for debugging purposes...')
 
     def test_fetch(self):
         run(cartAndArmFetch(), cartAndArmWorld())
@@ -299,7 +294,7 @@ class ChoreograhyTests(unittest.TestCase):
         run(causal_independent_err(), shouldSucceed = False)
 
     def test_funny_causal(self):
-        run(funny_fine_but_not_causal(), shouldSucceed = False)
+        run(funny_fine(), shouldSucceed = True)
 
 
 if __name__ == '__main__':

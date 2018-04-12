@@ -49,7 +49,7 @@ class DistributedStateNode(Node):
 
 
 class Choreography(DistributedStateNode):
-    initialized_components = set()
+    #initialized_components = set()
 
     def __init__(self, id, statements, predicate, start_state):
         DistributedStateNode.__init__(self, Type.choreography, start_state, None)
@@ -76,6 +76,18 @@ class Choreography(DistributedStateNode):
                 assert not pre in state_to_node
                 state_to_node[pre] = s
         return state_to_node
+
+    def getProcesses(self):
+        procs = set()
+        for s in self.statements:
+            if isinstance(s, Message):
+                procs.add(s.comp1)
+                procs.add(s.comp2)
+            if isinstance(s, Motion):
+                for m in s.motions:
+                    procs.add(m.id)
+        return procs
+
 
     # def __eq__(self, o: Node) -> bool:
     #     if super().__eq__(o):
@@ -108,8 +120,8 @@ class Message(DistributedStateNode):
         #     if comp2 not in Choreography.initialized_components:
         #         raise Exception("Component with name '" + comp2 + "' is not in programs processes.")
         # else:
-        Choreography.initialized_components.add(comp1)
-        Choreography.initialized_components.add(comp2)
+        #Choreography.initialized_components.add(comp1)
+        #Choreography.initialized_components.add(comp2)
 
         self.comp1 = comp1
         self.comp2 = comp2
@@ -177,7 +189,7 @@ class MotionArg(Node):
         #     if motion_name not in Choreography.initialized_components:
         #         raise Exception("Component with name '" + motion_name + "' is not in programs processes.")
         # else:
-        Choreography.initialized_components.add(id)
+        #Choreography.initialized_components.add(id)
 
     def __str__(self):
         string = str(self.id) + ': ' + self.mp_name + "("

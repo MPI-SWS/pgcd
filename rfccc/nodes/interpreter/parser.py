@@ -30,7 +30,7 @@ class Parser:
         self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
 
     def parse(self, text):
-        return Statement(self.parser.parse(text, self.lexer.lexer))
+        return Statement(self.parser.parse(text, self.lexer.lexer) + [Exit(S(0))])
 
     # ------------------------------------- STATEMENT --------------------------------------
 
@@ -43,7 +43,8 @@ class Parser:
                       | assign
                       | motion
                       | print
-                      | skip '''
+                      | skip
+                      | exit '''
         if len(p) > 2:
             p[0] = p[1] + p[3]
         else:
@@ -85,6 +86,10 @@ class Parser:
     def p_skip_function(self, p):
         'skip : SKIP'
         p[0] = Skip()
+    
+    def p_exit_function(self, p):
+        'exit : EXIT LPAREN expression RPAREN'
+        p[0] = Exit(p[3])
 
     # ------------------------- ACTIONS, KEY-VALUES AND ARGUMENTS---------------------------
 

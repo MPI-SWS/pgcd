@@ -1,2 +1,2 @@
-m_setAngleCart( 90 );
-send( id_arm, msg_OK, 1 )
+m_setAngleCart( 90 )
+#send( id_arm, msg_OK, 1 )
