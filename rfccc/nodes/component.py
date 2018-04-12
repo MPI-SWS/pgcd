@@ -5,6 +5,7 @@ import _thread
 import tf_updater
 from executor import Executor
 import cartandarm
+import carrier
 
 class Component(Executor):
 
@@ -43,6 +44,12 @@ class Component(Executor):
         if self.id == "arm":
             self.robot = cartandarm.arm()
             tf_updater.TFUpdater( "_frame_0", "cart_frame", self.robot )
+        #    tf_updater.TFUpdater( "_frame_1", "_frame_0", self.robot )
+        #    tf_updater.TFUpdater( "_frame_2", "_frame_1", self.robot )
+        #    tf_updater.TFUpdater( "_frame_3", "_frame_2", self.robot )
+        elif self.id == "carrier":
+            self.robot = carrier.carrier()
+            tf_updater.TFUpdater( "carrier_frame", "world", self.robot )
         else:
             self.robot = cartandarm.cart()
             tf_updater.TFUpdater( "cart_frame", "world", self.robot )

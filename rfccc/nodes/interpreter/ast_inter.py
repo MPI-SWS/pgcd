@@ -279,7 +279,7 @@ class Motion(Node):
 class Exit(Node):
 
     def __init__(self, expr):
-        Node.__init__(self, Type.motion)
+        Node.__init__(self, Type.exit)
         self.expr = expr
 
     def __str__(self):

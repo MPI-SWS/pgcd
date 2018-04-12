@@ -6,6 +6,7 @@ import tf2_msgs.msg
 import random
 import numpy as np
 from cartandarm import cart, arm
+from carrier import carrier
 
 
 class TFUpdater:
@@ -54,9 +55,12 @@ class TFUpdater:
         #elif self.id_matrix == 4:
         #    matrix = self.matrix.getConfigurationMatrixCart()
 
-        print( "broadcaster: type=", type(self.robot) )
+        #print( "broadcaster: type=", type(self.robot) )
         if type( self.robot ) == cart:
             self.updateMatrix( self.robot.getConfigurationMatrixCart(), "cart_frame", "world" )
+        elif type( self.robot ) == carrier:
+            self.updateMatrix( self.robot.getConfigurationMatrixCart(), "carrier_frame", "world" )
+            print( "broadcaster loop carrier" )
         else:
             self.updateMatrix( self.robot.getConfigurationMatrixTurntable(), "frame_turntable", "cart_frame" )
             self.updateMatrix( self.robot.getConfigurationMatrixCantilever(), "frame_cantilever", "frame_turntable" )

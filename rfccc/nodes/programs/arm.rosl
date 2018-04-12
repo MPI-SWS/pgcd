@@ -1,5 +1,5 @@
 #receive( m_idle ){ (msg_OK, point, {skip}) };
 m_setAngleCantilever( 90 );
 m_setAngleTurntable( 45 );
-m_setAngleAnchorPoint( 45 )
+m_setAngleAnchorPoint( 90 )
 

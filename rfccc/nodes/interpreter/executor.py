@@ -82,10 +82,10 @@ class Executor:
         elif node.tip == Type.assign:
             self.visit_assign(node)
 
-        elif node.tip == Type.motion
+        elif node.tip == Type.motion:
             self.visit_motion(node)
         
-        elif node.tip == Type.exit
+        elif node.tip == Type.exit:
             self.visit_exit(node)
 
     def visit_statement(self, node):
