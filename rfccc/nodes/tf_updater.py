@@ -20,9 +20,9 @@ class TFUpdater:
         try:
             k = 1
             while True:
-                parent_name = rospy.get_param('~frame_' + k + '_parent')
-                frame_name = rospy.get_param('~frame_' + k)
-                updt_func_name = rospy.get_param('~frame_' + k + '_updater')
+                parent_name = rospy.get_param('~frame_' + str(k) + '_parent')
+                frame_name = rospy.get_param('~frame_' + str(k))
+                updt_func_name = rospy.get_param('~frame_' + str(k) + '_updater')
                 k += 1
                 self.parent_ids.append(parent_name)
                 self.frames_ids.append(frame_name)
