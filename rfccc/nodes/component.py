@@ -11,7 +11,6 @@ class Component(Executor):
     def __init__(self):
         Executor.__init__(self, rospy.get_name())
         self.id = rospy.get_name()[1:]
-        self.components = {}
         self.prog_path = rospy.get_param('~program_location') + self.id + '.rosl'
 
         module = importlib.import_module(rospy.get_param('~object_module_name'))

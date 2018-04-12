@@ -14,7 +14,6 @@
         <param name="program_location" type="string" value="/home/pi/ros_catkin_ws/src/rfccc/nodes/programs/"/>
         <param name="object_module_name" type="string" value="cartandarm"/>
         <param name="object_class_name" type="string" value="arm"/>
-        <param name="program_location" type="string" value="arm"/>
 
         <param name="frame_1_parent" type="string" value="cart_frame"/>
         <param name="frame_1" type="string" value="frame_turntable"/>
