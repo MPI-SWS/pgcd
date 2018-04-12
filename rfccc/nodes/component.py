@@ -19,18 +19,7 @@ class Component(Executor):
         self.robot = class_()
 
         tf_updater.TFUpdater(self.robot)
-        #if self.id == "arm":
-        #    self.robot = cartandarm.arm()
-        #    tf_updater.TFUpdater( "_frame_0", "cart_frame", self.robot )
-        #elif self.id == "carrier":
-        #    self.robot = carrier.carrier()
-        #    tf_updater.TFUpdater( "carrier_frame", "world", self.robot )
-        #else:
-        #    self.robot = cartandarm.cart()
-        #    tf_updater.TFUpdater( "cart_frame", "world", self.robot )
-        
         self.execute_prog()
-
     
     def execute_prog(self):
         # try:
