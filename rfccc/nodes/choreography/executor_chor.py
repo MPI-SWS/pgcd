@@ -23,8 +23,8 @@ class ChoreographyExecutor:
         self.artificial_nodes_counter += 1
         return '__x__' + str(self.artificial_nodes_counter)
 
-    def execute(self, code):
-        self.choreography = self.parser.parse(code)
+    def execute(self, code, world = None):
+        self.choreography = self.parser.parse(code, world)
         return self.choreography
 
     def project(self, proj_name, process, debug = False):

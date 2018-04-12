@@ -195,9 +195,7 @@ def causal_err():
         in [true] x0
     '''
 
-def funny_fine_but_not_causal():
-    # DZ: our definition of causality is a bit too strong and we reject example like this which are fine
-    # DZ: need to think about something better
+def funny_fine():
     # needs processes C, A
     return ''' G =
         def x0 = C -> A: msg(); x1
@@ -247,7 +245,7 @@ def nomraliztion_err():
 def run(ch, components = None, shouldSucceed = True, debug = False):
     try:
         visitor = exec.ChoreographyExecutor()
-        visitor.execute(ch)
+        visitor.execute(ch, components)
         if (components != None):
             chor = visitor.choreography
             vectorize(chor, components)
@@ -267,9 +265,6 @@ def run(ch, components = None, shouldSucceed = True, debug = False):
         raise Exception("test passed but should have failed")
 
 class ChoreograhyTests(unittest.TestCase):
-
-    if len(exec.Choreography.initialized_components) == 0:
-        print('WARNING: no components initialized, this is only for debugging purposes...')
 
     def test_fetch(self):
         run(cartAndArmFetch(), cartAndArmWorld())
@@ -299,7 +294,7 @@ class ChoreograhyTests(unittest.TestCase):
         run(causal_independent_err(), shouldSucceed = False)
 
     def test_funny_causal(self):
-        run(funny_fine_but_not_causal(), shouldSucceed = False)
+        run(funny_fine(), shouldSucceed = True)
 
 
 if __name__ == '__main__':
