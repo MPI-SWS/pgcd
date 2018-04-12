@@ -50,7 +50,7 @@ class cart():
         GPIO.setup( self.pinMS3, GPIO.OUT )
         
         #self.offset = sp.Matrix( [[1,0,0,63], [0,1,0,0], [0,0,1,0], [0,0,0,1] ] )
-        self.offset = 63/200
+        self.offset = 63
 
         self.stepsCart = 0
         self.angleCart = 0
@@ -243,7 +243,7 @@ class arm():
     def __init__( self ):
         self.turntable = drv8825.drv8825( pinDir =  38, pinStep = 40, pinEnable = 32, waitingTime=0.002  )
         self.cantilever = drv8825.drv8825( pinDir = 29, pinStep = 31, pinEnable= 32, waitingTime=0.002 )
-        self.anchorpoint = drv8825.drv8825( pinDir = 33, pinStep = 35, pinEnable= 32, waitingTime=0.002 )
+        self.anchorpoint = drv8825.drv8825( pinDir = 33, pinStep = 35, pinEnable= 32, waitingTime=0.00002 )
 
         self.pinServo = 7 #bcm: 4
 
@@ -252,7 +252,7 @@ class arm():
         self.p = GPIO.PWM( self.pinServo, 50 )
         self.p.start( 2.5 )
 
-        self.offset = 63/200 #height of cart
+        self.offset = 63 #height of cart
 
         self.stepsTurnTable = 0
         self.stepsCantilever = 0
@@ -327,7 +327,7 @@ class arm():
     def getConfigurationMatrixCantilever( self ):
         #angle = sp.rad(270*self.stepsCantilever/5400)
         angle = self.angleCantilever-120
-        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 144/200], [0, 0, 0, 1] ] )
+        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 144], [0, 0, 0, 1] ] )
         #print( "caa cant>>", M)
         return M
 
@@ -351,7 +351,7 @@ class arm():
     def getConfigurationMatrixAnchorPoint( self ):
         #angle = sp.rad(270*self.stepsAnchorpoint/5400)
         angle = self.angleAnchorpoint+120
-        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 225/200], [0, 0, 0, 1] ] )
+        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 225], [0, 0, 0, 1] ] )
         #print( "caa ap>>", M)
         return M
 
@@ -366,7 +366,7 @@ class arm():
         #angle = sp.rad(270*self.stepsAnchorpoint/5400)
         #angle = self.angleGripper+120
         angle=0
-        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 200/200], [0, 0, 0, 1] ] )
+        M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 200], [0, 0, 0, 1] ] )
         #print( "caa grip>>", M)
         return M
 
