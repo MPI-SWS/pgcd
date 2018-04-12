@@ -206,10 +206,8 @@ class cart():
 
 
     
-    def moveCart( self, distance, direction ):
-        assert( distance > 0 )
+    def moveCart( self, distance ):
         steps = distance / 210 * 200*self.microstepping
-        steps = steps if direction==1 else -steps
         self.__compute_steps__( steps, 0, 0 )
 
         #steps = (angle/360)*200*6.42*2.15*self.microstepping
