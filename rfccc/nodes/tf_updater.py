@@ -7,6 +7,7 @@ import random
 import numpy as np
 from cartandarm import cart, arm
 from carrier import carrier
+import sympy as sp
 
 
 class TFUpdater:
@@ -35,10 +36,10 @@ class TFUpdater:
 
     def set_up_broadcaster(self, _):
         for parent, frame, updater in zip(self.parent_ids, self.frames_ids, self.updater_func_names):
-            self.updateMatrix(updater(), frame, parent)
+            self.updateMatrix(sp.N(updater()), frame, parent)
 
     def updateMatrix(self, matrix, id_frame, parent_frame):
-        print("Updating: ", id_frame, parent_frame, matrix)
+        #print("Updating: ", id_frame, parent_frame, matrix)
         t = geometry_msgs.msg.TransformStamped()
         t.header.frame_id = parent_frame
         t.header.stamp = rospy.Time.now()
