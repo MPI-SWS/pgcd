@@ -56,7 +56,7 @@ class cart():
         self.angleCart = 0
         self.microstepping = 16 
         self.__microstepping__( 16 )
-        print( self.microstepping )
+        #print( self.microstepping )
 
         self.x = 0
         self.y = 0
@@ -185,10 +185,10 @@ class cart():
     
         cutoff = now
         while now-cutoff < future-cutoff:
-            print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
+            #print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
             self.angleCart = sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle))
             now = time()
-            print( "loop", self.angleCart )
+            #print( "loop", self.angleCart )
 
 
         #print( "set angle cart to angle:", self.angleCart, angle )
@@ -276,10 +276,10 @@ class arm():
 
         cutoff = now
         while now-cutoff < future-cutoff:
-            print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
+            #print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
             setattr( self, angleName, sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ) )
-            print( "getAttr", getattr( self, angleName ) )
-            print( "------>", sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ))
+            #print( "getAttr", getattr( self, angleName ) )
+            #print( "------>", sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ))
             rospy.sleep(0.1)
 
             now = time()
@@ -320,7 +320,7 @@ class arm():
         else:
             self.cantilever.doStep( self.stepsCantilever-steps, 1 )
             self.stepsCantilever = steps
-        print( "set cantilever angle to", steps )
+        #print( "set cantilever angle to", steps )
 
         self.__updateAngleRos__( "angleCantilever", angle, 270, 10 )
 
@@ -344,7 +344,8 @@ class arm():
         else:
             self.anchorpoint.doStep( self.stepsAnchorpoint-steps, 0 )
             self.stepsAnchorpoint = steps
-        print( "set angle to", steps )
+        #
+        # print( "set angle to", steps )
         
         self.__updateAngleRos__( "angleAnchorpoint", -angle, 300, 10 )
 
