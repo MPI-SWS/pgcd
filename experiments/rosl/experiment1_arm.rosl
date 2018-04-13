@@ -1,0 +1,26 @@
+# 1, Wait for carrier
+m_setAngleTurntable( 90 );
+m_setAngleAnchorPoint( 150 );
+m_setAngleCantilever(210);
+
+#grab and lift piece
+receive( m_Idle ){ (msg_OK, ok, {skip}) };
+m_setAngleCantilever(250);
+m_grip(9.5);
+m_setAngleCantilever( 180 );
+
+# 2, release carrier and move to second configuration
+send( id_carrier, msg_OK, 1.0 );
+
+m_setAngleTurntable( 0 );
+
+# 3, wait for the carrier to arrive, release piece
+receive( m_Idle ){ (msg_OK, ok, {skip}) };
+m_setAngleCantilever( 250 );
+m_grip( 6 );
+
+# 4, release carrier, move to final configuration
+send( id_carrier, msg_OK, 1.0 );
+m_retractArm
+
+

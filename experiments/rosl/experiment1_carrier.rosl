@@ -1,0 +1,21 @@
+#Going for arm
+m_moveCart( 670 );
+
+# 1, Send in position to arm 
+send( id_arm, msg_OK, 1.0 );
+
+# 2, Get release from arm and move to second position
+receive( m_Idle ){ (msg_OK, ok, {skip} ) };
+m_setAngleCart( 45 );
+m_moveCart( 500 );
+m_setAngleCart( 85 );
+m_strafeCart( 85 );
+
+# 3, Send in position to arm 
+send( id_arm, msg_OK, 1.0 );
+
+
+# 4, Get release from arm and move to final position
+receive( m_Idle ){ (msg_OK, ok, {skip} ) };
+
+m_moveCart( 700 )

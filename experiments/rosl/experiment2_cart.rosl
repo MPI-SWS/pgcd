@@ -1,0 +1,12 @@
+#1,  go to meeting position
+#receive( m_Idle ){ (msg_OK, ok, { skip} ) };
+m_moveCart( -300 );
+receive( m_Idle ){ (msg_OK, ok, { skip } ) };
+send( id_arm, msg_OK, 1.0 );
+
+# 2, wait and return
+receive( m_Idle ){ (msg_OK, ok, { skip} ) };
+send( id_carrier, msg_OK, 1.0 );
+
+m_moveCart( 300 )
+

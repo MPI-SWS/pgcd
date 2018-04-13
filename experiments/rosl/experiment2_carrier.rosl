@@ -1,0 +1,11 @@
+# 1, Going for arm, send message
+#send( id_arm, msg_OK, 1.0 );
+m_moveCart( 500 );
+send( id_cart, msg_OK, 1.0 );
+
+# 2, wait for arm to grab
+receive( m_Idle ){ (msg_OK, ok, {skip} ) };
+
+# 3, return home
+m_moveCart( -500 )
+

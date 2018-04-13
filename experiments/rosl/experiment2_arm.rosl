@@ -1,0 +1,10 @@
+# 1, start to grab 
+receive( m_Idle ){ (msg_OK, ok, {skip} ) };
+m_setAngleCantilever( 250 );
+m_setAngleAnchorPoint( 150 );
+m_grip( 9.5 );
+m_retractArm;
+
+# 2, signal cart and carrier to move
+send( id_cart, msg_OK, 1.0 )
+
