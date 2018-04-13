@@ -6,6 +6,7 @@ Meccanum cart
 
 from __future__ import division
 import drv8825
+import steppers
 import RPi.GPIO as GPIO
 from time import sleep, time
 import rospy
@@ -18,11 +19,13 @@ from multiprocessing import Process
 
 class carrier():
     def __init__( self ):
-        self.motor1 = drv8825.drv8825( pinDir = 11, pinStep = 12, pinEnable = 3, waitingTime=0.002 )
-        self.motor2 = drv8825.drv8825( pinDir = 13, pinStep = 15, pinEnable = 3, waitingTime=0.002 )
-        self.motor3 = drv8825.drv8825( pinDir = 16, pinStep = 18, pinEnable = 3, waitingTime=0.002 )
-        self.motor4 = drv8825.drv8825( pinDir = 22, pinStep = 7, pinEnable = 3, waitingTime=0.002 )
-    
+        #self.motor1 = drv8825.drv8825( pinDir = 11, pinStep = 12, pinEnable = 3, waitingTime=0.002 )
+        #self.motor2 = drv8825.drv8825( pinDir = 13, pinStep = 15, pinEnable = 3, waitingTime=0.002 )
+        #self.motor3 = drv8825.drv8825( pinDir = 16, pinStep = 18, pinEnable = 3, waitingTime=0.002 )
+        #self.motor4 = drv8825.drv8825( pinDir = 22, pinStep = 7, pinEnable = 3, waitingTime=0.002 )
+
+        self.motors = steppers.Steppers( 4, [11,13,16,22], [12,15,18,7], [3,3,3,3] )
+
 
         GPIO.setmode(GPIO.BOARD)
         self.pinEnable = 3
@@ -66,40 +69,51 @@ class carrier():
         steps_motor2 = coeff_straight * straight - coeff_side * side - coeff_rotate * rotate;
         steps_motor3 = coeff_straight * straight - coeff_side * side + coeff_rotate * rotate;
         steps_motor4 = coeff_straight * straight + coeff_side * side + coeff_rotate * rotate;
+    
+        steps = []
+        direction = []
 
         if steps_motor1 > 0: 
-            f = lambda: self.motor1.doStep( steps_motor1, 1 )
+            direction.append( 1 )
         else:
-            f = lambda: self.motor1.doStep( -steps_motor1, 0 )
+            direction.append( 0 )
 
         if steps_motor2 > 0: 
-            g = lambda: self.motor2.doStep( steps_motor2, 1 )
+            direction.append( 1 )
         else:
-            g = lambda: self.motor2.doStep( -steps_motor2, 0 )
+            direction.append( 0 )
         
         if steps_motor3 > 0: 
-            h = lambda: self.motor3.doStep( steps_motor3, 1 )
+            direction.append( 1 )
         else:
-            h = lambda: self.motor3.doStep( -steps_motor3, 0 )
+            direction.append( 0 )
+        
 
         if steps_motor4 > 0: 
-            i = lambda: self.motor4.doStep( steps_motor4, 1 )
+            direction.append( 1 )
         else:
-            i = lambda: self.motor4.doStep( -steps_motor4, 0 )
+            direction.append( 0 )
 
-        p1 = Process(target = f)
-        p2 = Process(target = g)
-        p3 = Process(target = h)
-        p4 = Process(target = i)
-        p1.start()
-        p2.start()
-        p3.start()
-        p4.start()
+        step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3, steps_motor4] ) )
+        max_steps = max( step_list )
+        stepspertime = 1.6
+        self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
 
-        p1.join()
-        p2.join()
-        p3.join()
-        p4.join()
+
+        #p1 = Process(target = f)
+        #p2 = Process(target = g)
+        #p3 = Process(target = h)
+        #p4 = Process(target = i)
+        #p1.start()
+        #p2.start()
+        #p3.start()
+        #p4.start()
+        #print("join processes")
+        #p1.join()
+        #p2.join()
+        #p3.join()
+        #p4.join()
+        #print("processes joined")
 
 
     def __setMSPins__( self, MS1, MS2, MS3 ):
@@ -206,8 +220,9 @@ class carrier():
         dy = sp.N( sp.sin(self.angleCart)*distance )
         
         print( "x, y, dx, dy", self.x, self.y, dx, dy )
-
-        self.__updateDistanceRos__( "x", "y", self.angleCart, distance, 6.4 )
+        self.x += dx
+        self.y += dy
+        #self.__updateDistanceRos__( "x", "y", self.angleCart, distance, 6.4 )
         
 
         self.__motors_shutdown__()
@@ -222,7 +237,7 @@ class carrier():
 
 
 if __name__ == "__main__":
-    c = cart()
+    c = carrier()
     c.__motors_start__()
     print( c.getConfigurationMatrixCart() )
     c.setAngleCart( 45 )
@@ -233,6 +248,6 @@ if __name__ == "__main__":
     print( c.getConfigurationMatrixCart() )
     c.setAngleCart( 0 )
     print( c.getConfigurationMatrixCart() )
-
+    c.moveCart( 200 )
     
     c.__motors_shutdown__()

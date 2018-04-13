@@ -1,4 +1,4 @@
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from time import sleep
 from datetime import datetime
 from array import array
@@ -28,7 +28,7 @@ class Steppers():
         while i < n:
             GPIO.setup( self.pinDir[i], GPIO.OUT)
             GPIO.setup( self.pinStep[i], GPIO.OUT)
-            GPIO.setup( self.pinSleep[i], GPIO.OUT)
+            GPIO.setup( self.pinNen[i], GPIO.OUT)
             i += 1
 
     # toggle the not enable pin
@@ -62,7 +62,7 @@ class Steppers():
             self.delta[i] = -self.usec
             dt[i] = float(numberSteps[i]) * self.usec / iteration
             #print("dt", i, dt[i])
-            if direction[i]:
+            if directions[i]:
                 GPIO.output( self.pinDir[i], self.PUSH )
             else:
                 GPIO.output( self.pinDir[i], self.PULL )
