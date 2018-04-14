@@ -25,7 +25,6 @@ class World(Component):
         else:
             return self._frame
 
-
 def cartAndArmWorld():
     w = World()
     c = Cart("C", w)

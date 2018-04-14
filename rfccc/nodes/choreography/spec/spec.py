@@ -2,6 +2,7 @@ from sympy import *
 from sympy.vector import CoordSys3D
 import functools
 from abc import ABC, abstractmethod
+from geometry import cube
 
 ######################################################################
 # Some classes to write the spec of components and motion primitive. #
@@ -35,6 +36,7 @@ class Component(ABC):
         self._children = {}
         if parent != None:
             parent.addChildren(index, self)
+        self._obstacles = []
 
     def name(self):
         return self._name
@@ -56,9 +58,18 @@ class Component(ABC):
     def isProcess(self):
         return S.false
 
+    def isObstacle(self):
+        return S.false
+
     def allProcesses(self):
         cp = [p for c in self._children.values() for p in c.allProcesses()]
         if self.isProcess():
+           cp.append(self) 
+        return cp
+
+    def obstacles(self):
+        cp = [p for c in self._children.values() for p in c.allProcesses()]
+        if self.isObstacle():
            cp.append(self) 
         return cp
 
@@ -194,3 +205,38 @@ class MotionPrimitive():
     def invFP(self, point):
         """footprint of the invariant"""
         return S.true
+
+class Obstacle(Component):
+    
+    def __init__(self, name, parent = None, index = 0):
+        super().__init__(name, parent, index)
+    
+    def isObstacle(self):
+        return True
+    
+    def frame(self):
+        return self._parent.frame() #by default use the parent's frame
+
+    def footprint(self, point):
+        """footprint of the object"""
+        return S.true
+
+class Cube(Obstacle):
+
+    count = 0
+    
+    def __init__(self, x, y, z, theta, dx, dy, dy, parent = None, index = 0):
+        super().__init__("cube_" + str(Cube.count), parent, index)
+        Cube.count += 1
+        self.x = x
+        self.y = y
+        self.z = z
+        self.dx = dx
+        self.dy = dy
+        self.dz = dz
+        self.theta = theta
+
+    def footprint(self, point)
+        f = self.frame()
+        cf = f.orient_new_axis(self.name(), self.theta, f.k, location = self.x * f.i + self.y * f.j + self.z * f.k)
+        return cube(cubeFrame, cf.origin, cf.origin.locate_new(self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point)
