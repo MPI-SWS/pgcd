@@ -93,7 +93,7 @@ class Refinement():
     def sameMpName(self, n1, n2):
         l1 = n1.lower()
         l2 = n2.lower()
-        return l1 == l2 or nl == ('m_' + l2)
+        return l1 == l2 or l1 == ('m_' + l2)
     
     def sameMsgName(self, n1, n2):
         l1 = n1.lower()

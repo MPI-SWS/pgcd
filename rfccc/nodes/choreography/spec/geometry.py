@@ -49,3 +49,15 @@ def triangle(frame, centerToSide, height, p, maxError = 0.0):
     projZ = frame.k.projection(v, scalar=True)
     z = And(projZ >= -maxError, projZ <= height + maxError)
     return And(side1, side2, side3, z)
+
+def semiRegularHexagon(frame, centerToSide1, centerToSide2, height, p, maxError = 0.0):
+    side1a = halfSpace(frame, -0.5 * frame.i - 0.866 * frame.j, p, -centerToSide1 - maxError)
+    side1b = halfSpace(frame,  0.5 * frame.i + 0.866 * frame.j, p, -centerToSide2 - maxError)
+    side2a = halfSpace(frame, -0.5 * frame.i + 0.866 * frame.j, p, -centerToSide1 - maxError)
+    side2b = halfSpace(frame,  0.5 * frame.i - 0.866 * frame.j, p, -centerToSide2 - maxError)
+    side3a = halfSpace(frame, frame.i, p, -centerToSide1 - maxError)
+    side3b = halfSpace(frame, - frame.i, p, -centerToSide2 - maxError)
+    v = p.position_wrt(frame.origin)
+    projZ = frame.k.projection(v, scalar=True)
+    z = And(projZ >= -maxError, projZ <= height + maxError)
+    return And(side1a, side1b, side2a, side2b, side3a, side3b, z)

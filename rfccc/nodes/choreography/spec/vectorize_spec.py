@@ -8,11 +8,12 @@ def vectorize(choreography, world):
     #interpret function Pnt(x,y,z) as constructor for point
     #interpret id_x/y/z as accessing coord
     #an id get converted to a point (id_x, id_y, id_z) in the world's frame
+    known = { v for p in world.allProcesses() for v in p.variables() }
     f = world.frame()
     seen = {}
 
     def isKnown(sym):
-        return any([ sym in p.variables() for p in world.allProcesses() ])
+        return sym in known
 
     def updateSympyExpr(expr):
         if isinstance(expr, Symbol):

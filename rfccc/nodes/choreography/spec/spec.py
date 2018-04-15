@@ -221,11 +221,14 @@ class Obstacle(Component):
         """footprint of the object"""
         return S.true
 
+    def mountingPoint(self, index):
+        return ValueException(self.name() + " does not have mounting moints.")
+
 class Cube(Obstacle):
 
     count = 0
     
-    def __init__(self, x, y, z, theta, dx, dy, dy, parent = None, index = 0):
+    def __init__(self, x, y, z, theta, dx, dy, dz, parent = None, index = 0):
         super().__init__("cube_" + str(Cube.count), parent, index)
         Cube.count += 1
         self.x = x
@@ -236,7 +239,7 @@ class Cube(Obstacle):
         self.dz = dz
         self.theta = theta
 
-    def footprint(self, point)
+    def footprint(self, point):
         f = self.frame()
         cf = f.orient_new_axis(self.name(), self.theta, f.k, location = self.x * f.i + self.y * f.j + self.z * f.k)
         return cube(cubeFrame, cf.origin, cf.origin.locate_new(self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point)

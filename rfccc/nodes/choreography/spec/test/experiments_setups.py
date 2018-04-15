@@ -13,7 +13,7 @@ class World(Component):
         super().__init__('World', None)
         f = CoordSys3D('World')
         self._frame = f
-        self._mountingPoints = [f.orient_new_axis('world_mount', t, f.k, location= x * f.i + y * f.j + z * f.k) for (x,y,z,t) in mnts]
+        self._mountingPoints = [f.orient_new_axis('world_mount_' + str(i), t, f.k, location= x * f.i + y * f.j + z * f.k) for i, (x,y,z,t) in enumerate(mnts)]
         self._mount = f
 
     def frame(self):

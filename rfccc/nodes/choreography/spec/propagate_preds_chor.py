@@ -73,10 +73,20 @@ class ProcessPredicatesTracker:
         return self._pred
 
     def addPred(self, pred):
+        res = []
         disj1 = getDisjuncts(self._pred)
-        disj2 = [And(pred, d) for d in disj1]
-        res =  Or(*disj2)
-        self._pred = res
+        for d in disj1:
+            eq = []
+            nonEq = []
+            for c in getConjuncts(d) + [pred]:
+                if isinstance(c, Eq) and isinstance(c.args[0], Symbol):
+                    eq.append(c)
+                else:
+                    nonEq.append(c)
+            sub = {e.args[0]:e.args[1] for e in eq }
+            nonEq = [ e.subs(sub) for e in nonEq ]
+            res.append(And(*(eq+nonEq)))
+        self._pred = Or(*res)
 
     def relaxVariables(self, variables):
         #print('relaxVariables ' + str(variables))
@@ -389,7 +399,7 @@ class CompatibilityCheck:
                 inv = frame
                 for p in self.processes:
                     if debug:
-                        print("invariant (1) for process " + str(p))
+                        print("invariant (1) for process " + p.name())
                     motion = motionForProcess(node.motions, p)
                     mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
                     f = mp.inv()
@@ -400,7 +410,7 @@ class CompatibilityCheck:
                 #mp.invFP are disjoint
                 for p in self.processes:
                     if debug:
-                        print("invariant (2) for process " + str(p))
+                        print("invariant (2) for process " + p.name())
                     motion = motionForProcess(node.motions, p)
                     mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
                     f1 = mp.invFP(point)
@@ -422,20 +432,22 @@ class CompatibilityCheck:
                 post = frame
                 for p in self.processes:
                     if debug:
-                        print("post (1) for process " + str(p))
+                        print("post (1) for process " + p.name())
                     motion = motionForProcess(node.motions, p)
                     mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
-                    inv = And(post, mp.post())
+                    post = And(post, mp.post())
                 self.vcs.append( VC("post is sat @ " + str(node.start_state[0]), [And(assumptions, post)], True) )
                 #- mp.postFP are disjoint
                 for p in self.processes:
                     if debug:
-                        print("post (2) for process " + str(p))
+                        print("post (2) for process " + p.name())
                     motion = motionForProcess(node.motions, p)
                     mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
                     f1 = mp.postFP(point)
                     for p2 in self.processes:
                         if p.name() < p2.name():
+                            if debug:
+                                print("post (3) for process " + p2.name())
                             motion2 = motionForProcess(node.motions, p2)
                             mp2 = p2.motionPrimitive(motion2.mp_name, *motion2.mp_args)
                             f2 = mp2.postFP(point)

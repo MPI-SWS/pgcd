@@ -17,6 +17,8 @@ class Arm(Process):
         self.lowerArmLength = 0.10
         self.lowerArmRadius = 0.04
         self.gripperReach = 0.08
+        self.maxAngleAB =  13*mp.pi()/18
+        self.minAngleAB = -13*mp.pi()/18
         # variables
         self._a = symbols(name + '_a') # rotation along the Y-axis (upper arm to lower arm)
         self._b = symbols(name + '_b') # rotation along the Y-axis (base to upper arm)
@@ -36,6 +38,11 @@ class Arm(Process):
         MoveTo(self)
         OpenGripper(self)
         CloseGripper(self)
+        Grip(self)
+        SetAngleTurntable(self)
+        SetAngleCantilever(self)
+        SetAngleAnchorPoint(self)
+        RetractArm(self)
 
     def frame(self):
         return self._frame
@@ -55,10 +62,10 @@ class Arm(Process):
     def internalVariables(self):
         return [self._a, self._b, self._c, Symbol(self._name + '_dummy')]
 
-    def ownResources(self, point):
-        baseFP = cylinder(self._base, self.baseRadius, self.baseHeight, point)
-        upperFP = cylinder(self._upper, self.upperArmRadius, self.upperArmLength, point)
-        lowerFP = cylinder(self._lower, self.lowerArmRadius, self.lowerArmLength, point)
+    def ownResources(self, point, maxError = 0.0):
+        baseFP = cylinder(self._base, self.baseRadius, self.baseHeight, point, maxError)
+        upperFP = cylinder(self._upper, self.upperArmRadius, self.upperArmLength, point, maxError)
+        lowerFP = cylinder(self._lower, self.lowerArmRadius, self.lowerArmLength, point, maxError)
         return Or(baseFP, upperFP, lowerFP)
 
     def abstractResources(self, point, delta = 0.0):
@@ -76,8 +83,8 @@ class Arm(Process):
 
     def invariant(self):
         pi = mp.pi
-        domain_a = And(self._a >= -pi/2, self._a <= pi/2)
-        domain_b = And(self._b >= 0, self._b <= 2*pi/3)
+        domain_a = And(self._a >= self.minAngleAB, self._a <= self.maxAngleAB)
+        domain_b = And(self._b >= self.minAngleAB, self._b <= self.maxAngleAB)
         domain_c = And(self._c >= -pi, self._c <= pi)
         return And(domain_a, domain_b, domain_c)
 
@@ -94,6 +101,18 @@ class Fold(MotionPrimitiveFactory):
         return ArmFold(self.name(), self._component)
 
 
+class RetractArm(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+
+    def setParameters(self, args):
+        assert(len(args) == 0)
+        return ArmFold(self.name(), self._component)
+
 class ArmFold(MotionPrimitive):
 
     def __init__(self, name, component):
@@ -103,9 +122,10 @@ class ArmFold(MotionPrimitive):
         return S.true
 
     def post(self):
-        a = Eq(self._component.alpha(), mp.pi/2)
-        b = Eq(self._component.beta(), mp.pi/2)
-        return And(a, b)
+        a = Eq(self._component.alpha(), self._component.maxAngleAB)
+        b = Eq(self._component.beta(), self._component.minAngleAB)
+        c = Eq(self._component.gamma(), 0)
+        return And(a, b, c)
 
     def inv(self):
         return S.true
@@ -292,6 +312,19 @@ class OpenGripper(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return ArmIdle(self.name(), self._component)
 
+# since we don't precisely model the gripper, it is like idle
+class Grip(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+
+    def setParameters(self, args):
+        assert(len(args) == 1)
+        return ArmIdle(self.name(), self._component)
+
 class MoveTo(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -335,3 +368,73 @@ class ArmMoveTo(MotionPrimitive):
     def invFP(self, point):
         i = self._component.abstractResources(point, 0.05)
         return self.timify(i)
+
+class SetAngleTurntable(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ["source angle", "target angle"]
+
+    def setParameters(self, args):
+        assert(len(args) == 2)
+        return ArmSetAngle(self.name(), self._component, self._component._c, args[0], args[1])
+
+class SetAngleCantilever(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ["source angle", "target angle"]
+
+    def setParameters(self, args):
+        assert(len(args) == 2)
+        return ArmSetAngle(self.name(), self._component, self._component._b, args[0], args[1])
+
+class SetAngleAnchorPoint(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ["source angle", "target angle"]
+
+    def setParameters(self, args):
+        assert(len(args) == 2)
+        return ArmSetAngle(self.name(), self._component, self._component._a, args[0], args[1])
+
+class ArmSetAngle(MotionPrimitive):
+
+    def __init__(self, name, component, var, angle1, angle2):
+        super().__init__(name, component)
+        self.var = var
+        self.angle1 = angle1
+        self.angle2 = angle2
+
+    def modifies(self):
+        return [self.var, Symbol(self._component.name() + '_dummy')]
+
+    def pre(self):
+        return And(self.var >= self.angle1 - 0.01, self.angle1 <= self.angle1 + 0.01 ) #deal with δ-sat
+
+    def post(self):
+        return Eq(self.var, self.angle2 )
+
+    def inv(self):
+        if self.angle1 < self.angle2:
+            return And( self.var >= self.angle1, self.var <= self.angle2)
+        else:
+            return And( self.var >= self.angle2, self.var <= self.angle1)
+
+    def preFP(self, point):
+        return self._component.ownResources(point, 0.05)
+
+    def postFP(self, point):
+        return self._component.ownResources(point, 0.05)
+
+    def invFP(self, point):
+        i = self._component.ownResources(point, 0.05)
+        return self.timify(i)
+
