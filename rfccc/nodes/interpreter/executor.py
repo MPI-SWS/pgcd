@@ -215,10 +215,7 @@ class Executor:
         print( "visit_motion node:",node )
         try:
             print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
-
             #_thread.start_new_thread( getattr(self.robot, node.value), (*list(self.calculate_sympy_exp(x) for x in node.exps), ))
-
-
             getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
             print( "success" )
         except Exception as e:

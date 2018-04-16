@@ -89,20 +89,6 @@ class Choreography(DistributedStateNode):
         return procs
 
 
-    # def __eq__(self, o: Node) -> bool:
-    #     if super().__eq__(o):
-    #         for first, second in zip(self.statements, o.statements):
-    #             if first != second:
-    #                 return False
-    #     return False
-    #
-    # def __key(self):
-    #     return (self.id)
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
-
-
 class Message(DistributedStateNode):
 
     def __init__(self, start_state, comp1, comp2, msg_type, expressions, continue_state):
@@ -110,18 +96,6 @@ class Message(DistributedStateNode):
 
         if comp1 == comp2:
             raise Exception("No self message! (" + comp1 + "->" + comp2 + ")")
-
-        # TODO : uncomment in production mode
-        # when the main.py launches self.initialized_components
-        # will be populated!
-        # if not self.is_debug and len(Choreography.initialized_components) != 0:
-        #     if comp1 not in Choreography.initialized_components:
-        #         raise Exception("Component with name '" + comp1 + "' is not in programs processes.")
-        #     if comp2 not in Choreography.initialized_components:
-        #         raise Exception("Component with name '" + comp2 + "' is not in programs processes.")
-        # else:
-        #Choreography.initialized_components.add(comp1)
-        #Choreography.initialized_components.add(comp2)
 
         self.comp1 = comp1
         self.comp2 = comp2
@@ -138,12 +112,6 @@ class Message(DistributedStateNode):
 
     def accept(self, visitor):
         visitor.visit(self)
-
-    # def __key(self):
-    #     return (tuple(self.start_state), tuple(self.end_state))
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
 
 
 class Motion(DistributedStateNode):
@@ -170,13 +138,6 @@ class Motion(DistributedStateNode):
                 return False
         return True
 
-    # def __key(self):
-    #     return tuple(self.motions)
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
-
-
 class MotionArg(Node):
 
     def __init__(self, id, mp_name, mp_args):
@@ -184,12 +145,6 @@ class MotionArg(Node):
         self.id = id
         self.mp_name = mp_name
         self.mp_args = mp_args
-
-        # if not self.is_debug and len(Choreography.initialized_components) != 0:
-        #     if motion_name not in Choreography.initialized_components:
-        #         raise Exception("Component with name '" + motion_name + "' is not in programs processes.")
-        # else:
-        #Choreography.initialized_components.add(id)
 
     def __str__(self):
         string = str(self.id) + ': ' + self.mp_name + "("
@@ -201,12 +156,6 @@ class MotionArg(Node):
 
     def shift_delay_check(self, node):
         return self.id == node.id and self.mp_name == node.mp_name and self.mp_args == node.mp_args
-
-    # def __key(self):
-    #     return (tuple(self.start_state), tuple(self.end_state))
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
 
 
 class GuardedChoice(DistributedStateNode):
@@ -231,11 +180,6 @@ class GuardedChoice(DistributedStateNode):
             if not g1.shift_delay_check(g2):
                 return False
         return True
-    # def __key(self):
-    #     return (tuple(self.start_state), tuple(self.end_state))
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
 
     def get_successors(self, state_to_node):
         '''get first non guarded successors (accumulate the guards)'''
@@ -272,13 +216,6 @@ class GuardArg(Node):
     def shift_delay_check(self, node):
         return self.id == node.id and self.expression == node.expression
 
-    # def __key(self):
-    #     return (tuple(self.start_state), tuple(self.end_state))
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
-
-
 class Merge(DistributedStateNode):
 
     def __init__(self, start_state, continue_state):
@@ -298,12 +235,6 @@ class Merge(DistributedStateNode):
 
     def shift_delay_check(self, node):
         return  self == node
-
-    # def __key(self):
-    #     return (tuple(self.start_state), tuple(self.end_state))
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
 
 
 class Fork(DistributedStateNode):

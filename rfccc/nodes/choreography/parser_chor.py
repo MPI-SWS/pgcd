@@ -266,7 +266,6 @@ class ChoreographyParser:
     def p_expression_4th(self, p):
         '''expression : ICONST
                       | DCONST
-                      | SCONST
                       | BCONST'''
         p[0] = sympify(p[1])
 
