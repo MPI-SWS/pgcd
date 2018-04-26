@@ -32,3 +32,19 @@ TODO LIST
 #### 3. ROS BUGS/FEATURE
 * when error in parser occurs stop executing programs
 * make a script to configure all necessery things for running ros in python3?
+
+
+### Damien
+
+* type system
+  - process declaration: `name: type`
+  - componenent signature: `name, var (id: type)*, mp ( id(arg: type [, arg: type]*) )*`
+  - genration of ROS message signature from decalaration
+* choreo
+  - for the compat check, do a product construction directly on the global choreo
+  - idle as variable duration mp
+  - refactoring: spec/choreo folders need to be reorganized (same folder, better naming of the files, glue method to put thing together)
+* runtime performance
+  - have 1 thread for the program/ROS and 1 thread for the motion primitive
+  - how long does sending/receive a message take in the current version?
+  - more efficient interaction with tf (apply some code gen rather than sympy all the way, http://www.sympy.org/scipy-2017-codegen-tutorial/)
