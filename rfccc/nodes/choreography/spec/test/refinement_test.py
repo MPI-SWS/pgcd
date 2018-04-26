@@ -10,19 +10,21 @@ from copy import deepcopy
 
 def prog1C():
     return '''
-        send(id_A, msg_rotate, angles);
+        send(A, rotate, angles);
         receive(m_Idle){
-            (msg_moveTo, position, { m_MoveToPosition(position) })
+            case moveTo(position) =>
+                m_MoveToPosition(position);
         }
     '''
 
 def prog1A():
     return '''
         receive(m_Idle){
-            (msg_rotate, angles, { m_Grab(angles) })
-        };
-        send(id_C, msg_moveTo, position);
-        m_Idle
+            case rotate(angles) =>
+                m_Grab(angles);
+        }
+        send(C, moveTo, position);
+        m_Idle;
     '''
 
 def chor1():
@@ -39,42 +41,41 @@ def progFetchA():
     return '''
         while( true ) {
             receive(m_Idle) {
-                (msg_fold, dummy, {
+                case fold() => {
                     m_Fold;
-                    send(id_C, msg_folded, 0)
-                }),
-                (msg_grab, loc, {
+                    send(C, folded, 0);
+                }
+                case grab(loc) => {
                     m_Grab(loc);
-                    send(id_C, msg_grabbed, 0)
-                }),
-                (msg_done, dummy, {
-                    exit(0) 
-                })
+                    send(C, grabbed, 0);
+                }
+                case done() =>
+                    exit(0);
             }
         }
     '''
 
 def progFetchC():
     return '''
-        send(id_A, msg_fold, 0);
+        send(A, fold, 0);
         receive(m_Idle){
-            (msg_folded, dummy, { skip })
-        };
+            case folded() => skip;
+        }
         while (sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1) {
-            m_MoveFromTo(Pnt(0,0,0), Pnt(2,0,0))
-        };
-        send(id_A, msg_grab, Pnt(2.2,0,0));
+            m_MoveFromTo(Pnt(0,0,0), Pnt(2,0,0));
+        }
+        send(A, grab, Pnt(2.2,0,0));
         receive(m_Idle){
-            (msg_grabbed, dummy, { skip })
-        };
-        send(id_A, msg_fold, 0);
+            case grabbed() => skip;
+        }
+        send(A, fold, 0);
         receive(m_Idle){
-            (msg_folded, dummy, { skip })
-        };
+            case folded() => skip;
+        }
         while (sqrt((C_x)**2 + (C_y - 0)**2) > 0.1) {
-            m_MoveFromTo(Pnt(2,0,0), Pnt(0,0,0))
-        };
-        send(id_A, msg_done, 0)
+            m_MoveFromTo(Pnt(2,0,0), Pnt(0,0,0));
+        }
+        send(A, done, 0);
     '''
 
 def run(ch, components, progs, shouldSucceed = True, debug = False):

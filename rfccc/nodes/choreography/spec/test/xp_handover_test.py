@@ -41,44 +41,45 @@ def xp2_choreo():
 def xp2_cart():
     return '''
     #1,  go to meeting position
-    #receive( m_Idle ){ (msg_OK, ok, { skip} ) };
     m_moveCart( -300 );
-    receive( m_Idle ){ (msg_OK, ok, { skip } ) };
-    send( id_Arm, msg_OK, 1.0 );
-
+    receive( m_Idle ){ 
+        case OK() => skip;
+    }
+    send( Arm, OK, 1.0 );
     # 2, wait and return
-    receive( m_Idle ){ (msg_OK, ok, { skip} ) };
-    send( id_Carrier, msg_OK, 1.0 );
-
-    m_moveCart( 300 )
+    receive( m_Idle ){
+        case OK() => skip;
+    }
+    send( Carrier, OK, 1.0 );
+    m_moveCart( 300 );
     '''
 
 def xp2_arm():
     return '''
     # 1, start to grab 
-    receive( m_Idle ){ (msg_OK, ok, {skip} ) };
+    receive( m_Idle ){
+        case OK() => skip;
+    }
     m_setAngleCantilever( 250 );
     m_setAngleAnchorPoint( 150 );
     m_grip( 9.5 );
     m_retractArm;
-
     # 2, signal cart and carrier to move
-    send( id_Cart, msg_OK, 1.0 );
-    m_idle
+    send( Cart, OK, 1.0 );
+    m_idle;
     '''
 
 def xp2_carrier():
     return '''
     # 1, Going for arm, send message
-    #send( id_arm, msg_OK, 1.0 );
     m_moveCart( 500 );
-    send( id_Cart, msg_OK, 1.0 );
-
+    send( Cart, OK, 1.0 );
     # 2, wait for arm to grab
-    receive( m_Idle ){ (msg_OK, ok, {skip} ) };
-
+    receive( m_Idle ){
+        case OK() => skip;
+    }
     # 3, return home
-    m_moveCart( -500 )
+    m_moveCart( -500 );
     '''
 
 def run(ch, components, progs, debug = False):

@@ -14,7 +14,7 @@ class Lexer:
     # RESERVED WORDS
     reserved = (
                    'SKIP', 'SEND', 'RECEIVE', 'IF',
-                   'ELSE', 'WHILE', 'PRINT', 'EXIT'
+                   'ELSE', 'WHILE', 'PRINT', 'EXIT', 'CASE'
                ) + functions
 
     tokens = reserved + (
@@ -25,7 +25,7 @@ class Lexer:
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'POW',
 
         # OTHER
-        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'DOT'
+        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'DOT', 'ARROW'
     )
 
     # Operators
@@ -53,6 +53,7 @@ class Lexer:
     t_SEMI = r';'
     t_COLON = r':'
     t_DOT = r'\.'
+    t_ARROW = r'=>'
 
     # Completely ignored characters
     t_ignore = ' \t'
@@ -75,12 +76,6 @@ class Lexer:
         if re.match(r'm_.*', str(t.value)):
             t.value = str(t.value)[2:]
             t.type = 'MOTION'
-        elif re.match(r'id_.*', str(t.value)):
-            t.value = str(t.value)[3:]
-            t.type = 'COMPONENT_ID'
-        elif re.match(r'msg_.*', str(t.value)):
-            t.value = str(t.value)[4:]
-            t.type = 'MSGTYPE'
         elif re.match(r'(true|false)', str(t.value)):
             t.value = (t.value == 'true')
             t.type = 'BCONST'

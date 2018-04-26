@@ -9,7 +9,6 @@ TODO LIST
 * update the grammar file in interpreter/grammar as it is in parser.py
 
 #### 1. BUG/FEATURE (interpreter)
-* correct statement grammar such that: "statement ; statement ;"
 * string constant and other constants are not compatible because of sympy
 * fix also print parser
 
@@ -36,6 +35,8 @@ TODO LIST
 
 ### Damien
 
+* frontend
+  - parser keep track of positions (line/col) for error messages
 * type system
   - process declaration: `name: type`
   - componenent signature: `name, var (id: type)*, mp ( id(arg: type [, arg: type]*) )*`

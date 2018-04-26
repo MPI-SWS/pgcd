@@ -132,19 +132,19 @@ class Executor:
             #print('visit_rceive wait')
             self.visit_motion(node.motion)
 
-    def process_msg(self, msg, args):
+    def process_msg(self, msg, action):
         if self.waiting_msg:
             print('stop receiving> ' + self.id)
             for key in self.subs.keys():
                 self.subs[key].unregister()
 
             if 'source_frame' in msg.__slots__:
-                self.transform_slots(msg, args)
+                self.transform_slots(msg, action)
             else:
-                for name in msg.__slots__:
-                    print("\nSetting:", args['data_name'] + '_' + name, getattr(msg, name))
-                    self.__setattr__(args['data_name'] + '_' + name, getattr(msg, name))
-            args['program'].accept(self)
+                for name, var in zip(msg.__slots__, action['data_name']):
+                    print("\nSetting:",  var, "to", name, getattr(msg, name))
+                    self.__setattr__(var, getattr(msg, name))
+            action['program'].accept(self)
             self.waiting_msg = False
 
 
@@ -180,8 +180,8 @@ class Executor:
                 for name in msg.__slots__:
                     if name == 'source_frame':
                         continue
-                    print("\nSetting:", args['data_name'] + '_' + name, end_pt[k])
-                    self.__setattr__(args['data_name'] + '_' + name, end_pt[k])
+                    print("\nSetting:", args['data_name'][k], end_pt[k])
+                    self.__setattr__(args['data_name'][k], end_pt[k])
                     k += 1
                 break
                 # print("-----> 5")
@@ -191,7 +191,7 @@ class Executor:
         print("Transform took seconds: " + str(time.time() - a))
 
     def visit_action(self, node):
-        return {'msg_type': self.msg_types[node.str_msg_type], 'data_name': node.data_name, 'program': node.program}
+        return {'msg_type': self.msg_types[node.str_msg_type], 'data_name': node.data_names, 'program': node.program}
 
     def visit_if(self, node):
         for if_stmt in node.if_list:

@@ -8,3 +8,4 @@
 **/chor_parselog.txt
 *.dot
 /tf2_geometry_msgs
+**/parsetab.py

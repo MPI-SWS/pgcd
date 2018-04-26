@@ -34,37 +34,46 @@ class Parser:
 
     # ------------------------------------- STATEMENT --------------------------------------
 
+    def p_statements(self, p):
+        ''' statements  : statement statements
+                        | '''
+        if len(p) > 1:
+            p[0] = [p[1]] + p[2]
+        else:
+            p[0] = []
+    
     def p_statement_program(self, p):
-        ''' statement : statement SEMI statement
-                      | receive
-                      | send
+        ''' statement : block
                       | if
                       | while
-                      | assign
-                      | motion
-                      | print
-                      | skip
-                      | exit '''
-        if len(p) > 2:
-            p[0] = p[1] + p[3]
-        else:
-            p[0] = [p[1]]
+                      | receive
+                      | send SEMI
+                      | assign SEMI
+                      | motion SEMI
+                      | print SEMI
+                      | skip SEMI
+                      | exit SEMI '''
+        p[0] = p[1]
+
+    def p_block(self, p):
+        'block  : LBRACE statements RBRACE'
+        p[0] = Statement(p[2])
 
     def p_receive_msg(self, p):
-        'receive   : RECEIVE LPAREN motion RPAREN  LBRACE actions RBRACE'
+        'receive   : RECEIVE LPAREN motion RPAREN LBRACE actions RBRACE'
         p[0] = Receive(p[3], p[6])
 
     def p_send_msg(self, p):
-        '''send : SEND LPAREN COMPONENT_ID COMMA MSGTYPE COMMA args RPAREN'''
+        '''send : SEND LPAREN ID COMMA ID COMMA args RPAREN'''
         p[0] = Send(p[3], p[5], p[7])
 
     def p_if_code(self, p):
-        'if : IF LPAREN expression RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE'
-        p[0] = If(sympify(p[3]), Statement(p[6]), Statement(p[10]))
+        'if : IF LPAREN expression RPAREN statement ELSE statement'
+        p[0] = If(sympify(p[3]), p[6], p[10])
 
     def p_while_code(self, p):
-        'while : WHILE LPAREN expression RPAREN LBRACE statement RBRACE'
-        p[0] = While(sympify(p[3]), Statement(p[6]))
+        'while : WHILE LPAREN expression RPAREN statement'
+        p[0] = While(sympify(p[3]), p[5])
 
     def p_assign_code(self, p):
         ''' assign : ID EQUALS expression '''
@@ -94,20 +103,34 @@ class Parser:
     # ------------------------- ACTIONS, KEY-VALUES AND ARGUMENTS---------------------------
 
     def p_actions_tuple(self, p):
-        ''' actions : actions COMMA actions
-                    | LPAREN MSGTYPE COMMA ID COMMA LBRACE statement RBRACE RPAREN '''
-        if p[1] == u'(':
-            p[0] = [Action(p[2], p[4], Statement(p[7]))]
+        ''' actions : CASE ID LPAREN ids RPAREN ARROW statement actions
+                    | '''
+        if len(p) > 1:
+            p[0] = [Action(p[2], p[4], p[7])] + p[8]
         else:
-            p[0] = p[1] + p[3]
+            p[0] = []
+
+    def p_ids(self, p):
+        '''ids : ID COMMA ids
+               | ID
+               | '''
+        if len(p) > 2:
+            p[0] = [p[1]] + p[3]
+        elif len(p) > 1:
+            p[0] = [p[1]]
+        else:
+            p[0] = []
 
     def p_args_tuple(self, p):
         '''args : expression COMMA args
-                | expression'''
+                | expression
+                | '''
         if len(p) > 2:
             p[0] = [sympify(p[1])] + p[3]
-        else:
+        elif len(p) > 1:
             p[0] = [sympify(p[1])]
+        else:
+            p[0] = []
 
     # ------------------------------------EXPRESSIONS--------------------------------------
 

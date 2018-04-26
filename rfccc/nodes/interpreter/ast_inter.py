@@ -140,17 +140,19 @@ class Receive(Node):
 
 class Action(Node):
 
-    def __init__(self, str_msg_type, data_name, program):
+    def __init__(self, str_msg_type, data_names, program):
         Node.__init__(self, Type.action)
         self.str_msg_type = str_msg_type
-        self.data_name = data_name
+        self.data_names = data_names
         self.program = program
 
     def __str__(self):
         string = ''
         if self._label != None:
             string += self._label + ": "
-        string += '(' + str(self.str_msg_type) + ',' + str(self.data_name) + ',' + str(self.program) + ')'
+        string += 'case ' + str(self.str_msg_type) + '('
+        string += ','.join([ str(d) for d in self.data_names])
+        string += ') =>' + str(self.program)
         return string
 
     def accept(self, visitor):

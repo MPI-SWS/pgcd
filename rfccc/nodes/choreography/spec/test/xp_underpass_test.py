@@ -67,7 +67,7 @@ def xp1_cart():
     m_idle;
     m_idle;
     m_idle;
-    m_idle
+    m_idle;
     '''
 
 def xp1_arm():
@@ -78,24 +78,28 @@ def xp1_arm():
     m_setAngleAnchorPoint( 150 );
 
     #grab and lift piece
-    receive( m_Idle ){ (msg_OK, ok, {skip}) };
+    receive( m_Idle ){
+        case OK() => skip;
+    }
     m_setAngleCantilever(250);
     m_grip(9.5);
     m_setAngleCantilever( 180 );
 
     # 2, release carrier and move to second configuration
-    send( id_Carrier, msg_OK, 1.0 );
+    send( Carrier, OK, 1.0 );
 
     m_setAngleTurntable( 0 );
 
     # 3, wait for the carrier to arrive, release piece
-    receive( m_Idle ){ (msg_OK, ok, {skip}) };
+    receive( m_Idle ){
+        case OK() => skip;
+    }
     m_setAngleCantilever( 250 );
     m_grip( 6 );
 
     # 4, release carrier, move to final configuration
-    send( id_Carrier, msg_OK, 1.0 );
-    m_retractArm
+    send( Carrier, OK, 1.0 );
+    m_retractArm;
     '''
 
 def xp1_carrier():
@@ -106,21 +110,25 @@ def xp1_carrier():
     m_Idle;
 
     # 1, Send in position to arm 
-    send( id_Arm, msg_OK, 1.0 );
+    send( Arm, OK, 1.0 );
 
     # 2, Get release from arm and move to second position
-    receive( m_Idle ){ (msg_OK, ok, {skip} ) };
+    receive( m_Idle ){
+        case OK() => skip;
+    }
     m_setAngleCart( 45 );
     m_moveCart( 500 );
     m_setAngleCart( 85 );
     m_strafeCart( 85 );
 
     # 3, Send in position to arm 
-    send( id_Arm, msg_OK, 1.0 );
+    send( Arm, OK, 1.0 );
     # 4, Get release from arm and move to final position
-    receive( m_Idle ){ (msg_OK, ok, {skip} ) };
+    receive( m_Idle ){
+        case OK() => skip;
+    }
 
-    m_moveCart( 700 )
+    m_moveCart( 700 );
     '''
 
 
