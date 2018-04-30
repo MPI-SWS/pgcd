@@ -5,11 +5,11 @@ from copy import copy
 
 class ChoreographyCheck:
 
-    def __init__(self, chor, state_to_node, world):
-        self.start_state = chor.start_state
-        self.state_to_node = state_to_node
+    def __init__(self, chor, world):
+        self.chor = chor
+        self.state_to_node = chor.mk_state_to_node()
         self.scope = 0
-        self.process_motions_dictionary = {self.start_state: set()}
+        self.process_motions_dictionary = {self.chor.start_state: set()}
         self.join_scope = {}
         self.join_node = {}
         self.join_causalities = {}
@@ -24,9 +24,38 @@ class ChoreographyCheck:
         self.procs = copy(self.comps)
         self.causality = CausalityTracker(self.comps)
 
-    def check_well_formedness(self):
-        #print("Starting causality check")
-        self.traverse_graph(self.start_state, set(), self.start_state, self.causality)
+    def check_well_formedness(self, debug = False):
+        if debug:
+            print("Syntacic checks")
+        # at most one end state
+        ends = [ s for s in self.chor.statements if s.tip == Type.end ]
+        if len(ends) > 1:
+            raise Exception("Error: 'end' appeared more than once: " + str(ends))
+        # start is defined
+        start1 = [ s for s in self.chor.statements if self.chor.start_state in s.start_state ]
+        if len(start1) != 1:
+            raise Exception("Error: start state not exactly once on the LHS: " + str(start1))
+        start2 = [ s for s in self.chor.statements if self.chor.start_state in s.end_state ]
+        if len(start2) > 0:
+            raise Exception("Error: start state on the RHS: " + str(start2))
+        # each non-start state at exactly once on the RHS and LHS
+        left_states = set()
+        right_states = set()
+        for s in self.chor.statements:
+            for start in s.start_state:
+                if start in left_states:
+                    raise Exception("Error: " + str(start) + " appears more than once on the LHS")
+                else:
+                    left_states |= {start}
+            for end in s.end_state:
+                if end in right_states:
+                    raise Exception("Error: " + str(end) + " appears more than once on the RHS")
+                else:
+                    right_states |= {end}
+        assert not len(left_states ^ right_states) != 1, 'States ' + str((left_states ^ right_states) - {self.chor.start_state}) + ' are not on LHS or RHS!'
+        if debug:
+            print("Starting causality check")
+        self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
 
     def traverse_graph(self, state, visited, process, causality):
 
@@ -34,7 +63,7 @@ class ChoreographyCheck:
         visited.add(state)
 
         if isinstance(node, Message):
-            causality.p_message_q(node.comp1, node.comp2, node.start_state)
+            causality.p_message_q(node.sender, node.receiver, node.start_state)
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 

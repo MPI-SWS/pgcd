@@ -1,20 +1,16 @@
 from email.policy import strict
 from enum import Enum
-from interpreter.ast_inter import Node
 from sympy import And
 
 
 class Type(Enum):
-    choreography = 0
     statement = 1
     message = 2
     merge = 3
     join = 4
     fork = 5
-    guard_arg = 6
     guard = 7
     join_fork_arg = 8
-    motion_arg = 9
     expression = 10
     motion = 33
     end = 34
@@ -25,34 +21,9 @@ class Type(Enum):
     external_choice = 44
 
 
-class DistributedStateNode(Node):
-
-    def __init__(self, tip, start_state, end_state):
-        Node.__init__(self, tip)
-        self.start_state = start_state
-        self.end_state = end_state
-
-    def __str__(self):
-        return Node.__str__(self) + ": " + str(self.start_state) + " -> " + str(self.end_state)
-    #
-    # def __eq__(self, o: Node) -> bool:
-    #     if super().__eq__(o):
-    #         if len(self.start_state) == len(o.start_state) or len(self.start_state) == len(o.start_state):
-    #             return self.tip == o.tip
-    #     return False
-    #
-    # def __key(self):
-    #     return self.tip
-    #
-    # def __hash__(self) -> int:
-    #     return hash(self.__key())
-
-
-class Choreography(DistributedStateNode):
-    #initialized_components = set()
+class Choreography():
 
     def __init__(self, id, statements, predicate, start_state):
-        DistributedStateNode.__init__(self, Type.choreography, start_state, None)
         self.id = id
         self.statements = statements
         self.predicate = predicate
@@ -66,9 +37,6 @@ class Choreography(DistributedStateNode):
         string += " in [" + str(self.predicate) + ']' + str(self.start_state)
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
     def mk_state_to_node(self):
         state_to_node = {}
         for s in self.statements:
@@ -81,30 +49,39 @@ class Choreography(DistributedStateNode):
         procs = set()
         for s in self.statements:
             if isinstance(s, Message):
-                procs.add(s.comp1)
-                procs.add(s.comp2)
+                procs.add(s.sender)
+                procs.add(s.receiver)
             if isinstance(s, Motion):
                 for m in s.motions:
                     procs.add(m.id)
         return procs
 
 
+class DistributedStateNode():
+
+    def __init__(self, tip, start_state, end_state):
+        self.tip = tip
+        self.start_state = start_state
+        self.end_state = end_state
+
+    def __str__(self):
+        return Node.__str__(self) + ": " + str(self.start_state) + " -> " + str(self.end_state)
+
+
 class Message(DistributedStateNode):
 
-    def __init__(self, start_state, comp1, comp2, msg_type, expressions, continue_state):
+    def __init__(self, start_state, sender, receiver, msg_type, expressions, continue_state):
         DistributedStateNode.__init__(self, Type.message, start_state, continue_state)
-
-        if comp1 == comp2:
-            raise Exception("No self message! (" + comp1 + "->" + comp2 + ")")
-
-        self.comp1 = comp1
-        self.comp2 = comp2
+        if sender == receiver:
+            raise Exception("No self message! (" + sender + "->" + receiver + ")")
+        self.sender = sender
+        self.receiver = receiver
         self.msg_type = msg_type
         self.expressions = expressions
 
     def __str__(self):
         string = ''
-        string += self.start_state[0] + '=' + self.comp1 + '->' + self.comp2 + ':' + self.msg_type + '('
+        string += self.start_state[0] + '=' + self.sender + '->' + self.receiver + ':' + self.msg_type + '('
         for x in self.expressions:
             string += str(x)
         string += ');' + self.end_state[0]
@@ -138,10 +115,9 @@ class Motion(DistributedStateNode):
                 return False
         return True
 
-class MotionArg(Node):
+class MotionArg():
 
     def __init__(self, id, mp_name, mp_args):
-        Node.__init__(self, Type.motion_arg)
         self.id = id
         self.mp_name = mp_name
         self.mp_args = mp_args
@@ -150,9 +126,6 @@ class MotionArg(Node):
         string = str(self.id) + ': ' + self.mp_name + "("
         string += ", ".join([str(a) for a in self.mp_args]) + ')'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def shift_delay_check(self, node):
         return self.id == node.id and self.mp_name == node.mp_name and self.mp_args == node.mp_args
@@ -195,11 +168,9 @@ class GuardedChoice(DistributedStateNode):
                 acc.append(g)
         return acc
 
-
-class GuardArg(Node):
+class GuardArg():
 
     def __init__(self, expression, id):
-        Node.__init__(self, Type.guard_arg)
         self.id = id
         self.expression = expression
         self.has_motion = None # for normalization projection
@@ -210,11 +181,9 @@ class GuardArg(Node):
         string += '] ' + str(self.id)
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
     def shift_delay_check(self, node):
         return self.id == node.id and self.expression == node.expression
+
 
 class Merge(DistributedStateNode):
 

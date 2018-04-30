@@ -16,10 +16,10 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
     for node in choreography.statements:
 
         if isinstance(node, Message):
-            if node.comp1 == process.name():
-                node2 = SendMessage(node.start_state, node.comp2, node.msg_type, node.expressions, node.end_state)
+            if node.sender == process.name():
+                node2 = SendMessage(node.start_state, node.receiver, node.msg_type, node.expressions, node.end_state)
                 chor_proj.statements.append(node2)
-            elif node.comp2 == process.name():
+            elif node.receiver == process.name():
                 node2 = ReceiveMessage(node.start_state, node.msg_type, node.expressions, node.end_state)
                 chor_proj.statements.append(node2)
             else:

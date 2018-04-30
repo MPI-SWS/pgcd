@@ -9,3 +9,4 @@
 *.dot
 /tf2_geometry_msgs
 **/parsetab.py
+**/parselog.txt

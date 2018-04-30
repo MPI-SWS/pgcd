@@ -17,7 +17,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         parser = ChoreographyParser()
         tree = parser.parse(code, world)
         vectorize(tree, world)
-        checker = CompatibilityCheck(parser.state_to_node, tree, world)
+        checker = CompatibilityCheck(tree, world)
         checker.localChoiceChecks()
         # total guards
         checker.generateTotalGuardsChecks()
@@ -38,7 +38,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         parser = ChoreographyParser()
         tree = parser.parse(code, world)
         vectorize(tree, world)
-        checker = CompatibilityCheck(parser.state_to_node, tree, world)
+        checker = CompatibilityCheck(tree, world)
         checker.localChoiceChecks()
         # total guards
         checker.generateTotalGuardsChecks()
@@ -59,7 +59,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         parser = ChoreographyParser()
         tree = parser.parse(code, world)
         vectorize(tree, world)
-        checker = CompatibilityCheck(parser.state_to_node, tree, world)
+        checker = CompatibilityCheck(tree, world)
         checker.localChoiceChecks()
         # total guards
         checker.generateTotalGuardsChecks()
@@ -80,7 +80,7 @@ class CompatibilityCheckTest(unittest.TestCase):
         parser = ChoreographyParser()
         tree = parser.parse(code, world)
         vectorize(tree, world)
-        checker = CompatibilityCheck(parser.state_to_node, tree, world)
+        checker = CompatibilityCheck(tree, world)
         checker.localChoiceChecks()
         # total guards
         checker.generateTotalGuardsChecks()

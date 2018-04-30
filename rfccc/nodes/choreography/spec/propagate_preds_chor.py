@@ -206,10 +206,10 @@ class ProcessesPredicatesTracker:
 
 class CompatibilityCheck:
 
-    def __init__(self, state_to_node, chor, world, minX = -10, maxX = 10, minY = 10, maxY = 10, minZ = 0, maxZ = 2):
+    def __init__(self, chor, world, minX = -10, maxX = 10, minY = 10, maxY = 10, minZ = 0, maxZ = 2):
         self.start_state = chor.start_state
         self.start_pred = chor.predicate
-        self.state_to_node = state_to_node
+        self.state_to_node = chor.mk_state_to_node()
         self.minX = minX
         self.maxX = maxX
         self.minY = minY
@@ -221,8 +221,8 @@ class CompatibilityCheck:
         self.node_to_pred = {}
         self._mergeMap = {}
         #TODO get initial pred for start_state
-        for s in state_to_node.keys():
-            n = state_to_node[s]
+        for s in self.state_to_node.keys():
+            n = self.state_to_node[s]
             if s == self.start_state:
                 self.node_to_pred[n] = ProcessesPredicatesTracker(self.processes, self.start_pred)
             else:

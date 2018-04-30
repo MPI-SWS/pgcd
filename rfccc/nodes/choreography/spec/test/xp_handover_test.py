@@ -87,7 +87,7 @@ def run(ch, components, progs, debug = False):
         visitor.execute(ch)
         chor = visitor.choreography
         vectorize(chor, components)
-        checker = CompatibilityCheck(chor.mk_state_to_node(), chor, components)
+        checker = CompatibilityCheck(chor, components)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
         processes = components.allProcesses()

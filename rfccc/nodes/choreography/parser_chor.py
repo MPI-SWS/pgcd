@@ -21,22 +21,19 @@ class ChoreographyParser:
         ('right', 'UMINUS', 'SIN', 'TAN', 'COS', 'ABS', 'SQRT')
     )
 
-    def __init__(self, **kw):
-        logging.basicConfig(
-            level=logging.DEBUG,
-            filename="chor_parselog.txt",
-            filemode="w",
-            format="%(filename)10s:%(lineno)4d:%(message)s"
-        )
-        log = logging.getLogger()
-        self.lexer = clexer.ChoreographyLexer(debuglog=log, debug=False)
+    def __init__(self, debug = False):
+        log = None
+        if debug:
+            logging.basicConfig(
+                level=logging.DEBUG,
+                filename="chor_parselog.txt",
+                filemode="w",
+                format="%(filename)10s:%(lineno)4d:%(message)s"
+            )
+            log = logging.getLogger()
+        self.lexer = clexer.ChoreographyLexer(debuglog=log, debug=debug)
         self.tokens = self.lexer.tokens
-        self.parser = yacc.yacc(module=self, debuglog=log, debug=False)
-        self.left_states = set()
-        self.right_states = set()
-        self.start_state = None
-        self.end_appeared = False
-        self.state_to_node = {}
+        self.parser = yacc.yacc(module=self, debuglog=log, debug=debug)
 
     def parse(self, text, world = None):
         choreography = self.parser.parse(text, self.lexer.lexer)
@@ -44,50 +41,38 @@ class ChoreographyParser:
         return choreography
 
     def check_well_formdness(self, chor, world):
-        assert not len(self.left_states ^ self.right_states) != 1, 'States ' + str((self.left_states ^ self.right_states) - {
-                self.start_state}) + ' are not on LHS or RHS!'
-        check = ChoreographyCheck(chor, self.state_to_node, world)
+        check = ChoreographyCheck(chor, world)
         check.check_well_formedness()
 
-    def check_lhs_and_rhs_equality_state(self, lhs_list, rhs_list, node):
-
-        if self.start_state is None:
-            self.start_state = lhs_list[0]
-
-        for state in lhs_list:
-            assert not self.left_states.__contains__(state), 'State "' + state + '" appeared on LHS twice...'
-            self.left_states.add(state)
-            self.state_to_node[state] = node
-        for state in rhs_list:
-            assert not self.right_states.__contains__(state), 'State "' + state + '" appeared on RHS twice...'
-            assert not state == self.start_state, 'Start state "' + state + '" cannot appear on RHS.'
-            self.right_states.add(state)
 
 
     # ------------------------------------- STATEMENTS --------------------------------------
 
     def p_choreography(self, p):
-        ''' choreography : ID EQUALS DEF statement IN LSQUARE expression RSQUARE ID '''
+        ''' choreography : ID EQUALS DEF statements IN LSQUARE expression RSQUARE ID '''
         p[0] = Choreography(p[1], p[4], p[7], p[9])
 
+    def p_statements(self, p):
+        ''' statements : statement statements
+                       | '''
+        if len(p) > 2:
+            p[0] = [p[1]] + p[2]
+        else:
+            p[0] = []
+
     def p_statement(self, p):
-        ''' statement : statement statement
-                      | message
+        ''' statement : message
                       | motion
                       | guard
                       | merge
                       | fork
                       | join
                       | end '''
-        if len(p) > 2:
-            p[0] = p[1] + p[2]
-        else:
-            p[0] = [p[1]]
+        p[0] = p[1]
 
     def p_message(self, p):
         'message : ID EQUALS ID ARROW ID COLON ID msgarg SEMI ID'
         p[0] = Message([p[1]], p[3], p[5], p[7], p[8], [p[10]])
-        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_msgarg(self, p):
         ''' msgarg : LPAREN exp RPAREN
@@ -108,7 +93,6 @@ class ChoreographyParser:
     def p_motion(self, p):
         'motion : ID EQUALS LPAREN mspecs RPAREN SEMI ID'
         p[0] = Motion([p[1]], p[4], [p[7]])
-        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_mspecs(self, p):
         ''' mspecs : mspecs COMMA mspecs
@@ -132,7 +116,6 @@ class ChoreographyParser:
     def p_guard(self, p):
         ''' guard   : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs '''
         p[0] = GuardedChoice([p[1]], [GuardArg(sympify(p[4]), p[6])] + p[8])
-        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_gargs(self, p):
         ''' gargs : LSQUARE expression RSQUARE ID PLUS gargs
@@ -145,7 +128,6 @@ class ChoreographyParser:
     def p_merge(self, p):
         ''' merge : ID PLUS margs EQUALS ID '''
         p[0] = Merge([p[1]] + p[3], [p[5]])
-        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_margs(self, p):
         ''' margs : ID PLUS margs
@@ -158,7 +140,6 @@ class ChoreographyParser:
     def p_fork(self, p):
         ''' fork : ID EQUALS ID OR fargs '''
         p[0] = Fork([p[1]], [p[3]] + p[5])
-        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_fargs(self, p):
         ''' fargs : ID OR fargs
@@ -171,7 +152,6 @@ class ChoreographyParser:
     def p_join(self, p):
         ''' join : ID OR jargs EQUALS ID '''
         p[0] = Join([p[1]] + p[3], [p[5]])
-        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
 
     def p_jargs(self, p):
         ''' jargs : ID OR jargs
@@ -183,11 +163,7 @@ class ChoreographyParser:
 
     def p_end(self, p):
         ''' end : ID EQUALS END '''
-        if self.end_appeared:
-            raise Exception("Error: 'end' appeared more than once!")
         p[0] = End([p[1]])
-        self.check_lhs_and_rhs_equality_state(p[0].start_state, p[0].end_state, p[0])
-        self.end_appeared = True
 
     # ------------------------------------EXPRESSIONS--------------------------------------
 
