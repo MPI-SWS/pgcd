@@ -2,7 +2,7 @@ from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
 from spec import *
-from geometry import *
+from utils.geometry import *
 
 #TODO the 2nd cart of a cube 0.18 wide, 0.17 long, 0.16 high
 #when modeled as triangle then center 2 side is about 0.16

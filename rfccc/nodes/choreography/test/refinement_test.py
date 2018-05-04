@@ -4,8 +4,8 @@ import parser
 from refinement import *
 from parser_chor import *
 from experiments_setups import *
-from test.test import cartAndArmFetch, binSorting, armsHandover, ferry
-from vectorize_spec import *
+from parser_test import cartAndArmFetch, binSorting, armsHandover, ferry
+from vectorize_chor import *
 from copy import deepcopy
 
 def prog1C():

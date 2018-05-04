@@ -2,7 +2,7 @@ from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
 from spec import *
-from geometry import *
+from utils.geometry import *
 
 # model for a generic arm as 3 linkage connected by revolute actuators
 class Arm(Process):

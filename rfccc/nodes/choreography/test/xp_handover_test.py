@@ -1,10 +1,10 @@
 from spec import *
-from propagate_preds_chor import *
-from geometry import *
+from compatibility import *
+from utils.geometry import *
 from cart import *
 from arm import *
 from refinement import *
-from vectorize_spec import *
+from vectorize_chor import *
 from mpmath import mp
 from experiments_setups import World
 from copy import deepcopy
@@ -41,45 +41,45 @@ def xp2_choreo():
 def xp2_cart():
     return '''
     #1,  go to meeting position
-    m_moveCart( -300 );
-    receive( m_Idle ){ 
+    moveCart( -300 );
+    receive( Idle ){ 
         case OK() => skip;
     }
     send( Arm, OK, 1.0 );
     # 2, wait and return
-    receive( m_Idle ){
+    receive( Idle ){
         case OK() => skip;
     }
     send( Carrier, OK, 1.0 );
-    m_moveCart( 300 );
+    moveCart( 300 );
     '''
 
 def xp2_arm():
     return '''
     # 1, start to grab 
-    receive( m_Idle ){
+    receive( Idle ){
         case OK() => skip;
     }
-    m_setAngleCantilever( 250 );
-    m_setAngleAnchorPoint( 150 );
-    m_grip( 9.5 );
-    m_retractArm;
+    setAngleCantilever( 250 );
+    setAngleAnchorPoint( 150 );
+    grip( 9.5 );
+    retractArm;
     # 2, signal cart and carrier to move
     send( Cart, OK, 1.0 );
-    m_idle;
+    idle;
     '''
 
 def xp2_carrier():
     return '''
     # 1, Going for arm, send message
-    m_moveCart( 500 );
+    moveCart( 500 );
     send( Cart, OK, 1.0 );
     # 2, wait for arm to grab
-    receive( m_Idle ){
+    receive( Idle ){
         case OK() => skip;
     }
     # 3, return home
-    m_moveCart( -500 );
+    moveCart( -500 );
     '''
 
 def run(ch, components, progs, debug = False):

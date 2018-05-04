@@ -19,7 +19,7 @@ class Lexer:
 
     tokens = reserved + (
         # LITERALS (identifier; motion; component; message type; integer, double, string and bool constant)
-        'ID', 'MOTION', 'COMPONENT_ID', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
+        'ID', 'COMPONENT_ID', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
 
         # OPERATORS
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'POW',
@@ -73,10 +73,7 @@ class Lexer:
 
     def t_ID(self, t):
         r'[A-Za-z_][\w_]*'
-        if re.match(r'm_.*', str(t.value)):
-            t.value = str(t.value)[2:]
-            t.type = 'MOTION'
-        elif re.match(r'(true|false)', str(t.value)):
+        if re.match(r'(true|false)', str(t.value)):
             t.value = (t.value == 'true')
             t.type = 'BCONST'
         else:

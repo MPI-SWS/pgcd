@@ -1,5 +1,5 @@
 import experiments_setups
-from propagate_preds_chor import *
+from compatibility import *
 from sympy import *
 
 import unittest

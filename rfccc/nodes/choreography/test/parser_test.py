@@ -4,7 +4,7 @@ import parser as rp
 import choreography.executor_chor as exec
 import unittest
 from experiments_setups import *
-from vectorize_spec import *
+from vectorize_chor import *
 from copy import deepcopy
 
 

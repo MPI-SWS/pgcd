@@ -4,7 +4,7 @@ from ast_proj import *
 import ast_inter
 from sympy import *
 from DrealInterface import DrealInterface
-from vc import VC
+from utils.vc import VC
 from copy import *
 
 #the refinement check between a program and the projection

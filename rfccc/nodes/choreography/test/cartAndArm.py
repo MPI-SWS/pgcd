@@ -1,7 +1,7 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from spec import *
-from geometry import *
+from utils.geometry import *
 from cart import *
 from arm import *
 

@@ -80,8 +80,9 @@ class Parser:
         p[0] = Assign(id=p[1], value=sympify(p[3]))
 
     def p_motion_exec(self, p):
-        ''' motion : MOTION LPAREN args RPAREN
-                   | MOTION '''
+        ''' motion : ID LPAREN args RPAREN
+                   | ID LPAREN RPAREN
+                   | ID '''
         if len(p) > 2:
             p[0] = Motion(p[1], p[3])
         else:

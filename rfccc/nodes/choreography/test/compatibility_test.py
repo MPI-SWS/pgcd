@@ -1,9 +1,9 @@
 import experiments_setups
-from propagate_preds_chor import *
+from compatibility import *
 from sympy import *
-from test.test import cartAndArmFetch, binSorting, armsHandover, ferry
+from parser_test import cartAndArmFetch, binSorting, armsHandover, ferry
 from parser_chor import *
-from vectorize_spec import *
+from vectorize_chor import *
 
 import unittest
 

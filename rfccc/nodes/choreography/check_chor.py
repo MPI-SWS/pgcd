@@ -5,7 +5,8 @@ from copy import copy
 
 class ChoreographyCheck:
 
-    def __init__(self, chor, world):
+    def __init__(self, chor, world, debug = False):
+        self.debug = debug
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
         self.scope = 0
@@ -24,8 +25,8 @@ class ChoreographyCheck:
         self.procs = copy(self.comps)
         self.causality = CausalityTracker(self.comps)
 
-    def check_well_formedness(self, debug = False):
-        if debug:
+    def check_well_formedness(self):
+        if self.debug:
             print("Syntacic checks")
         # at most one end state
         ends = [ s for s in self.chor.statements if s.tip == Type.end ]
@@ -53,8 +54,8 @@ class ChoreographyCheck:
                 else:
                     right_states |= {end}
         assert not len(left_states ^ right_states) != 1, 'States ' + str((left_states ^ right_states) - {self.chor.start_state}) + ' are not on LHS or RHS!'
-        if debug:
-            print("Starting causality check")
+        if self.debug:
+            print("causality, local choice, connectedness, and ... checks")
         self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
 
     def traverse_graph(self, state, visited, process, causality):
@@ -72,7 +73,7 @@ class ChoreographyCheck:
                 self.process_motions_dictionary[process].add(comp_mot.id)
                 self.comps -= {comp_mot.id}
             self.loop_has_motion = True
-            causality.motion(1)
+            causality.motion(1) #TODO fix the duration
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
@@ -103,7 +104,8 @@ class ChoreographyCheck:
         self.check_all_threads_joined()
         self.check_no_disconnected_parts(visited)
         self.check_every_process_has_motion_in_one_thread()
-        print(' ---> Test passed ✓✓✓')
+        if self.debug:
+            print('---> Test passed ✓✓✓')
 
     def check_same_path_twice(self, node, visited, process, causality):
         for s in node.end_state:

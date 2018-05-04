@@ -47,10 +47,9 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
     return chor_proj
 
 
-class ChoreographyProjection(DistributedStateNode):
+class ChoreographyProjection():
 
     def __init__(self, id, statements, predicate, start_state, process):
-        DistributedStateNode.__init__(self, Type.projection, start_state, None)
         self.id = id
         self.statements = statements
         self.predicate = predicate
@@ -63,9 +62,6 @@ class ChoreographyProjection(DistributedStateNode):
             string += str(stmt) + '\n'
         string += " in [" + str(self.predicate) + ']' + str(self.start_state)
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def mk_state_to_node(self):
         state_to_node = {}

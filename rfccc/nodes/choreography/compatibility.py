@@ -2,7 +2,7 @@ from spec import *
 from ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
-from vc import *
+from utils.vc import *
 import copy
 import logging
 import functools

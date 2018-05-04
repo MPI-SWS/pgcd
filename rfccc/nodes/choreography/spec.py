@@ -2,7 +2,7 @@ from sympy import *
 from sympy.vector import CoordSys3D
 import functools
 from abc import ABC, abstractmethod
-from geometry import cube
+from utils.geometry import cube
 
 ######################################################################
 # Some classes to write the spec of components and motion primitive. #

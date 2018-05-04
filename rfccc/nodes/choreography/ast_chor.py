@@ -14,7 +14,6 @@ class Type(Enum):
     expression = 10
     motion = 33
     end = 34
-    projection = 40
     send_message = 41
     receive_message = 42
     indirection = 43

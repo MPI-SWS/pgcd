@@ -1,10 +1,10 @@
 from spec import *
-from propagate_preds_chor import *
-from geometry import *
+from compatibility import *
+from utils.geometry import *
 from cart import *
 from arm import *
 from refinement import *
-from vectorize_spec import *
+from vectorize_chor import *
 from mpmath import mp
 from experiments_setups import World
 from copy import deepcopy
@@ -55,80 +55,80 @@ def xp1_choreo():
 
 def xp1_cart():
     return '''
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
-    m_idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
+    idle;
     '''
 
 def xp1_arm():
     return '''
     # 1, Wait for carrier
-    m_setAngleTurntable( 90 );
-    m_setAngleCantilever(210);
-    m_setAngleAnchorPoint( 150 );
+    setAngleTurntable( 90 );
+    setAngleCantilever(210);
+    setAngleAnchorPoint( 150 );
 
     #grab and lift piece
-    receive( m_Idle ){
+    receive( Idle ){
         case OK() => skip;
     }
-    m_setAngleCantilever(250);
-    m_grip(9.5);
-    m_setAngleCantilever( 180 );
+    setAngleCantilever(250);
+    grip(9.5);
+    setAngleCantilever( 180 );
 
     # 2, release carrier and move to second configuration
     send( Carrier, OK, 1.0 );
 
-    m_setAngleTurntable( 0 );
+    setAngleTurntable( 0 );
 
     # 3, wait for the carrier to arrive, release piece
-    receive( m_Idle ){
+    receive( Idle ){
         case OK() => skip;
     }
-    m_setAngleCantilever( 250 );
-    m_grip( 6 );
+    setAngleCantilever( 250 );
+    grip( 6 );
 
     # 4, release carrier, move to final configuration
     send( Carrier, OK, 1.0 );
-    m_retractArm;
+    retractArm;
     '''
 
 def xp1_carrier():
     return '''
     #Going for arm
-    m_moveCart( 670 );
-    m_Idle;
-    m_Idle;
+    moveCart( 670 );
+    Idle;
+    Idle;
 
     # 1, Send in position to arm 
     send( Arm, OK, 1.0 );
 
     # 2, Get release from arm and move to second position
-    receive( m_Idle ){
+    receive( Idle ){
         case OK() => skip;
     }
-    m_setAngleCart( 45 );
-    m_moveCart( 500 );
-    m_setAngleCart( 85 );
-    m_strafeCart( 85 );
+    setAngleCart( 45 );
+    moveCart( 500 );
+    setAngleCart( 85 );
+    strafeCart( 85 );
 
     # 3, Send in position to arm 
     send( Arm, OK, 1.0 );
     # 4, Get release from arm and move to final position
-    receive( m_Idle ){
+    receive( Idle ){
         case OK() => skip;
     }
 
-    m_moveCart( 700 );
+    moveCart( 700 );
     '''
 
 
