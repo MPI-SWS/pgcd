@@ -7,20 +7,6 @@ import copy
 import logging
 import functools
 
-def getConjuncts(expr):
-    return list(And.make_args(expr))
-
-def getDisjuncts(expr):
-    return list(Or.make_args(expr))
-
-# conj2 ==> conj1
-def conjContains(conj1, conj2):
-    c1 = set(getConjuncts(conj1))
-    c2 = set(getConjuncts(conj2))
-    res = c1 == {S.true} or c1.issubset(c2) or c2 == {S.false}
-    #print("contains " + str(c1) + " " + str(c2) + " = " + str(res))
-    return res
-
 def choiceAt(node, process_set):
     allGuards = { v for gs in node.guarded_states for v in gs.expression.free_symbols }
     choiceCandidates = [ p for p in process_set if any([ v in allGuards for v in p.variables() ]) ]
