@@ -8,6 +8,7 @@ from sympy import S
 from parser_chor import *
 from ast_chor import *
 from ast_proj import *
+from minimize import *
 from normalization import *
 
 

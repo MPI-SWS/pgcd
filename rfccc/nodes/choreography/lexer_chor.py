@@ -18,13 +18,13 @@ class ChoreographyLexer:
 
     tokens = reserved + (
         # LITERALS (identifier; motion; component; message type; integer, double, string and bool constant)
-        'ID', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
+        'ID', 'ICONST', 'DCONST', 'BCONST',
 
         # OPERATORS
         'ARROW', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'POW', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
         # OTHER
-        'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'COMMA', 'SEMI', 'COLON', 'DOT'
+        'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'COMMA', 'SEMI', 'COLON'
     )
 
     # Operators
@@ -52,7 +52,6 @@ class ChoreographyLexer:
     t_COMMA = r','
     t_SEMI = r';'
     t_COLON = r':'
-    t_DOT = r'\.'
 
     # Completely ignored characters
     t_ignore = ' \t'

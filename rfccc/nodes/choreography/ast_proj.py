@@ -3,6 +3,11 @@ from sympy import *
 from spec import *
 from copy import *
 
+def isPlaceholderMp(mp):
+    return mp.mp_name() == "__wait__"
+
+def mkPlaceholderMp(process, duration):
+    return MotionArg(process.name(), "__wait__", [duration])
 
 
 def CreateProjectionFromChoreography(choreography, projection_name, process):
@@ -31,7 +36,7 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
                 if x.id == process.name():
                     motions.append(x)
             if motions == []:
-                motions.append(MotionArg(process.name(), "wait", [sympify(1)])) # TODO DZ: fix the duration later
+                motions.append(mkPlaceholderMp(process, sympify(1))) # TODO DZ: fix the duration later
             n2 = Motion(node.start_state, motions, node.end_state)
             chor_proj.statements.append(n2)
 

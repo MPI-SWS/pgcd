@@ -19,13 +19,13 @@ class Lexer:
 
     tokens = reserved + (
         # LITERALS (identifier; motion; component; message type; integer, double, string and bool constant)
-        'ID', 'COMPONENT_ID', 'MSGTYPE', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
+        'ID', 'ICONST', 'DCONST', 'SCONST', 'BCONST',
 
         # OPERATORS
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'POW',
 
         # OTHER
-        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'DOT', 'ARROW'
+        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'ARROW'
     )
 
     # Operators
@@ -51,8 +51,6 @@ class Lexer:
     t_RBRACE = r'\}'
     t_COMMA = r','
     t_SEMI = r';'
-    t_COLON = r':'
-    t_DOT = r'\.'
     t_ARROW = r'=>'
 
     # Completely ignored characters
