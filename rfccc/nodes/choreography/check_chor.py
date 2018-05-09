@@ -1,7 +1,6 @@
 from ast_chor import *
-import numpy as np
-from copy import copy
-
+from compatibility import choiceAt
+from utils.causality_tracker import *
 
 class ChoreographyCheck:
 
@@ -18,14 +17,20 @@ class ChoreographyCheck:
         self.looped_states = set()
         self.loop_has_motion = False
         self.comps = set()
+        self.world = world
         if world != None:
             self.comps = { p.name() for p in world.allProcesses() }
         else:
-            self.comps = chor.getProcesses()
-        self.procs = copy(self.comps)
+            self.comps = chor.getProcessNames()
         self.causality = CausalityTracker(self.comps)
 
     def check_well_formedness(self):
+        self.syntacic_checks()
+        if self.debug:
+            print("causality, local choice, connectedness, and ... checks")
+        self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
+
+    def syntacic_checks(self):
         if self.debug:
             print("Syntacic checks")
         # at most one end state
@@ -54,9 +59,18 @@ class ChoreographyCheck:
                 else:
                     right_states |= {end}
         assert not len(left_states ^ right_states) != 1, 'States ' + str((left_states ^ right_states) - {self.chor.start_state}) + ' are not on LHS or RHS!'
-        if self.debug:
-            print("causality, local choice, connectedness, and ... checks")
-        self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
+
+    def choice_at(self, node):
+        if self.world != None:
+            # the proper way
+            p = choiceAt(node, self.world.allProcesses())
+            return p.name()
+        else:
+            # poor man's version
+            candidates = { str(s).split('_')[0] for gs in node.guarded_states for s in gs.expression.free_symbols }
+            ps = candidates & self.chor.getProcessNames()
+            assert len(ps) == 1, "choice not local: " + str(node)
+            return ps.pop()
 
     def traverse_graph(self, state, visited, process, causality):
 
@@ -78,10 +92,8 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, GuardedChoice):
-            candidates = { str(s).split('_')[0] for gs in node.guarded_states for s in gs.expression.free_symbols }
-            ps = candidates & self.procs
-            assert len(ps) == 1, "choice not local: " + str(node)
-            causality.choice_at_p(ps.pop())
+            p = self.choice_at(node)
+            causality.choice_at_p(p)
             self.check_same_path_twice(node, visited, process, causality)
             return
 
@@ -175,86 +187,6 @@ class ChoreographyCheck:
                 self.traverse_graph(s, visited, s, var)
 
     def check_every_process_has_motion_in_one_thread(self):
-        assert not len(self.comps) > 0, 'No motions found for: ' + ','.join(self.comps) + '".'
+        assert not len(self.comps) > 0, 'No motions found for: ' + ','.join(self.comps) + '.'
 
 
-class CausalityTracker:
-
-    def __init__(self, process_set):
-        self.time = 0
-        self.process_to_vclock = {}
-        self.process_set = copy(process_set)
-        self.init_vclocks()
-        for p in self.process_set:
-            self.lastEvent = copy(self.process_to_vclock[p][0])
-
-    def copy(self, tracker):
-        self.time = tracker.time
-        idx = 0
-        for proc in self.process_set:
-            self.process_to_vclock[proc] = (np.copy(tracker.process_to_vclock[proc][0]), idx)
-            idx += 1
-
-    def init_vclocks(self):
-        idx = 0
-        for proc in self.process_set:
-            self.process_to_vclock[proc] = (np.zeros((len(self.process_set),), dtype=int), idx)
-            idx += 1
-
-    def inc_thread_vclock(self, p):
-        self.process_to_vclock[p][0][self.process_to_vclock[p][1]] += 1
-
-    def p_concurrent_q(self, p, q):
-        return not (self.p_after_q(p, q) or self.p_after_q(q, p))
-
-    def after(self, evtAfter, evtBefore):
-        return all( after >= before for after, before in zip(evtAfter, evtBefore))
-
-    def before(self, evtBefore, evtAfter):
-        return self.after(evtAfter, evtBefore)
-
-    def p_before_q(self, p, q):
-        return self.p_after_q(q, p)
-
-    def p_after_q(self, p, q):
-        return self.after(self.process_to_vclock[p][0], self.process_to_vclock[q][0])
-
-    def p_message_q(self, p, q, state):
-        #print("msg", p, q)
-        #assert self.p_after_q(p, q), 'Process at state "' + ''.join(state) + '": "' + str(self.process_to_vclock[p][0]) + '" isn\'t after process "' + str(self.process_to_vclock[q][0]) + '".'
-        self.inc_thread_vclock(p)
-        assert self.after(self.process_to_vclock[p][0], self.lastEvent), 'Process at state "' + ''.join(state) + '": "' + str(self.process_to_vclock[p][0]) + '" isn\'t after last event "' + str(self.lastEvent) + '".'
-
-        self.process_to_vclock[q] = (np.copy(self.process_to_vclock[p][0]), self.process_to_vclock[q][1])
-        self.lastEvent = self.process_to_vclock[q][0]
-        #self.inc_thread_vclock(q)
-
-    def choice_at_p(self, p):
-        #print("choice at", p)
-        self.inc_thread_vclock(p)
-        assert self.after(self.process_to_vclock[p][0], self.lastEvent), 'Process at state "' + ''.join(state) + '": "' + str(self.process_to_vclock[p][0]) + '" isn\'t after last event "' + str(self.lastEvent) + '".'
-        self.lastEvent = self.process_to_vclock[p][0]
-
-    def motion(self, duration):
-        #print("motion", 1)
-        self.time += duration
-        self.init_vclocks()
-        for p in self.process_set:
-            self.lastEvent = copy(self.process_to_vclock[p][0])
-
-    def join_with_causalities(self, causalities, end_states):
-        for i in range(len(causalities)):
-            assert self.time == causalities[i].time, 'Cannot join states: "' + ' , '.join(end_states) + '" because time doesn\'t match: "' + str(self.time) + ' != ' + str(causalities[i].time) + '".'
-            for proc in self.process_set:
-                self.process_to_vclock[proc] = (
-                np.maximum(self.process_to_vclock[proc][0], causalities[i].process_to_vclock[proc][0]),
-                self.process_to_vclock[proc][1])
-
-    def fork_new_thread(self):
-        cl = CausalityTracker(self.process_set)
-        cl.time = self.time
-        idx = 0
-        for proc in self.process_set:
-            cl.process_to_vclock[proc] = (np.copy(self.process_to_vclock[proc][0]), idx)
-            idx += 1
-        return cl

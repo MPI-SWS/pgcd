@@ -44,7 +44,7 @@ class Choreography():
                 state_to_node[pre] = s
         return state_to_node
 
-    def getProcesses(self):
+    def getProcessNames(self):
         procs = set()
         for s in self.statements:
             if isinstance(s, Message):

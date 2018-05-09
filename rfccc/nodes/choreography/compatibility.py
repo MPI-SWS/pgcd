@@ -3,6 +3,7 @@ from ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
 from utils.vc import *
+from utils.fixed_point import *
 import copy
 import logging
 import functools
@@ -26,16 +27,6 @@ def motionForProcess(motions, process):
         return candidates.pop()
     else:
         raise Exception("more than one motion primitive for " + p.name() + " -> " + str(candidates))
-
-def processForMotion(processes, motion):
-    candidates = [ p for p in processes if p.name() == motion.id ]
-    assert(len(candidates) <= 1)
-    if len(candidates) == 0:
-        return None
-    elif len(candidates) == 1:
-        return candidates.pop()
-    else:
-        raise Exception("more than one process for motion primitive " + motion.id + " -> " + str(candidates))
 
 class ProcessPredicatesTracker:
 
@@ -160,7 +151,8 @@ class ProcessesPredicatesTracker:
     def addPred(self, pred):
         p = self._findProcess(pred)
         if p == None:
-            logging.warning('ignoring predicate without process "%s": make sure it is not false.', str(pred))
+            if pred != S.true:
+                logging.warning('ignoring predicate without process "%s": make sure it is not false.', str(pred))
         else:
             self._process_to_pred[p].addPred(pred)
 
@@ -190,11 +182,39 @@ class ProcessesPredicatesTracker:
             acc = acc + "\n  " + str(self._process_to_pred[p])
         return acc
 
+
+class ComputePreds(FixedPointDataflowAnalysis):
+
+    def startElement(self, node):
+        return ProcessesPredicatesTracker(self.processes, self.chor.predicate)
+    
+    def defaultElement(self, node):
+        return ProcessesPredicatesTracker(self.processes, S.false)
+    
+    def _guard(self, pred, guard, succ):
+        trackerSrc = self.node_to_element[pred]
+        tracker = trackerSrc.copy()
+        tracker.addFormula(guard)
+        return self._goesInto(tracker, succ)
+
+    def _motion(self, pred, motions, succ):
+        #TODO how to deal with the processes specified in other branches?
+        #TODO this assums we have all the processes!
+        trackerSrc = self.node_to_element[pred]
+        tracker = trackerSrc.copy()
+        #relax for the variables that changes
+        for mp in motions:
+            tracker.relaxVariables(mp.modifies())
+        #add the postconditions
+        for mp in motions:
+            tracker.addFormula(mp.post())
+        return self._goesInto(tracker, succ)
+
+
 class CompatibilityCheck:
 
     def __init__(self, chor, world, minX = -10, maxX = 10, minY = 10, maxY = 10, minZ = 0, maxZ = 2):
-        self.start_state = chor.start_state
-        self.start_pred = chor.predicate
+        self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
         self.minX = minX
         self.maxX = maxX
@@ -206,131 +226,13 @@ class CompatibilityCheck:
         self.processes = world.allProcesses()
         self.node_to_pred = {}
         self._mergeMap = {}
-        #TODO get initial pred for start_state
-        for s in self.state_to_node.keys():
-            n = self.state_to_node[s]
-            if s == self.start_state:
-                self.node_to_pred[n] = ProcessesPredicatesTracker(self.processes, self.start_pred)
-            else:
-                self.node_to_pred[n] = ProcessesPredicatesTracker(self.processes, S.false)
-            self._mergeMap[n] = []
         self.predComputed = False
         self.vcs = []
 
-    def _goesInto(self, tracker, succ):
-        if isinstance(succ, Merge) or isinstance(succ, Join):
-            succ = self.state_to_node[succ.end_state[0]]
-            self._mergeMap[succ].append(tracker)
-        else:
-            trackerOld = self.node_to_pred[succ]
-            self.node_to_pred[succ] = tracker
-            return not trackerOld.equals(tracker)
-
-    def _guard(self, pred, guard, succ):
-        trackerSrc = self.node_to_pred[pred]
-        tracker = trackerSrc.copy()
-        tracker.addFormula(guard)
-        return self._goesInto(tracker, succ)
-
-    def _motion(self, pred, motions, succ):
-        #TODO how to deal with the processes specified in other branches?
-        #TODO this assums we have all the processes!
-        trackerSrc = self.node_to_pred[pred]
-        tracker = trackerSrc.copy()
-        #relax for the variables that changes
-        for mp in motions:
-            tracker.relaxVariables(mp.modifies())
-        #add the postconditions
-        for mp in motions:
-            tracker.addFormula(mp.post())
-        return self._goesInto(tracker, succ)
-
-    # for operation that do not change the predicates
-    def _transfer(self, pred, succ):
-        tracker = self.node_to_pred[pred]
-        return self._goesInto(tracker, succ)
-
-    def _merge(self, node):
-        tracker = ProcessesPredicatesTracker(self.processes, S.false)
-        for t in self._mergeMap[node]:
-            tracker.merge(t)
-        self._mergeMap[node] = []
-        trackerOld = self.node_to_pred[node]
-        self.node_to_pred[node] = tracker
-        return not trackerOld.equals(tracker)
-
-    # a fixed point to compute the pred at each point in the choreography
-    # TODO smarter fixed point with a work queue
     def computePreds(self, debug = False):
-        changed = True
-        counter = 0
-        while changed:
-            counter = counter + 1
-            if debug:
-                print("")
-                print("")
-                print("")
-                print("==========================")
-                print("==========================")
-                print("iteration " + str(counter))
-                for node in self.state_to_node.values():
-                    print(node)
-                    print(self.node_to_pred[node])
-                print("==========================")
-            changed = False
-            # first the non-merge
-            for node in self.state_to_node.values():
-                if debug:
-                    print("processing " + str(node))
-                if isinstance(node, Message):
-                    succ = self.state_to_node[node.end_state[0]]
-                    res = self._transfer(node, succ)
-                    if debug and res:
-                        print("changed: " + str(node))
-                    changed = changed or res
-                elif isinstance(node, GuardedChoice):
-                    for gs in node.guarded_states:
-                        guard = gs.expression
-                        succ = self.state_to_node[gs.id]
-                        res = self._guard(node, guard, succ)
-                        if debug and res:
-                            print("changed: " + str(node))
-                        changed = changed or res
-                elif isinstance(node, Fork):
-                    for s in node.end_state:
-                        succ = self.state_to_node[s]
-                        res = self._transfer(node, succ)
-                        if debug and res:
-                            print("changed: " + str(node))
-                        changed = changed or res
-                elif isinstance(node, Motion):
-                    processes = []
-                    mps = []
-                    for motion in node.motions:
-                        proc = processForMotion(self.processes, motion)
-                        mpName = motion.mp_name
-                        mpArgs = motion.mp_args
-                        mp = proc.motionPrimitive(mpName, *mpArgs)
-                        processes.append(proc)
-                        mps.append(mp)
-                    assert set(processes) == set(self.processes), str(processes) + " != " + str(set(self.processes))
-                    succ = self.state_to_node[node.end_state[0]]
-                    res = self._motion(node, mps, succ)
-                    if debug and res:
-                        print("changed: " + str(node))
-                    changed = changed or res
-            #finish the merge/join
-            merged = set()
-            for node in self.state_to_node.values():
-                if isinstance(node, Merge) or isinstance(node, Join):
-                    # TODO probably not the best for Join
-                    succ = self.state_to_node[node.end_state[0]]
-                    if not succ in merged:
-                        merged.add(succ)
-                        res = self._merge(succ)
-                        if debug and res:
-                            print("changed: " + str(node))
-                        changed = changed or res
+        cp = ComputePreds(self.chor, self.world)
+        cp.perform(debug)
+        self.node_to_pred = cp.result()
         self.predComputed = True
 
     def isTimeInvariant(self, formula):

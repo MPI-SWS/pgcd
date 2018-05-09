@@ -79,11 +79,6 @@ class ChoreographyExecutor:
         if debug:
             print("-- after remove fork/join --")
             print(choreography)
-        #to help the refinement
-        #addExternalChoice(self, choreography, state_to_node, debug)
-        #if debug:
-        #    print("-- after add external --")
-        #    print(choreography)
         minimize(choreography, state_to_node, debug)
         if debug:
             print("-- after minimize --")
