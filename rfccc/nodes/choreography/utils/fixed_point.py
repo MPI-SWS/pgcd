@@ -1,28 +1,26 @@
 from abc import ABC, abstractmethod
 from ast_chor import *
-import copy
 
 class FixedPointDataflowAnalysis(ABC):
 
-    def __init__(self, chor, world):
+    def __init__(self, chor, processes):
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
-        self.world = world
-        self.processes = world.allProcesses()
+        self.processes = processes
         self.node_to_element = {}
         self._mergeMap = {}
         self.done = False
     
     ##################################
     ## Begin operations to override ##
+    ## the default methods are for  ##
+    ## a forward analysis.          ##
     ##################################
 
+    # the element must provide a `copy`, `equals`, `merge`, and `join` methods
+
     @abstractmethod
-    def startElement(self, node):
-        pass
-    
-    @abstractmethod
-    def defaultElement(self, node):
+    def initialValue(self, node):
         pass
     
     def _guard(self, pred, guard, succ):
@@ -46,18 +44,24 @@ class FixedPointDataflowAnalysis(ABC):
         return self._goesInto(tracker, succ)
 
     def _merge(self, node):
-        tracker = self.defaultElement(node)
+        tracker = None
         for t in self._mergeMap[node]:
-            tracker.merge(t)
+            if tracker == None:
+                tracker = t.copy()
+            else:
+                tracker.merge(t)
         self._mergeMap[node] = []
         trackerOld = self.node_to_element[node]
         self.node_to_element[node] = tracker
         return not trackerOld.equals(tracker)
     
     def _join(self, node):
-        tracker = self.defaultElement(node) #TODO !?!?
+        tracker = None
         for t in self._mergeMap[node]:
-            tracker.merge(t) #TODO !?!?
+            if tracker == None:
+                tracker = t.copy()
+            else:
+                tracker.join(t)
         self._mergeMap[node] = []
         trackerOld = self.node_to_element[node]
         self.node_to_element[node] = tracker
@@ -67,6 +71,7 @@ class FixedPointDataflowAnalysis(ABC):
     ## End operations to override ##
     ################################
     
+    # use for forward analysis
     def _goesInto(self, tracker, succ):
         if isinstance(succ, Merge) or isinstance(succ, Join):
             succ = self.state_to_node[succ.end_state[0]]
@@ -75,9 +80,19 @@ class FixedPointDataflowAnalysis(ABC):
             trackerOld = self.node_to_element[succ]
             self.node_to_element[succ] = tracker
             return not trackerOld.equals(tracker)
+    
+    # use for backward analysis
+    def _goesBackTo(self, tracker, pred):
+        if isinstance(pred, GuardedChoice) or isinstance(pred, Fork):
+            pred = self.state_to_node[pred.start_state[0]]
+            self._mergeMap[pred].append(tracker)
+        else:
+            trackerOld = self.node_to_element[pred]
+            self.node_to_element[pred] = tracker
+            return not trackerOld.equals(tracker)
 
     def processForMotion(self, motion):
-        candidates = [ p for p in self.processes if p.name() == motion.id ]
+        candidates = [ p for p in self.processes if p == motion.id or p.name() == motion.id ]
         assert(len(candidates) <= 1)
         if len(candidates) == 0:
             return None
@@ -95,10 +110,7 @@ class FixedPointDataflowAnalysis(ABC):
         # initialization
         for s in self.state_to_node.keys():
             n = self.state_to_node[s]
-            if s == self.chor.start_state:
-                self.node_to_element[n] = self.startElement(n)
-            else:
-                self.node_to_element[n] = self.defaultElement(n)
+            self.node_to_element[n] = self.initialValue(n)
             self._mergeMap[n] = []
         #loop
         changed = True
@@ -143,19 +155,8 @@ class FixedPointDataflowAnalysis(ABC):
                             print("changed: " + str(node))
                         changed = changed or res
                 elif isinstance(node, Motion):
-                    processes = []
-                    mps = []
-                    for motion in node.motions:
-                        proc = self.processForMotion(motion)
-                        mpName = motion.mp_name
-                        mpArgs = motion.mp_args
-                        mp = proc.motionPrimitive(mpName, *mpArgs)
-                        processes.append(proc)
-                        mps.append(mp)
-                    #TODO take the thread partition into account for restricting the elements!
-                    assert set(processes) == set(self.processes), str(processes) + " != " + str(set(self.processes))
                     succ = self.state_to_node[node.end_state[0]]
-                    res = self._motion(node, mps, succ)
+                    res = self._motion(node, node.motions, succ)
                     if debug and res:
                         print("changed: " + str(node))
                     changed = changed or res

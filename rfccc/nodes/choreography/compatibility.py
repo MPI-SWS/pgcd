@@ -169,6 +169,9 @@ class ProcessesPredicatesTracker:
     def merge(self, tracker):
         for p in self._process_set:
             self._process_to_pred[p].merge(tracker._process_to_pred[p])
+    
+    def join(self, tracker):
+        self.merge(tracker) #TODO fixed once we have the thread partition info!!
 
     def contains(self, tracker):
         return all([ self._process_to_pred[p].contains(tracker._process_to_pred[p]) for p in self._process_set])
@@ -185,12 +188,12 @@ class ProcessesPredicatesTracker:
 
 class ComputePreds(FixedPointDataflowAnalysis):
 
-    def startElement(self, node):
-        return ProcessesPredicatesTracker(self.processes, self.chor.predicate)
-    
-    def defaultElement(self, node):
-        return ProcessesPredicatesTracker(self.processes, S.false)
-    
+    def initialValue(self, node):
+        if node.start_state[0] == self.chor.start_state:
+            return ProcessesPredicatesTracker(self.processes, self.chor.predicate)
+        else:
+            return ProcessesPredicatesTracker(self.processes, S.false)
+
     def _guard(self, pred, guard, succ):
         trackerSrc = self.node_to_element[pred]
         tracker = trackerSrc.copy()
@@ -198,15 +201,26 @@ class ComputePreds(FixedPointDataflowAnalysis):
         return self._goesInto(tracker, succ)
 
     def _motion(self, pred, motions, succ):
-        #TODO how to deal with the processes specified in other branches?
-        #TODO this assums we have all the processes!
         trackerSrc = self.node_to_element[pred]
         tracker = trackerSrc.copy()
+        processes = []
+        mps = []
+        for motion in motions:
+            proc = self.processForMotion(motion)
+            mpName = motion.mp_name
+            mpArgs = motion.mp_args
+            mp = proc.motionPrimitive(mpName, *mpArgs)
+            processes.append(proc)
+            mps.append(mp)
+        #TODO take the thread partition into account for restricting the elements!
+        #TODO how to deal with the processes specified in other branches?
+        #TODO this assums we have all the processes!
+        assert set(processes) == set(self.processes), str(processes) + " != " + str(set(self.processes))
         #relax for the variables that changes
-        for mp in motions:
+        for mp in mps:
             tracker.relaxVariables(mp.modifies())
         #add the postconditions
-        for mp in motions:
+        for mp in mps:
             tracker.addFormula(mp.post())
         return self._goesInto(tracker, succ)
 
@@ -225,12 +239,11 @@ class CompatibilityCheck:
         self.world = world
         self.processes = world.allProcesses()
         self.node_to_pred = {}
-        self._mergeMap = {}
         self.predComputed = False
         self.vcs = []
 
     def computePreds(self, debug = False):
-        cp = ComputePreds(self.chor, self.world)
+        cp = ComputePreds(self.chor, self.processes)
         cp.perform(debug)
         self.node_to_pred = cp.result()
         self.predComputed = True

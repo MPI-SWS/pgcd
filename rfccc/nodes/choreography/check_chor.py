@@ -1,6 +1,7 @@
 from ast_chor import *
 from compatibility import choiceAt
 from utils.causality_tracker import *
+from threads import *
 
 class ChoreographyCheck:
 
@@ -22,13 +23,22 @@ class ChoreographyCheck:
             self.comps = { p.name() for p in world.allProcesses() }
         else:
             self.comps = chor.getProcessNames()
+        self.threadTrackers = None
         self.causality = CausalityTracker(self.comps)
 
     def check_well_formedness(self):
         self.syntacic_checks()
+        self.thread_checks()
         if self.debug:
             print("causality, local choice, connectedness, and ... checks")
         self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
+
+    def thread_checks(self):
+        if self.world != None:
+            tc = ThreadChecks(self.chor, self.world.allProcesses())
+        else:
+            tc = ThreadChecks(self.chor, self.chor.getProcessNames())
+        self.threadTrackers = tc.perform(self.debug)
 
     def syntacic_checks(self):
         if self.debug:
