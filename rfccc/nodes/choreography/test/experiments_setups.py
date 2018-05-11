@@ -25,6 +25,23 @@ class World(Component):
         else:
             return self._frame
 
+class DummyProcess(Process):
+
+    def __init__(self, name, parent, index):
+        super().__init__(name, parent, index)
+        Idle(self)
+
+    def frame(self):
+        return parent.frame()
+
+    def outputVariables(self):
+        return [Symbol(self.name() + "_x"), Symbol(self.name() + "_y"), Symbol(self.name() + "_z")]
+
+    def abstractResources(self, *arg):
+        return S.false
+
+
+
 def cartAndArmWorld():
     w = World()
     c = Cart("C", w)
@@ -51,22 +68,8 @@ def ferryWorld():
     return w
 
 
-
-# creating a few thing to test if it works:
-def testing():
-    print("cart and arm")
-    w = cartAndArmWorld()
-    print(w)
-    print(w.allProcesses())
-    print("arms hand over")
-    w = armsHandoverWorld()
-    print(w)
-    print(w.allProcesses())
-    print("bin sorting")
-    w = binSortingWorld()
-    print(w)
-    print(w.allProcesses())
-    print("ferry")
-    w = ferryWorld()
-    print(w)
-    print(w.allProcesses())
+def mkDummyWorld(*cmpNames):
+    w = World()
+    for i, name in enumerate(cmpNames):
+        c = DummyProcess(name, world, i)
+    return w

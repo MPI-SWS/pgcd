@@ -195,6 +195,45 @@ def causal_err():
         in [true] x0
     '''
 
+def thread_partition_err1():
+    # needs processes C, A1, A2
+    return ''' G =
+        def x0 = C -> A1: msg(); x1
+            x1 = C -> A2: msg(); x2
+            x2 = x3 || x4
+            x3 = (C: Idle(), A1: Idle()); x5
+            x4 = (A1: Idle(), A2: Idle()); x6
+            x5 || x6 = x7
+            x7 = end
+        in [true] x0
+    '''
+
+def thread_partition_err2():
+    # needs processes C, A1, A2
+    return ''' G =
+        def x0 = C -> A1: msg(); x1
+            x1 = C -> A2: msg(); x2
+            x2 = x3 || x4
+            x3 = (C: Idle()); x5
+            x4 = (A2: Idle()); x6
+            x5 || x6 = x7
+            x7 = end
+        in [true] x0
+    '''
+
+def thread_partition_err3():
+    # needs processes C, A1, A2
+    return ''' G =
+        def x0 = C -> A1: msg(); x1
+            x1 = C -> A2: msg(); x2
+            x2 = x3 || x4
+            x3 = (C: Idle(), A1: Idle()); x5
+            x4 = (A2: Idle()); x6
+            x5 + x6 = x7
+            x7 = end
+        in [true] x0
+    '''
+
 def funny_fine():
     # needs processes C, A
     return ''' G =
@@ -210,7 +249,7 @@ def causal_loop_err():
     return ''' G =
         def x0 = C -> A1: msg(); x1
             x1 + x6 = x2
-            x2 = [True] x3 + [True] x7
+            x2 = [C_x >= 0] x3 + [C_x <= 0] x7
             x3 = A1 -> A2: msg(); x4
             x4 = (C: idle(), A1: idle(), A2: idle()); x5
             x5 = C -> A2: msg(); x6
@@ -219,8 +258,6 @@ def causal_loop_err():
     '''
 
 def causal_independent_err():
-    # DZ: our algorithm causality does not catch that example
-    # DZ: need to think about something better
     # needs processes A, B, C, D
     return ''' G =
         def x0 = A -> B: msg(); x1
@@ -287,11 +324,20 @@ class ChoreograhyTests(unittest.TestCase):
     def test_err2(self):
         run(causal_err(), shouldSucceed = False)
 
+    def test_err3(self):
+        run(causal_independent_err(), shouldSucceed = False)
+    
     def test_err4(self):
         run(causal_loop_err(), shouldSucceed = False)
 
-    def test_err3(self):
-        run(causal_independent_err(), shouldSucceed = False)
+    def test_err5(self):
+        run(thread_partition_err1(), shouldSucceed = False)
+
+    def test_err6(self):
+        run(thread_partition_err2(), shouldSucceed = False)
+
+    def test_err7(self):
+        run(thread_partition_err3(), shouldSucceed = False)
 
     def test_funny_causal(self):
         run(funny_fine(), shouldSucceed = True)
