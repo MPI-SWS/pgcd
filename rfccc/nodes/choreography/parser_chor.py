@@ -35,13 +35,13 @@ class ChoreographyParser:
         self.tokens = self.lexer.tokens
         self.parser = yacc.yacc(module=self, debuglog=log, debug=debug)
 
-    def parse(self, text, world = None):
+    def parse(self, text, world = None, debug = False):
         choreography = self.parser.parse(text, self.lexer.lexer)
-        self.check_well_formdness(choreography, world)
+        self.check_well_formedness(choreography, world, debug)
         return choreography
 
-    def check_well_formdness(self, chor, world):
-        check = ChoreographyCheck(chor, world)
+    def check_well_formedness(self, chor, world, debug = False):
+        check = ChoreographyCheck(chor, world, debug)
         check.check_well_formedness()
 
 

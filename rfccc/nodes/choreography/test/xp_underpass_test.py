@@ -8,7 +8,7 @@ from vectorize_chor import *
 from mpmath import mp
 from experiments_setups import World
 from copy import deepcopy
-import choreography.executor_chor as exec
+from choreography.projection import Projection
 import parser
 
 import unittest
@@ -133,7 +133,7 @@ def xp1_carrier():
 
 
 def run(ch, components, progs, debug = False):
-        visitor = exec.ChoreographyExecutor()
+        visitor = Projection()
         visitor.execute(ch)
         chor = visitor.choreography
         vectorize(chor, components)

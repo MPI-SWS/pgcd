@@ -43,6 +43,8 @@ class Arm(Process):
         SetAngleCantilever(self)
         SetAngleAnchorPoint(self)
         RetractArm(self)
+        PutOnCart(self)
+        GetFromCart(self)
 
     def frame(self):
         return self._frame
@@ -438,3 +440,22 @@ class ArmSetAngle(MotionPrimitive):
         i = self._component.ownResources(point, 0.05)
         return self.timify(i)
 
+#TODO
+class PutOnCart(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def setParameters(self, args):
+        assert(len(args) == 0)
+        return ArmIdle(self.name(), self._component)
+
+#TODO
+class GetFromCart(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def setParameters(self, args):
+        assert(len(args) == 0)
+        return ArmIdle(self.name(), self._component)

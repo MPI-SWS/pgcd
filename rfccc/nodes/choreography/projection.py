@@ -12,7 +12,7 @@ from minimize import *
 from normalization import *
 
 
-class ChoreographyExecutor:
+class Projection:
 
     def __init__(self):
         self.parser = ChoreographyParser()
@@ -24,8 +24,8 @@ class ChoreographyExecutor:
         self.artificial_nodes_counter += 1
         return '__x__' + str(self.artificial_nodes_counter)
 
-    def execute(self, code, world = None):
-        self.choreography = self.parser.parse(code, world)
+    def execute(self, code, world = None, debug = False):
+        self.choreography = self.parser.parse(code, world, debug)
         return self.choreography
 
     def project(self, proj_name, process, debug = False):

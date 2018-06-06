@@ -1,4 +1,4 @@
-import choreography.executor_chor as exec
+from choreography.projection import Projection
 import unittest
 import parser
 from refinement import *
@@ -80,7 +80,7 @@ def progFetchC():
 
 def run(ch, components, progs, shouldSucceed = True, debug = False):
     try:
-        visitor = exec.ChoreographyExecutor()
+        visitor = Projection()
         visitor.execute(ch)
         chor = visitor.choreography
         vectorize(chor, components)

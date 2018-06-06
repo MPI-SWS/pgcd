@@ -1,14 +1,17 @@
 from abc import ABC, abstractmethod
 from ast_chor import *
+from typing import List
 
 class FixedPointDataflowAnalysis(ABC):
 
-    def __init__(self, chor, processes):
+    def __init__(self, chor, processes, forward = True, debug = False):
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
         self.processes = processes
-        self.node_to_element = {}
+        self.state_to_element = {}
         self._mergeMap = {}
+        self.forward = forward
+        self.debug = debug
         self.done = False
     
     ##################################
@@ -20,77 +23,80 @@ class FixedPointDataflowAnalysis(ABC):
     # the element must provide a `copy`, `equals`, `merge`, and `join` methods
 
     @abstractmethod
-    def initialValue(self, node):
+    def initialValue(self, state, node):
         pass
+
+    def motion(self, tracker, motions):
+        return tracker
+
+    def message(self, tracker, node):
+        return tracker
     
-    def _guard(self, pred, guard, succ):
-        trackerSrc = self.node_to_element[pred]
-        tracker = trackerSrc.copy()
-        return self._goesInto(tracker, succ)
+    def guard(self, tracker, guard):
+        return tracker
+
+    def merge(self, tracker):
+        return tracker
+    
+    def fork(self, tracker):
+        return tracker
+
+    def join(self, tracker):
+        return tracker
+
 
     def _motion(self, pred, motions, succ):
-        trackerSrc = self.node_to_element[pred]
-        tracker = trackerSrc.copy()
-        return self._goesInto(tracker, succ)
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
+        tracker = self.motion(trackerSrc.copy(), motions)
+        return self._goesTo(tracker, pred, succ)
 
-    def _message(self, pred, succ):
-        trackerSrc = self.node_to_element[pred]
-        tracker = trackerSrc.copy()
-        return self._goesInto(tracker, succ)
+    def _message(self, pred, node, succ):
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
+        tracker = self.message(trackerSrc.copy(), node)
+        return self._goesTo(tracker, pred, succ)
+    
+    def _guard(self, pred, guard, succ):
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
+        tracker = self.guard(trackerSrc.copy(), guard)
+        return self._goesTo(tracker, pred, succ)
+
+    def _merge(self, pred, succ):
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
+        tracker = self.merge(trackerSrc.copy())
+        return self._goesTo(tracker, pred, succ)
 
     def _fork(self, pred, succ):
-        trackerSrc = self.node_to_element[pred]
-        tracker = trackerSrc.copy()
-        return self._goesInto(tracker, succ)
-
-    def _merge(self, node):
-        tracker = None
-        for t in self._mergeMap[node]:
-            if tracker == None:
-                tracker = t.copy()
-            else:
-                tracker.merge(t)
-        self._mergeMap[node] = []
-        trackerOld = self.node_to_element[node]
-        self.node_to_element[node] = tracker
-        return not trackerOld.equals(tracker)
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
+        tracker = self.fork(trackerSrc.copy())
+        return self._goesTo(tracker, pred, succ)
     
-    def _join(self, node):
-        tracker = None
-        for t in self._mergeMap[node]:
-            if tracker == None:
-                tracker = t.copy()
-            else:
-                tracker.join(t)
-        self._mergeMap[node] = []
-        trackerOld = self.node_to_element[node]
-        self.node_to_element[node] = tracker
-        return not trackerOld.equals(tracker)
+    def _join(self, pred, succ):
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
+        tracker = self.join(trackerSrc.copy())
+        return self._goesTo(tracker, pred, succ)
     
     ################################
     ## End operations to override ##
     ################################
     
-    # use for forward analysis
-    def _goesInto(self, tracker, succ):
-        if isinstance(succ, Merge) or isinstance(succ, Join):
-            succ = self.state_to_node[succ.end_state[0]]
-            self._mergeMap[succ].append(tracker)
-        else:
-            trackerOld = self.node_to_element[succ]
-            self.node_to_element[succ] = tracker
-            return not trackerOld.equals(tracker)
+    def _goesTo(self, tracker, pred, succ):
+        state = succ if self.forward else pred
+        node = self.state_to_node[pred]
+        trackerOld = self.state_to_element[state]
+        if self.forward and isinstance(node, Merge):
+            tracker.merge(trackerOld)
+        elif self.forward and isinstance(node, Join):
+            tracker.join(trackerOld)
+        elif not self.forward and isinstance(node, GuardedChoice):
+            tracker.merge(trackerOld)
+        elif not self.forward and isinstance(node, Fork):
+            tracker.join(trackerOld)
+        self.state_to_element[state] = tracker
+        res = not trackerOld.equals(tracker)
+        if self.debug and res:
+            print("changed ", state, node, " to ", tracker)
+        return res
     
-    # use for backward analysis
-    def _goesBackTo(self, tracker, pred):
-        if isinstance(pred, GuardedChoice) or isinstance(pred, Fork):
-            pred = self.state_to_node[pred.start_state[0]]
-            self._mergeMap[pred].append(tracker)
-        else:
-            trackerOld = self.node_to_element[pred]
-            self.node_to_element[pred] = tracker
-            return not trackerOld.equals(tracker)
-
     def processForMotion(self, motion):
         candidates = [ p for p in self.processes if p == motion.id or p.name() == motion.id ]
         assert(len(candidates) <= 1)
@@ -103,80 +109,63 @@ class FixedPointDataflowAnalysis(ABC):
 
     def result(self):
         assert self.done
-        return self.node_to_element
+        return self.state_to_element
 
-    def perform(self, debug = False):
+    def perform(self):
         assert not self.done
         # initialization
         for s in self.state_to_node.keys():
             n = self.state_to_node[s]
-            self.node_to_element[n] = self.initialValue(n)
-            self._mergeMap[n] = []
+            self.state_to_element[s] = self.initialValue(s, n)
         #loop
         changed = True
         counter = 0
         while changed:
-            counter = counter + 1
-            if debug:
-                print("")
+            if self.debug:
                 print("")
                 print("")
                 print("==========================")
                 print("==========================")
                 print("iteration " + str(counter))
-                for node in self.state_to_node.values():
-                    print(node)
-                    print(self.node_to_element[node])
+                for state in self.state_to_node.keys():
+                    node = self.state_to_node[state]
+                    print(state, node)
+                    print(self.state_to_element[state])
                 print("==========================")
+            counter = counter + 1
             changed = False
             # first the non-merge
-            for node in self.state_to_node.values():
-                if debug:
-                    print("processing " + str(node))
+            for state in self.state_to_node.keys():
+                node = self.state_to_node[state]
+                if self.debug:
+                    print("processing ", state, str(node))
                 if isinstance(node, Message):
-                    succ = self.state_to_node[node.end_state[0]]
-                    res = self._message(node, succ)
-                    if debug and res:
-                        print("changed: " + str(node))
+                    succ = node.end_state[0]
+                    res = self._message(state, node, succ)
                     changed = changed or res
                 elif isinstance(node, GuardedChoice):
                     for gs in node.guarded_states:
                         guard = gs.expression
-                        succ = self.state_to_node[gs.id]
-                        res = self._guard(node, guard, succ)
-                        if debug and res:
-                            print("changed: " + str(node))
+                        res = self._guard(state, guard, gs.id)
                         changed = changed or res
                 elif isinstance(node, Fork):
-                    for s in node.end_state:
-                        succ = self.state_to_node[s]
-                        res = self._fork(node, succ)
-                        if debug and res:
-                            print("changed: " + str(node))
+                    for succ in node.end_state:
+                        res = self._fork(state, succ)
                         changed = changed or res
                 elif isinstance(node, Motion):
-                    succ = self.state_to_node[node.end_state[0]]
-                    res = self._motion(node, node.motions, succ)
-                    if debug and res:
-                        print("changed: " + str(node))
+                    succ = node.end_state[0]
+                    res = self._motion(state, node.motions, succ)
                     changed = changed or res
-            #finish the merge/join
-            merged = set()
-            for node in self.state_to_node.values():
-                if isinstance(node, Merge):
-                    succ = self.state_to_node[node.end_state[0]]
-                    if not succ in merged:
-                        merged.add(succ)
-                        res = self._merge(succ)
-                        if debug and res:
-                            print("changed: " + str(node))
-                        changed = changed or res
+                elif isinstance(node, Merge):
+                    succ = node.end_state[0]
+                    res = self._merge(state, succ)
+                    changed = changed or res
                 elif isinstance(node, Join):
-                    succ = self.state_to_node[node.end_state[0]]
-                    if not succ in merged:
-                        merged.add(succ)
-                        res = self._join(succ)
-                        if debug and res:
-                            print("changed: " + str(node))
-                        changed = changed or res
+                    succ = node.end_state[0]
+                    res = self._join(state, succ)
+                    changed = changed or res
+                elif isinstance(node, End):
+                    pass
+                else:
+                    raise Exception("??? " + str(node))
         self.done= True

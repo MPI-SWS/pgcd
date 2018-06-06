@@ -1,7 +1,7 @@
 import sys
 
 import parser as rp
-import choreography.executor_chor as exec
+from choreography.projection import Projection
 import unittest
 from experiments_setups import *
 from vectorize_chor import *
@@ -135,7 +135,9 @@ def ferry():
             cb5 = A2 -> C : done(); cb2a
             cb2a = (A1: Idle(), A2: Idle(), C: MoveFromTo(Pnt(1,0,0), Pnt(-1,0,0))); ca2b1
             ca2b1 = end
-        in [true] x0
+        in [ (A1_a == 1.57079632679490) && (A1_b == 1.57079632679490) && (A1_c == 0) &&
+             (A2_a == 1.57079632679490) && (A2_b == 1.57079632679490) && (A2_c == 0) &&
+             (C_x == 0) && (C_y == 0) ] x0
     '''
 
 def ferry1():
@@ -281,8 +283,8 @@ def nomraliztion_err():
 
 def run(ch, components = None, shouldSucceed = True, debug = False):
     try:
-        visitor = exec.ChoreographyExecutor()
-        visitor.execute(ch, components)
+        visitor = Projection()
+        visitor.execute(ch, components, debug)
         if (components != None):
             chor = visitor.choreography
             vectorize(chor, components)
@@ -315,6 +317,9 @@ class ChoreograhyTests(unittest.TestCase):
     def test_ferry(self):
         run(ferry(), ferryWorld(), debug = False)
 
+    def test_ferry1(self):
+        run(ferry1(), ferryWorld(), debug = True)
+
     def test_err1(self):
         run(funny_thread_partition(), shouldSucceed = False)
 
@@ -328,10 +333,10 @@ class ChoreograhyTests(unittest.TestCase):
         run(causal_independent_err(), shouldSucceed = False)
     
     def test_err4(self):
-        run(causal_loop_err(), shouldSucceed = False)
+        run(causal_loop_err(), shouldSucceed = False, debug = False)
 
     def test_err5(self):
-        run(thread_partition_err1(), shouldSucceed = False)
+        run(thread_partition_err1(), shouldSucceed = False, debug = False)
 
     def test_err6(self):
         run(thread_partition_err2(), shouldSucceed = False)

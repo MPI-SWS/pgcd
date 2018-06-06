@@ -12,13 +12,19 @@ class ThreadTracker:
         self.seen_mp = False
 
     def copy(self):
-        return copy.copy(self)
+        cpy = ThreadTracker()
+        cpy.stack = copy.copy(self.stack)
+        cpy.processes = self.processes
+        cpy.seen_mp = self.seen_mp
+        return cpy
 
     def push(self, nodeFrom, nodeTo):
-        self.stack.append( (node, nodeFrom, nodeTo) )
+        if any( n == nodeFrom for n,t in self.stack ):
+            raise Exception("fork again on " + nodeFrom + " before joining.")
+        self.stack.append( (nodeFrom, nodeTo) )
     
-    def pop(self, node, idx):
-        return self.pop
+    def pop(self):
+        return self.stack.pop()
 
     def addProcess(self, proc):
         self.processes = self.processes | {proc}
@@ -30,10 +36,13 @@ class ThreadTracker:
         return self.stack[-1]
 
     def merge(self, tracker):
-        pass
+        self.join(tracker) #TODO better
 
     def join(self, tracker):
-        self.process = self.processes | tracker.processes
+        if len(self.stack) < len(tracker.stack) or (len(self.stack) > 0 and len(self.stack) == len(tracker.stack) and self.lastFork() > tracker.lastFork()):
+            self.stack = tracker.stack
+        self.processes = self.processes | tracker.processes
+        self.seen_mp = self.seen_mp or tracker.seen_mp #TODO better
 
     def equals(self, tracker):
         return self.stack == tracker.stack and self.processes == tracker.processes and self.seen_mp == tracker.seen_mp
@@ -44,48 +53,39 @@ class ThreadTracker:
 
 class ComputeThreads(FixedPointDataflowAnalysis):
 
+    def __init__(self, chor, processes, debug = False):
+        super().__init__(chor, processes, True, debug)
+
     def getProcesses(self):
         return { p if isinstance(p, str) else p.name() for p in self.processes }
 
-    def initialValue(self, node):
-        if node.start_state[0] == self.chor.start_state:
+    def initialValue(self, state, node):
+        if state == self.chor.start_state:
             return ThreadTracker([], self.getProcesses() )
         else:
             return ThreadTracker([], set())
 
-
-    def _motion(self, pred, motions, succ):
-        trackerSrc = self.node_to_element[pred]
-        tracker = trackerSrc.copy()
+    def motion(self, tracker, motions):
         for mp in motions:
             tracker.addProcess(mp.id)
         tracker.seen_mp = True
-        return self._goesInto(tracker, succ)
+        return tracker
+    
+    def join(self, tracker):
+        if len(tracker.stack) > 0:
+            forkNode = tracker.pop()[0]
+            if not tracker.seen_mp:
+                trackerFork = self.state_to_element[forkNode]
+                tracker.processes = forkNode.processes
+        return tracker
 
     def _fork(self, pred, succ):
-        trackerSrc = self.node_to_element[pred]
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
         tracker = trackerSrc.copy()
         tracker.push(pred, succ)
         tracker.clearProcesses()
         tracker.seen_mp = False
-        return self._goesInto(tracker, succ)
-    
-    def _join(self, node):
-        tracker = None
-        for t in self._mergeMap[node]:
-            if tracker == None:
-                tracker = t.copy()
-            else:
-                tracker.join(t)
-        self._mergeMap[node] = []
-        if len(tracker.stack) > 0:
-            forkNode = tracker.pop()[0]
-            if not tracker.seen_mp:
-                trackerFork = self.node_to_element[forkNode]
-                tracker.processes = forkNode.processes
-        trackerOld = self.node_to_element[node]
-        self.node_to_element[node] = tracker
-        return not trackerOld.equals(tracker)
+        return self._goesTo(tracker, pred, succ)
 
 
 class ThreadChecks():
@@ -97,29 +97,32 @@ class ThreadChecks():
     def perform(self, debug = False):
         if debug:
             print("thread correctness and partition")
-        cp = ComputeThreads(self.chor, self.processes)
-        cp.perform(debug)
+        cp = ComputeThreads(self.chor, self.processes, debug)
+        cp.perform()
         node_to_trackers = cp.result()
         state_to_node = self.chor.mk_state_to_node()
         def getPreds(node):
-            return [ node_to_trackers[state_to_node[s]] for s in node.start_state ]
-        for node in node_to_trackers.keys():
+            return [ node_to_trackers[s] for s in node.start_state ]
+        for state in node_to_trackers.keys():
+            node = state_to_node[state]
             if isinstance(node, End):
-                t = node_to_trackers[node]
+                t = node_to_trackers[state]
                 assert t.stack == [], "ending in the middle of a fork: " + str(node) + " " + str(t)
+                assert t.processes == cp.getProcesses(), "not all the processes got joined " + str(node) + " " + str(t)
             elif isinstance(node, Merge):
-                t = node_to_trackers[node]
+                t = node_to_trackers[state]
                 preds = getPreds(node)
                 assert all( p.equals(t) for p in preds )
-            elif isinstance(node, Fork):
+            elif isinstance(node, Join):
                 preds = getPreds(node)
                 rep = preds[0]
                 forkNode = rep.lastFork()[0]
-                assert all(p.stack == rep.stack for p in preds), "joining thread from different fork"
+                assert all(len(p.stack) == len(rep.stack) for p in preds), "joining thread from different fork"
+                assert all(len(p.stack) == 0 or p.stack[:-1] == rep.stack[:-1] for p in preds), "joining thread from different fork"
+                assert all(len(p.stack) == 0 or p.lastFork()[0] == rep.lastFork()[0] for p in preds), "joining thread from different fork"
                 assert all(p.seen_mp == rep.seen_mp for p in preds), "joining thread with and without having seen an motion primitive"
-                assert all(any(p.lastFork()[1] == s for p in preds) for s in forkNode.end_state), "not every thread is joined"
-                assert all(p.lastFork()[1] in forkNode.end_state), "every thread joining from ???"
-                assert all(p == rep or p.lastFork()[1] != rep.lastFork()[1]), "joining same thread multiple time"
+                assert all(any(p.lastFork()[1] == s for p in preds) for s in state_to_node[forkNode].end_state), "not every thread is joined"
+                assert all(p == rep or p.lastFork()[1] != rep.lastFork()[1] for p in preds), "joining same thread multiple time"
                 assert all(p == rep or len(p.processes & rep.processes) == 0 for p in preds), "thread partition is not respected"
         #TODO check that every thread is eventually joined
         return node_to_trackers

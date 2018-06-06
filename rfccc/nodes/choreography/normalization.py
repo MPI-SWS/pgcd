@@ -88,9 +88,10 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
             return mergeThreads(pred, pred_index, pendingMotion, states)
         # merge the internal
         if len(internal) > 0:
+            #FIXME this does not look right. it should be the combinations ?!? (2ⁿ)
             newIntId = nameGen.get_artificial_name()
             guards = [ g for i in internal for g in i.get_successors(state_to_node) ]
-            newInt = GuardedChoice([newExtId()], guards)
+            newInt = GuardedChoice([newInt], guards)
             internal = [newIntId]
             state_to_node[newIntId] = newInt
         # merge the external choices (temporary allow multiple motions in parallel)

@@ -188,21 +188,16 @@ class ProcessesPredicatesTracker:
 
 class ComputePreds(FixedPointDataflowAnalysis):
 
-    def initialValue(self, node):
-        if node.start_state[0] == self.chor.start_state:
+    def __init__(self, chor, processes, debug = False):
+        super().__init__(chor, processes, True, debug)
+
+    def initialValue(self, state, node):
+        if state == self.chor.start_state:
             return ProcessesPredicatesTracker(self.processes, self.chor.predicate)
         else:
             return ProcessesPredicatesTracker(self.processes, S.false)
 
-    def _guard(self, pred, guard, succ):
-        trackerSrc = self.node_to_element[pred]
-        tracker = trackerSrc.copy()
-        tracker.addFormula(guard)
-        return self._goesInto(tracker, succ)
-
-    def _motion(self, pred, motions, succ):
-        trackerSrc = self.node_to_element[pred]
-        tracker = trackerSrc.copy()
+    def motion(self, tracker, motions):
         processes = []
         mps = []
         for motion in motions:
@@ -222,7 +217,11 @@ class ComputePreds(FixedPointDataflowAnalysis):
         #add the postconditions
         for mp in mps:
             tracker.addFormula(mp.post())
-        return self._goesInto(tracker, succ)
+        return tracker
+
+    def guard(self, tracker, guard):
+        tracker.addFormula(guard)
+        return tracker
 
 
 class CompatibilityCheck:
