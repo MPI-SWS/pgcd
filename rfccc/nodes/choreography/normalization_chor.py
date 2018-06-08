@@ -36,7 +36,7 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
         node = state_to_node[state]
         if isinstance(node, Motion) and not isPlaceholderMp(node.motions[0]):
             return True
-        elif isinstance(node, SendMessage) or isinstance(node, GuardedChoice) or isinstance(node, ReceiveMessage):
+        elif isinstance(node, Message) or isinstance(node, GuardedChoice):
             return True
         elif isinstance(node, Join):
             return first
@@ -79,10 +79,10 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
             merged = list({ m.end_state[0] for m in merge })
             states = choice + motion + message + merged + join
             return mergeThreads(pred, pred_index, states)
-        if len(choices) + len(message) > 1: #still something to do without spending time
+        if len(choice) + len(message) > 1: #still something to do without spending time
             # new choice
             newId = nameGen.get_artificial_name()
-            choice = GuardedChoice([newId], [GuardArg(S.true(), newId) for x in (choices+message)])
+            choice = GuardedChoice([newId], [GuardArg(S.true(), newId) for x in (choice+message)])
             state_to_node[newId] = choice
             #update the predecessor
             pred.end_state[pred_index] = newId
@@ -91,8 +91,8 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
             # one action
             acc = []
             joinAt = None
-            for i, a in (choices+message):
-                remaining = copy((choices+message)).pop(i)
+            for i, a in (choice+message):
+                remaining = copy((choice+message)).pop(i)
                 a2 = copy(state_to_node[a])
                 newId2 = nameGen.get_artificial_name()
                 a2.start_state[0] = newId2
@@ -110,8 +110,8 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
             if debug:
                 print("    next choice action:", choice)
             return acc, joinAt
-        elif len(choices) + len(message) == 1:
-            a = state_to_node[(choices+message).pop()]
+        elif len(choice) + len(message) == 1:
+            a = state_to_node[(choice+message).pop()]
             if debug:
                 print("    next (unique) action:", a)
             a2 = copy(a)
@@ -133,9 +133,9 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
                 else:
                     assert(joinAt == j)
             return acc, joinAt
-        elif len(motion)) >= 1: # motions
+        elif len(motion) >= 1: # motions
             assert len(join) == 0, "motion " + str(motion) + ", join " + str(join)
-            mps = [ m for ms in motion for m in ms.motions ] 
+            mps = [ m for ms in motion for m in state_to_node[ms].motions ] 
             newId = nameGen.get_artificial_name()
             newDest = nameGen.get_artificial_name() # just a placeholder
             mp = Motion([newId], mps, [newDest]) 
@@ -146,8 +146,8 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
         elif len(join) >= 1:
             head = join.pop()
             # only joins
-            assert( all( j == head for j in join ) )
-            return [], head
+            assert( all( state_to_node[j] == state_to_node[head] for j in join ) ), [head] + join
+            return [(pred, pred_index)], state_to_node[head].end_state[0]
         else:
             raise Exception("nothing to do !?")
     # get the fork we need to remove
@@ -176,7 +176,7 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
             print("after processing:", nonNestedFork)
             for v in state_to_node.values():
                 print(v)
+        choreography.statements = state_to_node.values
+        removeUnreachable(choreography, state_to_node)
         forks = [ s for s in forks if not s in nonNestedFork ]
         nonNestedFork = [ s for s in forks if noForkBeforeJoin(s) ]
-        # remove unreachable node
-        removeUnreachable(choreography, state_to_node)

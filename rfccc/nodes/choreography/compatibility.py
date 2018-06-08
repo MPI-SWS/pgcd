@@ -237,14 +237,14 @@ class CompatibilityCheck:
         self.maxZ = maxZ
         self.world = world
         self.processes = world.allProcesses()
-        self.node_to_pred = {}
+        self.state_to_pred = {}
         self.predComputed = False
         self.vcs = []
 
     def computePreds(self, debug = False):
-        cp = ComputePreds(self.chor, self.processes)
-        cp.perform(debug)
-        self.node_to_pred = cp.result()
+        cp = ComputePreds(self.chor, self.processes, debug = debug)
+        cp.perform()
+        self.state_to_pred = cp.result()
         self.predComputed = True
 
     def isTimeInvariant(self, formula):
@@ -267,7 +267,7 @@ class CompatibilityCheck:
             if debug:
                 print("generateCompatibilityChecks for node " + str(node))
             if isinstance(node, Motion):
-                tracker = self.node_to_pred[node]
+                tracker = self.state_to_pred[node.start_state[0]]
                 assumptions = And(*[ p.invariant() for p in self.processes ]) #TODO add the connection as ==
                 preState = tracker.pred()
                 # a point for the footprint

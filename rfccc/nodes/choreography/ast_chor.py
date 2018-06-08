@@ -55,6 +55,9 @@ class Choreography():
                     procs.add(m.id)
         return procs
 
+    def hasParallel(self):
+        return any( isinstance(node, Fork) for node in self.statements )
+
 
 class DistributedStateNode():
 

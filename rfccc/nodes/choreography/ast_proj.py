@@ -4,7 +4,7 @@ from spec import *
 from copy import *
 
 def isPlaceholderMp(mp):
-    return mp.mp_name() == "__wait__"
+    return mp.mp_name == "__wait__"
 
 def mkPlaceholderMp(process, duration):
     return MotionArg(process.name(), "__wait__", [duration])

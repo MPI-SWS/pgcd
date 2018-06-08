@@ -158,7 +158,9 @@ def ferry1():
             cb2 || cb6 = cb2a
             cb2a = (A1: Idle(), A2: Idle(), C: MoveFromTo(Pnt(1,0,0), Pnt(-1,0,0))); ca2b1
             ca2b1 = end
-        in [true] x0
+        in [ (A1_a == 1.57079632679490) && (A1_b == 1.57079632679490) && (A1_c == 0) &&
+             (A2_a == 1.57079632679490) && (A2_b == 1.57079632679490) && (A2_c == 0) &&
+             (C_x == 0) && (C_y == 0) ] x0
     '''
 
 def funny_thread_partition():
