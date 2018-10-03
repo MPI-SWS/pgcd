@@ -15,6 +15,10 @@ class McMessages:
         self.processes = processes
         self.dir = None
         self.file = None
+        self.n = 0
+        self.msgs = set()
+        self.mps = set()
+        self.labels = dict()
 
     def write(self, text):
         self.file.write(text)
@@ -32,9 +36,15 @@ class McMessages:
     def as_mp(self, mp):
         return "mp_" + str(mp)
 
+    def as_label(self, l):
+        return "l_" + str(l)
+
     def condition_as_string(self, cond):
         # TODO better
-        return "true"
+        if cond == sp.false or cond == False:
+            return "false"
+        else:
+            return "true"
 
     def collect_msgs(self, statement):
         if isinstance(statement, ast_inter.Statement):
@@ -87,44 +97,49 @@ class McMessages:
         else:
             raise Exception("!??! " + str(statement))
 
-    def print_mtype_decl(self, msgs, mps):
-        str_msgs = { self.as_msg(m) for m in msgs }
-        str_mps = { self.as_mp(m) for m in mps }
-        assert len(str_msgs.intersection(str_mps)) == 0
-        strs = str_msgs.union(str_mps)
+    def print_mtype_decl(self):
+        str_msgs = { self.as_msg(m) for m in self.msgs }
+        str_mps = { self.as_mp(m) for m in self.mps }
+        str_lbs = { self.as_label(l) for l in self.labels }
+        strs = str_msgs.union(str_mps).union(str_lbs)
         self.write("mtype = { " + ", ".join(strs) + " }")
 
-    def print_scheduling_decl(self, n):
-        for i in range(0, n):
+    def print_scheduling_decl(self):
+        for i in range(0, self.n):
             self.write("int busy_for_" + str(i) + " = 0")
             self.write("mtype doing_" + str(i))
+            self.write("mtype loc_" + str(i))
             self.write("bool terminated_" + str(i) + " = false")
-            self.write("#define set_mp_" + str(i) + "(mp, time) { doing_"+str(i)+" = mp; busy_for_"+str(i)+" = time; busy_for_"+str(i)+" == 0 }")
+            self.write("#define set_mp_" + str(i) + "(label, mp, time) { loc_"+str(i)+" = label; doing_"+str(i)+" = mp; busy_for_"+str(i)+" = time; busy_for_"+str(i)+" == 0 }")
             self.write("chan channel_" + str(i) + " = [0] of { mtype }")
 
-    def print_scheduler(self, n, mps):
+    def print_scheduler(self):
         self.write("active proctype time_manager() {")
         self.write("    do")
-        self.write("    :: " + " && ".join("busy_for_"+str(i) for i in range(0,n)) + " ->")
+        self.write("    :: " + " && ".join("busy_for_"+str(i)+" > 0" for i in range(0,self.n)) + " ->")
         self.write("        d_step {")
-        self.write("            printf(\"# start MP\");")
-        for i in range(0, n):
+        self.write("            printf(\"MP\");")
+        for i in range(0, self.n):
             self.write("            if")
-            for m  in mps:
+            for m  in self.mps:
                 self.write("            :: doing_"+str(i)+" == " + self.as_mp(m) + " ->")
-                self.write("                printf(\""+str(i)+" doing " + str(m) + " for %d\\n\", busy_for_"+str(i)+")")
+                self.write("                if")
+                for l in self.labels:
+                    self.write("                :: loc_"+str(i)+" == " + self.as_label(l) + " ->")
+                    self.write("                    printf(\", "+str(i)+" at " + str(l) + " doing " + str(m) + " for %d\", busy_for_"+str(i)+")")
+                self.write("                fi")
             self.write("            fi;")
         self.write("            if")
-        for i in range(0, n):
-            self.write("            :: " + " && ".join("busy_for_"+str(i)+" <= busy_for_"+str(j) for j in range(0,n) if j != i) + " ->")
-            for j in range(0, n):
+        for i in range(0, self.n):
+            self.write("            :: " + " && ".join("busy_for_"+str(i)+" <= busy_for_"+str(j) for j in range(0,self.n) if j != i) + " ->")
+            for j in range(0, self.n):
                 if i != j:
                     self.write("                busy_for_"+str(j)+" = busy_for_"+str(j)+" - busy_for_"+str(i)+";")
             self.write("                busy_for_"+str(i)+" = 0")
         self.write("            fi;")
-        self.write("            printf(\"# end MP\")")
+        self.write("            printf(\"\\n\")")
         self.write("        }")
-        self.write("    :: " + " && ".join("terminated_"+str(i) for i in range(0,n)) + " ->")
+        self.write("    :: " + " && ".join("terminated_"+str(i) for i in range(0,self.n)) + " ->")
         self.write("        break")
         self.write("    od")
         self.write("}")
@@ -134,14 +149,15 @@ class McMessages:
             for c in statement.children:
                 self.print_stmt(i, name_to_id, c, indent + 4, ";")
         elif isinstance(statement, ast_inter.Receive): # Action
-            self.write_indent(indent, "if")
+            self.write_indent(indent, "do")
             for a in statement.actions:
                 self.write_indent(indent, ":: channel_" + str(i) + "?" + self.as_msg(a.str_msg_type) + " ->")
-                self.print_stmt(i, name_to_id, a.program, indent + 1)
+                self.print_stmt(i, name_to_id, a.program, indent + 1, end_of_line = ";")
+                self.write_indent(indent + 1, "break")
             if statement.motion != None:
                 self.write_indent(indent, ":: timeout ->")
                 self.print_stmt(i, name_to_id, statement.motion, indent + 1)
-            self.write_indent(indent, "fi" + end_of_line)
+            self.write_indent(indent, "od" + end_of_line)
         elif isinstance(statement, ast_inter.If): # IfComponent
             self.write_indent(indent, "if")
             for c in statement.if_list:
@@ -158,7 +174,7 @@ class McMessages:
         elif isinstance(statement, ast_inter.Send):
             self.write_indent(indent, "channel_" + str(name_to_id[statement.comp]) + "!" + self.as_msg(statement.msg_type) + end_of_line)
         elif isinstance(statement, ast_inter.Motion):
-            self.write_indent(indent, "set_mp_" + str(i) + "(" + self.as_mp(statement.value) + ",1)"+ end_of_line)
+            self.write_indent(indent, "set_mp_" + str(i) + "(" + self.as_label(statement.get_label()) + ", " + self.as_mp(statement.value) + ", 1)"+ end_of_line)
         elif isinstance(statement, ast_inter.Print):
             self.write_indent(indent, "skip" + end_of_line)
         elif isinstance(statement, ast_inter.Skip):
@@ -171,8 +187,17 @@ class McMessages:
     def print_process(self, i, name_to_id, name, proc):
         self.write("active proctype " + name + "() {")
         self.print_stmt(i, name_to_id, proc, 1)
-        self.write("    LEXIT_" + str(i) + ": skip")
+        self.write("    LEXIT_" + str(i) + ": terminated_"+str(i)+" = true")
         self.write("}")
+
+    def parse_mp(self, text):
+        #sample: 0 at loc doing m_Fold for 1
+        raw_mps = text.split(',')
+        mps = {}
+        for i in raw_mps[1:]:
+            parts = i.strip().split(' ')
+            mps[int(parts[0])] = (parts[2], parts[4], int(parts[6]))
+        return mps
 
     def call_spin(self):
         assert(self.dir != None)
@@ -180,7 +205,7 @@ class McMessages:
         old_path = os.getcwd()
         try:
             os.chdir(self.dir)
-            # TODO call spin and parse the result
+            # call spin and parse the result
             command1 = ["spin", "-a", "model.pml"]
             call_spin = subprocess.run(command1)
             assert(call_spin.returncode == 0)
@@ -188,37 +213,61 @@ class McMessages:
             call_gcc = subprocess.run(command2)
             assert(call_gcc.returncode == 0)
             command3 = ["./pan", "-m10000", "-c1", "-w19"]
-            call_pan = subprocess.run(command3, stdout=subprocess.PIPE)
+            call_pan = subprocess.run(command3, stdout=subprocess.PIPE, encoding="ascii")
             if call_pan.returncode == 0:
-                raise Exception("TODO analysis spin result")
+                print("# spin result is:")
+                lines = call_pan.stdout.split('\n')
+                mps = []
+                err = []
+                for l in lines:
+                    print(l)
+                    if l.startswith("MP"):
+                        mps.append(self.parse_mp(l))
+                    elif l.startswith("pan:"):
+                        err.append(l)
+                if len(err) > 1:
+                    print("ERROR detected by spin")
+                    command4 = ["spin", "-t", "model.pml"]
+                    call_spin = subprocess.run(command4)
+                    return (mps, False)
+                else:
+                    print("spin check succeeded")
+                    return (mps, True)
             else:
-                raise Exception("spin found an error")
+                raise Exception("error running spin")
         finally:
             os.chdir(old_path)
 
+    def check_motion(self, mps):
+        for mp in mps:
+            print("mp:", mp)
+        raise Exception("TODO check_motion")
+
     def check(self):
-        n = len(self.processes)
-        msgs = { m for name, prog in self.processes for m in self.collect_msgs(prog) }
-        mps = { m for name, prog in self.processes for m in self.collect_mps(prog) }
+        self.n = len(self.processes)
+        self.msgs = { m for name, prog in self.processes for m in self.collect_msgs(prog) }
+        self.mps = { m for name, prog in self.processes for m in self.collect_mps(prog) }
         with tempfile.TemporaryDirectory() as tmpdirname:
             self.dir = tmpdirname
             self.file = open(tmpdirname + "/model.pml", 'w')
             try:
-                self.print_mtype_decl(msgs, mps)
-                self.print_scheduling_decl(n)
                 i = 0
                 name_to_id = {}
                 for name, program in self.processes:
                     name_to_id[name] = i
+                    labels = program.label_as_root()
+                    self.labels.update(labels)
                     i = i + 1
+                self.print_mtype_decl()
+                self.print_scheduling_decl()
                 i = 0
                 for name, program in self.processes:
                     self.print_process(i, name_to_id, name, program)
                     i = i + 1
-                self.print_scheduler(n, mps)
+                self.print_scheduler()
             finally:
                 self.file.close()
-            result = self.call_spin()
+            mps, result = self.call_spin()
             self.file = None
             self.dir = None
-            return result
+            return result and self.check_motion(mps)
