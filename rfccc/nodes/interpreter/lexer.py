@@ -25,7 +25,7 @@ class Lexer:
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'POW',
 
         # OTHER
-        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'ARROW'
+        'EQUALS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'ARROW'
     )
 
     # Operators
@@ -51,6 +51,7 @@ class Lexer:
     t_RBRACE = r'\}'
     t_COMMA = r','
     t_SEMI = r';'
+    t_COLON = r':'
     t_ARROW = r'=>'
 
     # Completely ignored characters

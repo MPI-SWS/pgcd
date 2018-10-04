@@ -28,6 +28,10 @@ class Node:
     def __str__(self):
         return str(self.tip.value)
 
+    def set_label(self, label):
+        assert (self._label == None)
+        self._label = label
+
     def get_label(self):
         if (self._label == None):
             Node.label_num += 1

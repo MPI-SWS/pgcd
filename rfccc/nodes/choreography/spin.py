@@ -144,6 +144,9 @@ class McMessages:
         self.write("    od")
         self.write("}")
 
+    def print_motion(self, i, label, statement, indent = 1, end_of_line = ""):
+        self.write_indent(indent, "set_mp_" + str(i) + "(" + self.as_label(label) + ", " + self.as_mp(statement.value) + ", 1)"+ end_of_line)
+
     def print_stmt(self, i, name_to_id, statement, indent = 1, end_of_line = ""):
         if isinstance(statement, ast_inter.Statement):
             for c in statement.children:
@@ -156,7 +159,7 @@ class McMessages:
                 self.write_indent(indent + 1, "break")
             if statement.motion != None:
                 self.write_indent(indent, ":: timeout ->")
-                self.print_stmt(i, name_to_id, statement.motion, indent + 1)
+                self.print_motion(i, statement.get_label(), statement.motion, indent + 1)
             self.write_indent(indent, "od" + end_of_line)
         elif isinstance(statement, ast_inter.If): # IfComponent
             self.write_indent(indent, "if")
@@ -174,7 +177,7 @@ class McMessages:
         elif isinstance(statement, ast_inter.Send):
             self.write_indent(indent, "channel_" + str(name_to_id[statement.comp]) + "!" + self.as_msg(statement.msg_type) + end_of_line)
         elif isinstance(statement, ast_inter.Motion):
-            self.write_indent(indent, "set_mp_" + str(i) + "(" + self.as_label(statement.get_label()) + ", " + self.as_mp(statement.value) + ", 1)"+ end_of_line)
+            self.print_motion(i, statement.get_label(), statement, indent, end_of_line)
         elif isinstance(statement, ast_inter.Print):
             self.write_indent(indent, "skip" + end_of_line)
         elif isinstance(statement, ast_inter.Skip):

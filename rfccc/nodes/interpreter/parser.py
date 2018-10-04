@@ -52,7 +52,8 @@ class Parser:
                       | motion SEMI
                       | print SEMI
                       | skip SEMI
-                      | exit SEMI '''
+                      | exit SEMI 
+                      | labelled '''
         p[0] = p[1]
 
     def p_block(self, p):
@@ -100,6 +101,11 @@ class Parser:
     def p_exit_function(self, p):
         'exit : EXIT LPAREN expression RPAREN'
         p[0] = Exit(p[3])
+    
+    def p_labelled(self, p):
+        'labelled : ID COLON statement'
+        p[3].set_label(p[1])
+        p[0] = p[3]
 
     # ------------------------- ACTIONS, KEY-VALUES AND ARGUMENTS---------------------------
 
