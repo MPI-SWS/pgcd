@@ -48,7 +48,7 @@ def run(progs, shouldSucceed = True, debug = False):
         prser = parser.Parser()
         parsed = { (name, prser.parse(txt)) for name, txt in progs.items() }
         mc = spin.McMessages(parsed, debug)
-        result = mc.check()
+        result, mps = mc.check()
         return result == shouldSucceed
     except Exception as e:
         if shouldSucceed:

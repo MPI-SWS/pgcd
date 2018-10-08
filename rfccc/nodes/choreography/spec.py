@@ -136,8 +136,23 @@ class Process(Component):
         self._motionPrimitives[n] = mp
     
     def motionPrimitive(self, name, *args):
-        n = name
-        return self._motionPrimitives[n].setParameters(args)
+        return self._motionPrimitives[name].setParameters(args)
+    
+    def motionPrimitiveWithFreeParams(self, name):
+        factory = self._motionPrimitives[name]
+        params = []
+        base = self.name() + "_" + name + "_"
+        counter = 0
+        for p in factory.parameters():
+            ptName = base + str(counter)
+            px = Symbol(ptName + "_x")
+            py = Symbol(ptName + "_y")
+            pz = Symbol(ptName + "_z")
+            f = self.frame()
+            pt = f.origin.locate_new(ptName, px * f.i + py * f.j + px * f.k)
+            params.append(pt)
+            counter += 1
+        return factory.setParameters(params), params
 
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.

@@ -5,8 +5,6 @@ import subprocess
 import tempfile
 import os
 
-#TODO 
-
 # model-checking messages
 class McMessages:
 
@@ -241,11 +239,6 @@ class McMessages:
         finally:
             os.chdir(old_path)
 
-    def check_motion(self, mps):
-        for mp in mps:
-            print("mp:", mp)
-        raise Exception("TODO check_motion")
-
     def check(self):
         self.n = len(self.processes)
         self.msgs = { m for name, prog in self.processes for m in self.collect_msgs(prog) }
@@ -253,11 +246,13 @@ class McMessages:
         with tempfile.TemporaryDirectory() as tmpdirname:
             self.dir = tmpdirname
             self.file = open(tmpdirname + "/model.pml", 'w')
+            name_to_id = {}
+            id_to_name = {}
             try:
                 i = 0
-                name_to_id = {}
                 for name, program in self.processes:
                     name_to_id[name] = i
+                    id_to_name[i] = name
                     labels = program.label_as_root()
                     self.labels.update(labels)
                     i = i + 1
@@ -270,7 +265,8 @@ class McMessages:
                 self.print_scheduler()
             finally:
                 self.file.close()
-            mps, result = self.call_spin()
+            rawMpsCombinations, result = self.call_spin()
+            mpsCombinations = [ dict( (id_to_name[i], mp) for i, mp in mps.items() ) for mps in rawMpsCombinations ]
             self.file = None
             self.dir = None
-            return result and self.check_motion(mps)
+            return result, mpsCombinations
