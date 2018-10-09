@@ -227,6 +227,9 @@ class carrier():
 
         self.__motors_shutdown__()
 
+    def idle(self):
+        time.sleep(0.1)
+
 
     def getConfigurationMatrixCart( self ):
         angle = sp.rad( self.angleCart  )

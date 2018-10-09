@@ -225,6 +225,8 @@ class cart():
             self.x = self.x+dx
             self.y = self.y+dy
 
+    def idle(self):
+        time.sleep(0.1)
 
     def getConfigurationMatrixCart( self ):
         angle = self.angleCart
@@ -392,6 +394,9 @@ class arm():
         p2.join()
         p3.join()
     
+    def idle(self):
+        time.sleep(0.1)
+
     # Simple Positioning of the arm
 
     def moveToFront( self ):
