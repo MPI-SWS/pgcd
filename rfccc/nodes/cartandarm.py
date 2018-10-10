@@ -6,6 +6,7 @@ Calibrate arm first!
 
 from __future__ import division
 import drv8825
+import steppers
 import RPi.GPIO as GPIO
 import rospy 
 from time import sleep, time
@@ -31,11 +32,8 @@ class cart():
 
     """
     def __init__( self ):
-        self.motor1 = drv8825.drv8825( pinDir = 11, pinStep = 12, pinEnable = 3, waitingTime=0.002 )
-        self.motor2 = drv8825.drv8825( pinDir = 13, pinStep = 15, pinEnable = 3, waitingTime=0.002 )
-        self.motor3 = drv8825.drv8825( pinDir = 16, pinStep = 18, pinEnable = 3, waitingTime=0.002 )
-        #self.motor4 = drv8825.drv8825( pinDir = 22, pinStep = 7, pinEnable = 3, waitingTime=0.002 )
     
+        self.motors = steppers.Steppers( 3, [11,13,16], [12,15,18], [3,3,3] )
 
         GPIO.setmode(GPIO.BOARD)
         self.pinEnable = 3
@@ -54,7 +52,7 @@ class cart():
 
         self.stepsCart = 0
         self.angleCart = 0
-        self.microstepping = 16 
+        self.microstepping = 16
         self.__microstepping__( 16 )
         #print( self.microstepping )
 
@@ -75,35 +73,31 @@ class cart():
         """
         """
         steps_motor1 = ( 0*straight+2*side-rotate )
-        steps_motor2 = ( 2*straight+2*side-rotate )
-        steps_motor3 = ( -2*straight+2*side-rotate )
-       #steps_motor4 = ( 0 ) # *straight+2*side-rotate )
-        #print( steps_motor1, steps_motor2, steps_motor3 )
+        steps_motor2 = ( 2*straight-1*side-rotate )
+        steps_motor3 = ( -2*straight-1*side-rotate )
+
+        steps = []
+        direction = []
+
         if steps_motor1 > 0: 
-            f = lambda: self.motor1.doStep( steps_motor1, 1 )
+            direction.append( 1 )
         else:
-            f = lambda: self.motor1.doStep( -steps_motor1, 0 )
+            direction.append( 0 )
 
         if steps_motor2 > 0: 
-            g = lambda: self.motor2.doStep( steps_motor2, 1 )
+            direction.append( 1 )
         else:
-            g = lambda: self.motor2.doStep( -steps_motor2, 0 )
+            direction.append( 0 )
         
         if steps_motor3 > 0: 
-            h = lambda: self.motor3.doStep( steps_motor3, 1 )
+            direction.append( 1 )
         else:
-            h = lambda: self.motor3.doStep( -steps_motor3, 0 )
+            direction.append( 0 )
 
-        p1 = Process(target = f)
-        p2 = Process(target = g)
-        p3 = Process(target = h)
-        p1.start()
-        p2.start()
-        p3.start()
-
-        p1.join()
-        p2.join()
-        p3.join()
+        step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3] ) )
+        max_steps = max( step_list )
+        stepspertime = 3.2
+        self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
 
 
     def __setMSPins__( self, MS1, MS2, MS3 ):
@@ -123,6 +117,7 @@ class cart():
         High    High    High    Sixteenth step
         """
         assert( steps in [1,2,4,8,16] )
+        assert( steps == 16 )
         #setStepping = {
         #        1: self.__setMSPins__( 0, 0, 0 ),
         #        2: self.__setMSPins__( 1, 0, 0 ), 
@@ -137,77 +132,47 @@ class cart():
         return steps
 
 
-
-
     # Cart radius = 215mm, wheel radius = 33.5mm -> 6.41 rev. per wheel per full circle
     # 200 steps per fc * microstepping
+    # factor 4 for the gearbox
 
     def setAngleCart( self, angle ):
-        #self.__motors_start__()
+        self.__motors_start__()
         assert( 0<=angle and angle<=360 )
 
-        steps = (angle/360)*200*6.42*2.15*self.microstepping
+        steps = (angle/360)*200*6.42*6.5*self.microstepping
         
-        #if self.angleCart > steps:
-        #    steps = self.angleCart-steps
-        #    self.angleCart = self.angleCart-steps
-        #else:
-        #    steps = steps-self.angleCart
-        #    self.angleCart = self.angleCart+steps
-
-        
-        #steps = (angle/360)*200*7.4626*1.85
-
         #print( "angle %d steps" %(steps) )
-        if steps > self.angleCart:
-            f = lambda: self.motor1.doStep( steps-self.angleCart, 1 )
-            g = lambda: self.motor2.doStep( steps-self.angleCart, 1 )
-            h = lambda: self.motor3.doStep( steps-self.angleCart, 1 )
+        if steps > self.stepsCart:
+            direction = [1,1,1]
         else:
-            f = lambda: self.motor1.doStep( self.angleCart-steps, 0 )
-            g = lambda: self.motor2.doStep( self.angleCart-steps, 0 )
-            h = lambda: self.motor3.doStep( self.angleCart-steps, 0 )
+            direction = [0,0,0]
+        delta = abs(steps-self.stepsCart)
+        step_list = [delta, delta, delta]
+        #print( "step_list", step_list )
+        stepspertime = 3.2
+        self.motors.doSteps( int(delta/stepspertime), step_list, direction )
 
-        
-        p1 = Process(target = f)
-        p2 = Process(target = g)
-        p3 = Process(target = h)
-        p1.start()
-        p2.start()
-        p3.start()
-    
-
-        now = time()
-        future = now+angle/360*41.024
-
-
+        #now = time()
+        #future = now+angle/360*41.024
         #print( "now, future, angle ", now, future, angle )
-    
-        cutoff = now
-        while now-cutoff < future-cutoff:
-            #print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
-            self.angleCart = sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle))
-            now = time()
-            #print( "loop", self.angleCart )
-
-
-        #print( "set angle cart to angle:", self.angleCart, angle )
-        p1.join()
-        p2.join()
-        p3.join()
-
+        #cutoff = now
+        #while now-cutoff < future-cutoff:
+        #    #print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
+        #    self.angleCart = sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle))
+        #    now = time()
+        #    #print( "loop", self.angleCart )
+        ##print( "set angle cart to angle:", self.angleCart, angle )
+        ##self.__compute_steps__( 0,0, steps-self.stepsCart )
+        self.stepsCart = steps
+        self.angleCart = angle
         
-
-        #self.__compute_steps__( 0,0, steps-self.stepsCart )
-        #self.stepsCart = steps
-        
-        #self.__motors_shutdown__()
+        self.__motors_shutdown__()
 
 
-
-    
     def moveCart( self, distance ):
-        steps = distance / 210 * 200*self.microstepping
+        self.__motors_start__()
+        steps = distance / 410 * 200 * 6 * self.microstepping
         self.__compute_steps__( steps, 0, 0 )
 
         #steps = (angle/360)*200*6.42*2.15*self.microstepping
@@ -218,15 +183,16 @@ class cart():
         dx = sp.cos(angle)*distance
         dy = sp.sin(angle)*distance
         
-        if direction == 0:
+        if steps < 0:
             self.x = self.x-dx
             self.y = self.y-dy
         else:
             self.x = self.x+dx
             self.y = self.y+dy
+        self.__motors_shutdown__()
 
-    def idle(self):
-        time.sleep(0.1)
+    def idle( self ):
+        sleep( 0.1 )
 
     def getConfigurationMatrixCart( self ):
         angle = self.angleCart
@@ -240,10 +206,11 @@ class arm():
     """
     """
 
-    def __init__( self ):
-        self.turntable = drv8825.drv8825( pinDir =  38, pinStep = 40, pinEnable = 32, waitingTime=0.002  )
+    def __init__( self, motionOnSeparateThread = False ):
+        self.motionOnSeparateThread = motionOnSeparateThread
+        self.turntable = drv8825.drv8825( pinDir =  38, pinStep = 40, pinEnable = 32, waitingTime=0.0005  )
         self.cantilever = drv8825.drv8825( pinDir = 29, pinStep = 31, pinEnable= 32, waitingTime=0.002 )
-        self.anchorpoint = drv8825.drv8825( pinDir = 33, pinStep = 35, pinEnable= 32, waitingTime=0.00002 )
+        self.anchorpoint = drv8825.drv8825( pinDir = 33, pinStep = 35, pinEnable= 32, waitingTime=0.0002 )
 
         self.pinServo = 7 #bcm: 4
 
@@ -258,7 +225,6 @@ class arm():
         self.stepsCantilever = 0
         self.stepsAnchorpoint = 0
         
-        
         self.angleTurnTable = 0
         self.angleCantilever = 0
         self.angleAnchorpoint = 0
@@ -271,34 +237,41 @@ class arm():
         Continuously updates the angles s.t. ros can turn the coordinate 
         systems in real time.
         """
-        now = time()
-        future = now+angle/maxAngle*timePerRev
+        #now = time()
+        #future = now+angle/maxAngle*timePerRev
+        #cutoff = now
+        #while now-cutoff < future-cutoff:
+        #    #print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
+        #    setattr( self, angleName, sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ) )
+        #    #print( "getAttr", getattr( self, angleName ) )
+        #    #print( "------>", sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ))
+        #    rospy.sleep(0.1)
+        #    now = time()
+        setattr( self, angleName, sp.N(sp.rad(angle)))
 
-        cutoff = now
-        while now-cutoff < future-cutoff:
-            #print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
-            setattr( self, angleName, sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ) )
-            #print( "getAttr", getattr( self, angleName ) )
-            #print( "------>", sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ))
-            rospy.sleep(0.1)
-
-            now = time()
-        #setattr( self, angleName, sp.N(sp.rad(angle)))
-
+    def _stepTurntable(self, delta):
+        if delta >= 0 :
+            self.turntable.doStep( delta, 1 )
+        else:
+            self.turntable.doStep( -delta, 0 )
 
     #17300 steps over all
-    def setAngleTurntable( self, angle ):
+    def _setAngleTurntable( self, angle, spawn ):
         assert( angle >= 0 and angle <= 270 )
         steps = 17300/270*angle
-        
-        if steps > self.stepsTurnTable:
-            self.turntable.doStep( steps-self.stepsTurnTable, 1 )
-            self.stepsTurnTable = steps
+        delta = steps-self.stepsTurnTable
+        if spawn:
+            f = lambda: self._stepTurntable(delta)
+            p1 = Process(target = f)
+            p1.start()
+            p1.join()
         else:
-            self.turntable.doStep( self.stepsTurnTable-steps, 0 )
-            self.stepsTurnTable = steps
-        
+            self._stepTurntable(delta)
+        self.stepsTurnTable = steps
         self.__updateAngleRos__( "angleTurnTable", angle, 270, 10 )
+    
+    def setAngleTurntable( self, angle ):
+        self._setAngleTurntable(angle, self.motionOnSeparateThread)
 
     def getConfigurationMatrixTurntable( self ):
         #angle = sp.rad(270*self.stepsTurnTable/17300)
@@ -307,22 +280,29 @@ class arm():
         #print( "caa turn>>", M)
         return M
 
+    def _stepCantilever( self, delta):
+        if delta >= 0 :
+            self.cantilever.doStep( delta, 0 )
+        else:
+            self.cantilever.doStep( -delta, 1 )
 
     #5600 steps over all
-    def setAngleCantilever( self, angle ):
+    def _setAngleCantilever( self, angle, spawn ):
         assert( angle >= -30 and angle <= 270 )
-
         steps = 5400/270*angle
-        
-        if steps > self.stepsCantilever:
-            self.cantilever.doStep( steps-self.stepsCantilever, 0 )
-            self.stepsCantilever = steps
+        delta = steps-self.stepsCantilever
+        if spawn:
+            f = lambda: self._stepCantilever(delta)
+            p1 = Process(target = f)
+            p1.start()
+            p1.join()
         else:
-            self.cantilever.doStep( self.stepsCantilever-steps, 1 )
-            self.stepsCantilever = steps
-        #print( "set cantilever angle to", steps )
-
+            self._stepCantilever(delta)
+        self.stepsCantilever = steps
         self.__updateAngleRos__( "angleCantilever", angle, 270, 10 )
+    
+    def setAngleCantilever( self, angle ):
+        self._setAngleCantilever(angle, self.motionOnSeparateThread)
 
     def getConfigurationMatrixCantilever( self ):
         #angle = sp.rad(270*self.stepsCantilever/5400)
@@ -331,23 +311,28 @@ class arm():
         #print( "caa cant>>", M)
         return M
 
+    def _stepAnchorPoint(self, delta):
+        if delta >= 0 :
+            self.anchorpoint.doStep( delta, 1 )
+        else:
+            self.anchorpoint.doStep( -delta, 0 )
 
+    def _setAngleAnchorPoint( self, angle, spawn ):
+        assert( angle >= -30 and angle <= 270 )
+        steps = 5400/270*angle*5
+        delta = steps-self.stepsAnchorpoint
+        if spawn:
+            f = lambda: self._stepAnchorPoint(delta)
+            p1 = Process(target = f)
+            p1.start()
+            p1.join()
+        else:
+            self._stepAnchorPoint(delta)
+        self.stepsAnchorpoint = steps
+        self.__updateAngleRos__( "angleAnchorpoint", -angle, 300, 10 )
 
     def setAngleAnchorPoint( self, angle ):
-        assert( angle >= -30 and angle <= 270 )
-
-        steps = 5400/270*angle*5
-        
-        if steps > self.stepsAnchorpoint:
-            self.anchorpoint.doStep( steps-self.stepsAnchorpoint, 1 )
-            self.stepsAnchorpoint = steps
-        else:
-            self.anchorpoint.doStep( self.stepsAnchorpoint-steps, 0 )
-            self.stepsAnchorpoint = steps
-        #
-        # print( "set angle to", steps )
-        
-        self.__updateAngleRos__( "angleAnchorpoint", -angle, 300, 10 )
+        self._setAngleAnchorPoint(angle, self.motionOnSeparateThread)
 
     def getConfigurationMatrixAnchorPoint( self ):
         #angle = sp.rad(270*self.stepsAnchorpoint/5400)
@@ -360,8 +345,8 @@ class arm():
     def grip( self, cycle ):
         assert( cycle > 5 and cycle < 12.5 )
         self.p.ChangeDutyCycle( cycle )
-        sleep( 1 )
-        self.__updateAngleRos__( "angleGripper", -angle, 270, 10 )
+        rospy.sleep( 2 )
+        #self.__updateAngleRos__( "angleGripper", -angle, 270, 10 )
 
     def getConfigurationMatrixGripper( self ):
         #angle = sp.rad(270*self.stepsAnchorpoint/5400)
@@ -380,23 +365,28 @@ class arm():
         self.setAngleCantilever( 0 )
 
     def retractArm( self ):
-        f = lambda: self.setAngleCantilever( 0 )
-        g = lambda: self.moveToBack() 
-        h = lambda: self.setAngleAnchorPoint( 0 )
+        f = lambda: self._setAngleCantilever( 0, False )
+        g = lambda: self._setAngleTurntable( 0, False ) 
+        h = lambda: self._setAngleAnchorPoint( 0, False )
         p1 = Process(target = f)
         p2 = Process(target = g)
         p3 = Process(target = h)
         p1.start()
         p2.start()
         p3.start()
-
         p1.join()
         p2.join()
         p3.join()
-    
-    def idle(self):
-        time.sleep(0.1)
+        self.stepsAnchorpoint = 0
+        self.stepsTurnTable = 0
+        self.stepsCantilever = 0
+        self.__updateAngleRos__( "angleTurnTable", 0, 270, 0 )
+        self.__updateAngleRos__( "angleAnchorpoint", 0, 300, 0 )
+        self.__updateAngleRos__( "angleCantilever", 0, 270, 0 )
 
+    def idle( self ):
+        rospy.sleep(0.1)
+    
     # Simple Positioning of the arm
 
     def moveToFront( self ):
@@ -410,9 +400,3 @@ class arm():
     
     def moveToBack( self ):
         self.setAngleTurntable( 0 )
-
-if __name__ == "__main__":
-    c = cart()
-    c.__motors_start__()
-    c.setAngleCart( 60 )
-    c.__motors_shutdown__()
