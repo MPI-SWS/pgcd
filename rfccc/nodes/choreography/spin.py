@@ -16,7 +16,7 @@ class McMessages:
         self.n = 0
         self.msgs = set()
         self.mps = set()
-        self.labels = dict()
+        self.labels = set()
 
     def write(self, text):
         self.file.write(text)
@@ -111,18 +111,23 @@ class McMessages:
             self.write("#define set_mp_" + str(i) + "(label, mp, time) { loc_"+str(i)+" = label; doing_"+str(i)+" = mp; busy_for_"+str(i)+" = time; busy_for_"+str(i)+" == 0 }")
             self.write("chan channel_" + str(i) + " = [0] of { mtype }")
 
-    def print_scheduler(self):
+    def print_scheduler(self, id_to_name):
         self.write("active proctype time_manager() {")
         self.write("    do")
         self.write("    :: " + " && ".join("busy_for_"+str(i)+" > 0" for i in range(0,self.n)) + " ->")
         self.write("        d_step {")
         self.write("            printf(\"MP\");")
+        processes = dict(self.processes)
         for i in range(0, self.n):
+            prog = processes[id_to_name[i]]
+            prog_labels = prog.label_as_root()
+            mps = self.collect_mps(prog)
+            labels = { l for l in self.labels if l in prog_labels } 
             self.write("            if")
-            for m  in self.mps:
+            for m  in mps:
                 self.write("            :: doing_"+str(i)+" == " + self.as_mp(m) + " ->")
                 self.write("                if")
-                for l in self.labels:
+                for l in labels:
                     self.write("                :: loc_"+str(i)+" == " + self.as_label(l) + " ->")
                     self.write("                    printf(\", "+str(i)+" at " + str(l) + " doing " + str(m) + " for %d\", busy_for_"+str(i)+")")
                 self.write("                fi")
@@ -254,6 +259,7 @@ class McMessages:
                     name_to_id[name] = i
                     id_to_name[i] = name
                     labels = program.label_as_root()
+                    filtered_labels = { x for x, s in labels.items() if isinstance(s, ast_inter.Receive) or isinstance(s, ast_inter.Motion) }
                     self.labels.update(labels)
                     i = i + 1
                 self.print_mtype_decl()
@@ -262,7 +268,7 @@ class McMessages:
                 for name, program in self.processes:
                     self.print_process(i, name_to_id, name, program)
                     i = i + 1
-                self.print_scheduler()
+                self.print_scheduler(id_to_name)
             finally:
                 self.file.close()
             rawMpsCombinations, result = self.call_spin()

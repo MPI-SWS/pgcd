@@ -130,5 +130,115 @@ def progHandoverAnnot(arm, cart, carrier):
 
 #TODO Underpass
 
+def progUnderpassArm():
+    return '''
+    # 1, Wait for carrier
+    A0: SetAngleTurntable(0, 1.5707963267948966);
+    A1: SetAngleCantilever(-2.2689280275926285, 1.3962634015954636);
+    A2: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659);
+    #grab and lift piece
+    A3: receive( Idle ){
+        case OK() => skip;
+    }
+    A4: SetAngleCantilever(1.3962634015954636, 2.0943951023931953);
+    A5: Grip(9.5);
+    A6: SetAngleCantilever(2.0943951023931953, 0.87266462599716477);
+    # 2, release carrier and move to second configuration
+    send( Carrier, OK, 1.0 );
+    A7: SetAngleTurntable(1.5707963267948966, 0);
+    # 3, wait for the carrier to arrive, release piece
+    A8: receive( Idle ){
+        case OK() => skip;
+    }
+    A9: SetAngleCantilever(0.87266462599716477, 2.0943951023931953 );
+    A10: Grip( 6 );
+    # 4, release carrier, move to final configuration
+    send( Carrier, OK, 1.0 );
+    A11: RetractArm;
+    '''
+
+def progUnderpassCart():
+    return '''
+    B0: Idle;
+    B1: Idle;
+    B2: Idle;
+    B3: Idle;
+    B4: Idle;
+    B5: Idle;
+    B6: Idle;
+    B7: Idle;
+    B8: Idle;
+    B9: Idle;
+    B10: Idle;
+    B11: Idle;
+    B12: Idle;
+    '''
+
+def progUnderpassCarrier():
+    return '''
+    #Going for arm
+    C0: MoveCart(0, 0, 0, 0.67);
+    C1: Idle;
+    C2: Idle;
+    # 1, Send in position to arm 
+    send( Arm, OK, 1.0 );
+    # 2, Get release from arm and move to second position
+    C3: receive( Idle ){
+        case OK() => skip;
+    }
+    C4: SetAngleCart(0.78539816339744828);
+    C5: MoveCart(0.67, 0, 0.78539816339744828, 0.5);
+    C6: SetAngleCart(1.5707963267948966);
+    C7: StrafeCart(1.023553390594, 0.353553390594, 1.5707963267948966, -0.085);
+    # 3, Send in position to arm 
+    send( Arm, OK, 1.0 );
+    # 4, Get release from arm and move to final position
+    C8: receive( Idle ){
+        case OK() => skip;
+    }
+    C9: MoveCart(1.108553390594, 0.353553390594, 1.5707963267948966, 0.7);
+    '''
+
+def progUnderpassAnnot(arm, car, carrier):
+    Arm_a, Arm_b, Arm_c = sp.symbols('Arm_a, Arm_b, Arm_c')
+    Cart_x, Cart_y, Cart_theta = sp.symbols('Cart_x, Cart_y, Cart_theta')
+    Carrier_x, Carrier_y, Carrier_theta = sp.symbols('Carrier_x, Carrier_y, Carrier_theta')
+    return {
+      "A0": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, arm.minAngleAB), sp.Eq(Arm_c, 0)),
+      "A1": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, arm.minAngleAB), sp.Eq(Arm_c, 1.5707963267948966)),
+      "A2": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 1.3962634015954636), sp.Eq(Arm_c, 1.5707963267948966)),
+      "A3": sp.And(sp.Eq(Arm_a, -0.3490658503988659), sp.Eq(Arm_b, 1.3962634015954636), sp.Eq(Arm_c, 1.5707963267948966)),
+      "A4": sp.And(sp.Eq(Arm_a, -0.3490658503988659), sp.Eq(Arm_b, 1.3962634015954636), sp.Eq(Arm_c, 1.5707963267948966)),
+      "A5": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 2.0943951023931953), sp.Eq(Arm_c, 1.5707963267948966)),
+      "A6": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 2.0943951023931953), sp.Eq(Arm_c, 1.5707963267948966)),
+      "A7": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 0.87266462599716477), sp.Eq(Arm_c, 1.5707963267948966)),
+      "A8": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 0.87266462599716477), sp.Eq(Arm_c, 0)),
+      "A9": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 0.87266462599716477), sp.Eq(Arm_c, 0)),
+      "A10": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 2.0943951023931953), sp.Eq(Arm_c, 0)),
+      "A11": sp.And(sp.Eq(Arm_a, arm.maxAngleAB), sp.Eq(Arm_b, 2.0943951023931953), sp.Eq(Arm_c, 0)),
+      "B0": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B1": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B2": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B3": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B4": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B5": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B6": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B7": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B8": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B9": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B10": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B11": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "B12": sp.And(sp.Eq(Cart_theta, 0), sp.Eq(Cart_x, 0), sp.Eq(Cart_y, 0)),
+      "C0": sp.And(sp.Eq(Carrier_theta, 0), sp.Eq(Carrier_x, 0), sp.Eq(Carrier_y, 0)),
+      "C1": sp.And(sp.Eq(Carrier_theta, 0), sp.Eq(Carrier_x, 0.67), sp.Eq(Carrier_y, 0)),
+      "C2": sp.And(sp.Eq(Carrier_theta, 0), sp.Eq(Carrier_x, 0.67), sp.Eq(Carrier_y, 0)),
+      "C3": sp.And(sp.Eq(Carrier_theta, 0), sp.Eq(Carrier_x, 0.67), sp.Eq(Carrier_y, 0)),
+      "C4": sp.And(sp.Eq(Carrier_theta, 0), sp.Eq(Carrier_x, 0.67), sp.Eq(Carrier_y, 0)),
+      "C5": sp.And(sp.Eq(Carrier_theta, 0.78539816339744828), sp.Eq(Carrier_x, 0.67), sp.Eq(Carrier_y, 0)),
+      "C6": sp.And(sp.Eq(Carrier_theta, 0.78539816339744828), sp.Eq(Carrier_x, 1.023553390594), sp.Eq(Carrier_y, 0.353553390594)),
+      "C7": sp.And(sp.Eq(Carrier_theta, 1.5707963267948966), sp.Eq(Carrier_x, 1.023553390594), sp.Eq(Carrier_y, 0.353553390594)),
+      "C8": sp.And(sp.Eq(Carrier_theta, 1.5707963267948966), sp.Eq(Carrier_x, 1.108553390594), sp.Eq(Carrier_y, 0.353553390594)),
+      "C9": sp.And(sp.Eq(Carrier_theta, 1.5707963267948966), sp.Eq(Carrier_x, 1.108553390594), sp.Eq(Carrier_y, 0.353553390594))
+    }
 
 #TODO twist and turn

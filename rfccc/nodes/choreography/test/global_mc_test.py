@@ -6,6 +6,7 @@ from global_mc import *
 from experiments_setups import *
 from experiments_setups_2 import *
 import xp_handover_test
+import xp_underpass_test
 
 from itertools import *
 def first_true(iterable, default=False, pred=None):
@@ -48,7 +49,21 @@ class GlobalMcTests(unittest.TestCase):
         print("#VC:", len(mc.vcs))
     
     def test_03(self):
-        pass
+        start = datetime.datetime.now()
+        programs = { "Arm": progUnderpassArm(), "Cart": progUnderpassCart(), "Carrier": progUnderpassCarrier() }
+        prser = parser.Parser()
+        parsed = dict( (name, prser.parse(txt)) for name, txt in programs.items() )
+        world = xp_underpass_test.xp1_world()
+        arm = first_true(world.allProcesses(), None, lambda x: x.name() == "Arm")
+        cart = first_true(world.allProcesses(), None, lambda x: x.name() == "Cart")
+        carrier = first_true(world.allProcesses(), None, lambda x: x.name() == "Carrier")
+        annot = progUnderpassAnnot(arm, cart, carrier)
+        mc = GlobalModelChecking(world, parsed, annot, debug = True)
+        mc.check()
+        end = datetime.datetime.now()
+        delta = end - start
+        print("elapsed: ", delta)
+        print("#VC:", len(mc.vcs))
 
     def test_04(self):
         pass
