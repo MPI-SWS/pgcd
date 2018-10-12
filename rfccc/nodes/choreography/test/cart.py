@@ -122,7 +122,8 @@ class CartMove(MotionPrimitive):
 
     def post(self):
         onGround = self._onGround(self._component.position())
-        workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxErrorPost, self._maxErrorPost, 0.0)
+        #workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxErrorPost, self._maxErrorPost, 0.0)
+        workSpace = distance(self._component.position().origin, self._dst) <= 0.0
         return And(onGround, workSpace)
 
     def inv(self):

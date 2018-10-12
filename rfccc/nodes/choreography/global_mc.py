@@ -5,6 +5,7 @@ from utils.vc import *
 from utils.cfa import *
 from utils.bbox import *
 from utils.predicate_tracker import *
+from vectorize_chor import Vectorizer
 import logging
 import spec
 
@@ -29,6 +30,12 @@ class GlobalModelChecking():
         self.annotations = annotations
         self.bbox = bbox
         self.debug = debug
+        self.vcs = []
+        # cfa
+        self.cfas = dict( (name, CFA(prog)) for name, prog in programs.items() )
+        #
+        known = { v for p in world.allProcesses() for v in p.variables() }
+        self.vec = Vectorizer(world.frame(), known)
         # logging
         self.logger = logging.getLogger(__name__)
         if debug:
@@ -40,12 +47,10 @@ class GlobalModelChecking():
         formatter = logging.Formatter('[%(name)s] %(levelname)s: %(message)s')
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
-        # cfa
-        self.cfas = dict( (name, CFA(prog)) for name, prog in programs.items() )
 
-        def logMultiline(self, level, msg):
-            for l in msg.split('\n'):
-                self.logger.log(level, l)
+    def logMultiline(self, level, msg):
+        for l in msg.split('\n'):
+            self.logger.log(level, l)
 
     def checkMessages(self):
         spin = McMessages(self.programs.items(), self.debug)
@@ -68,7 +73,8 @@ class GlobalModelChecking():
     def findNextAnnot(self, label):
         openLabel = set(label)
         seenLabel = set()
-        formula = sp.false #TODO ∨ or ∧ ?
+        #formula = sp.false
+        formula = sp.true
         while len(openLabel) > 0:
             label = openLabel.pop()
             seenLabel.add(label)
@@ -76,7 +82,8 @@ class GlobalModelChecking():
                 if c.hasLabel(label):
                     for l in c.nextLabel(label):
                         if self.hasAnnot(l):
-                            formula = sp.Or(formula, self.findAnnot(l)) #TODO ∨ or ∧ ?
+                            #formula = sp.Or(formula, self.findAnnot(l)) #TODO ∨ or ∧ ?
+                            formula = sp.And(formula, self.findAnnot(l))
                         elif not l in seenLabel:
                             openLabel.add(l)
         return formula
@@ -95,22 +102,30 @@ class GlobalModelChecking():
         loc, name, t = mp[p.name()]
         if name.startswith("m_"):
             name = name[2:]
-        motion, args = p.motionPrimitiveWithFreeParams(name) #TODO args
+        #get that args ...
+        prog = self.programs[p.name()]
+        stmt = prog.label_as_root()[loc]
+        if isinstance(stmt, ast_inter.Receive):
+            stmt = stmt.motion
+        assert isinstance(stmt, ast_inter.Motion)
+        params = [ self.vec.apply(e) for e in stmt.exps ]
+        self.logger.debug("looking for mp %s(%s) @ %s for %s", name, params, loc, p.name())
+        motion = p.motionPrimitive(name, *params)
         return motion
 
     def check_motion(self, mps):
-        vcs = []
         px, py, pz = sp.symbols('inFpX inFpY inFpZ')
         pointDomain = self.bbox.contains(px, py, pz)
-        # a point for the footprint
-        point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
         # processes and abstraction
         for p in self.processes:
             self.logger.debug("correctness of footprint abstraction for %s", p.name())
             point = p.frame().origin.locate_new("inFp", px * p.frame().i + py * p.frame().j + pz * p.frame().k )
             hypotheses = sp.And(p.invariant(), pointDomain, p.ownResources(point))
             concl = p.abstractResources(point)
-            vcs.append( VC("correctness of footprint abstraction for " + p.name(), [sp.And(hypotheses, sp.Not(concl))]) )
+            self.vcs.append( VC("correctness of footprint abstraction for " + p.name(), [sp.And(hypotheses, sp.Not(concl))]) )
+        # a point for the footprint
+        point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
+        # now to the mp
         assumptions = sp.And(*[ p.invariant() for p in self.processes ]) #TODO add the connection as ==
         for mp in mps:
             self.logger.info("mp: %s", mp) # mp is map from name to loc, mp, time
@@ -120,17 +135,17 @@ class GlobalModelChecking():
             for p in self.processes:
                 motion = self.getMotion(mp, p)
                 #pre spec implies precondition
-                vcs.append( VC("precondition of " + motion.name() + " for " + p.name() + " @ " + str(mp), [sp.And(assumptions, annotAtPre, sp.Not(motion.pre()))]) )
+                self.vcs.append( VC("precondition of " + motion.name() + " for " + p.name() + " @ " + str(mp), [sp.And(assumptions, annotAtPre, sp.Not(motion.pre()))]) )
                 #pre spec has resources
                 fpCoarse = sp.And(assumptions, annotAtPre, pointDomain, p.abstractResources(point), sp.Not(motion.preFP(point)))
                 fpFine = sp.And(assumptions, annotAtPre, pointDomain, p.ownResources(point), sp.Not(motion.preFP(point)))
-                vcs.append( VC("pre resources of " + motion.name() + " for " + p.name() + " @ " + str(mp), [fpCoarse, fpFine]) )
+                self.vcs.append( VC("pre resources of " + motion.name() + " for " + p.name() + " @ " + str(mp), [fpCoarse, fpFine]) )
                 #pre no collision
                 for p2 in self.processes:
                     if p.name() < p2.name():
                         motion2 = self.getMotion(mp, p2)
                         fs = [sp.And(assumptions, annotAtPre, pointDomain, motion.preFP(point), motion2.preFP(point))]
-                        vcs.append( VC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(mp), fs) )
+                        self.vcs.append( VC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(mp), fs) )
                 changedVariables.update(motion.modifies())
             frame = self.weakenPred(annotAtPre, changedVariables) 
             self.logger.debug("changedVariables: %s", changedVariables)
@@ -145,7 +160,7 @@ class GlobalModelChecking():
                 assert(self.isTimeInvariant(f))
                 inv = sp.And(inv, spec.deTimifyFormula(p.variables(), f))
             #inv is sat
-            vcs.append( VC("inv is sat @ " + str(mp), [And(assumptions, inv)], True) )
+            self.vcs.append( VC("inv is sat @ " + str(mp), [And(assumptions, inv)], True) )
             #inv no collision
             for p in self.processes:
                 self.logger.debug("invariant (2) for process %s", p.name())
@@ -160,11 +175,11 @@ class GlobalModelChecking():
                         assert(self.isTimeInvariant(f2))
                         f2 = spec.deTimifyFormula(p2.variables(), f2)
                         fs = [sp.And(assumptions, inv, pointDomain, f1, f2)]
-                        vcs.append( VC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(mp), fs) )
+                        self.vcs.append( VC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(mp), fs) )
                 #process resources are included in invFP
                 fpCoarse = sp.And(assumptions, inv, pointDomain, p.abstractResources(point), sp.Not(f1))
                 fpFine = sp.And(assumptions, inv, pointDomain, p.ownResources(point), sp.Not(f1))
-                vcs.append( VC("inv resources of " + motion.name() + " for " + p.name() + " @ " + str(mp), [fpCoarse, fpFine]) )
+                self.vcs.append( VC("inv resources of " + motion.name() + " for " + p.name() + " @ " + str(mp), [fpCoarse, fpFine]) )
             # post
             annotAtPost = sp.And(*[ self.findNextAnnot(loc) for name, (loc, mp, t) in mp.items() ])
             #post postconditions is sat
@@ -173,9 +188,9 @@ class GlobalModelChecking():
                 self.logger.debug("post (1) for process %s", p.name())
                 motion = self.getMotion(mp, p)
                 post = sp.And(post, motion.post())
-            vcs.append( VC("post is sat @ " + str(mp), [sp.And(assumptions, post)], True) )
+            self.vcs.append( VC("post is sat @ " + str(mp), [sp.And(assumptions, post)], True) )
             #post postconditions implies spec
-            vcs.append( VC("post implies annot @ " + str(mp), [sp.And(assumptions, post, sp.Not(annotAtPost))]) )
+            self.vcs.append( VC("post implies annot @ " + str(mp), [sp.And(assumptions, post, sp.Not(annotAtPost))]) )
             #post no collision
             for p in self.processes:
                 self.logger.debug("post (2) for process %s", p.name())
@@ -187,12 +202,12 @@ class GlobalModelChecking():
                         motion2 = self.getMotion(mp, p2)
                         f2 = motion2.postFP(point)
                         fs = [sp.And(assumptions, post, pointDomain, f1, f2)]
-                        vcs.append( VC("no collision in post for " + p.name() + " and " + p2.name() + " @ " + str(mp), fs) )
+                        self.vcs.append( VC("no collision in post for " + p.name() + " and " + p2.name() + " @ " + str(mp), fs) )
                     #process resources are included in postFP
                     fpCoarse = sp.And(assumptions, post, pointDomain, p.abstractResources(point), sp.Not(f1))
                     fpFine = sp.And(assumptions, post, pointDomain, p.ownResources(point), sp.Not(f1))
-                    vcs.append( VC("post resources of " + motion.name() + " for " + p.name() + " @ " + str(mp), [fpCoarse, fpFine]) )
-        for vc in vcs:
+                    self.vcs.append( VC("post resources of " + motion.name() + " for " + p.name() + " @ " + str(mp), [fpCoarse, fpFine]) )
+        for vc in self.vcs:
             if not vc.discharge(timeout = 300, debug = self.debug):
                 raise Exception("failed to check " + str(vc))
 

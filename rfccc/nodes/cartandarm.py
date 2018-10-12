@@ -144,9 +144,9 @@ class cart():
         
         #print( "angle %d steps" %(steps) )
         if steps > self.stepsCart:
-            direction = [1,1,1]
-        else:
             direction = [0,0,0]
+        else:
+            direction = [1,1,1]
         delta = abs(steps-self.stepsCart)
         step_list = [delta, delta, delta]
         #print( "step_list", step_list )
