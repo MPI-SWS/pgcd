@@ -17,7 +17,7 @@ def xp2_world():
     w = World( (0,0,0,0), (1, 0, 0, mp.pi) )
     cart = Cart("Cart", w, 0)
     arm = Arm("Arm", cart)
-    carrier = Cart("Carrier", w, 1)
+    carrier = CartSquare("Carrier", w, 1)
     return w
 
 def xp2_choreo():

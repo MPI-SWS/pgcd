@@ -28,9 +28,10 @@ class GlobalMcTests(unittest.TestCase):
         mc.check()
         end = datetime.datetime.now()
         delta = end - start
-        print("elapsed: ", delta)
-        print("#VC:", len(mc.vcs))
-    
+        print("RES fetch")
+        print("RES elapsed: ", delta)
+        print("RES #VC:", len(mc.vcs))
+
     def test_02(self):
         start = datetime.datetime.now()
         programs = { "Arm": progHandoverArm(), "Cart": progHandoverCart(), "Carrier": progHandoverCarrier() }
@@ -45,9 +46,10 @@ class GlobalMcTests(unittest.TestCase):
         mc.check()
         end = datetime.datetime.now()
         delta = end - start
-        print("elapsed: ", delta)
-        print("#VC:", len(mc.vcs))
-    
+        print("RES handover")
+        print("RES elapsed: ", delta)
+        print("RES #VC:", len(mc.vcs))
+
     def test_03(self):
         start = datetime.datetime.now()
         programs = { "Arm": progUnderpassArm(), "Cart": progUnderpassCart(), "Carrier": progUnderpassCarrier() }
@@ -58,14 +60,31 @@ class GlobalMcTests(unittest.TestCase):
         cart = first_true(world.allProcesses(), None, lambda x: x.name() == "Cart")
         carrier = first_true(world.allProcesses(), None, lambda x: x.name() == "Carrier")
         annot = progUnderpassAnnot(arm, cart, carrier)
-        mc = GlobalModelChecking(world, parsed, annot, debug = True)
+        mc = GlobalModelChecking(world, parsed, annot, debug = False)
         mc.check()
         end = datetime.datetime.now()
         delta = end - start
-        print("elapsed: ", delta)
-        print("#VC:", len(mc.vcs))
+        print("RES underpass ")
+        print("RES elapsed: ", delta)
+        print("RES #VC:", len(mc.vcs))
 
     def test_04(self):
+        start = datetime.datetime.now()
+        programs = { "Arm": progTwistAndTurnArm(), "Cart": progTwistAndTurnCart(), "Carrier": progTwistAndTurnCarrier() }
+        prser = parser.Parser()
+        parsed = dict( (name, prser.parse(txt)) for name, txt in programs.items() )
+        world = progTwistAndTurnWorld()
+        arm = first_true(world.allProcesses(), None, lambda x: x.name() == "Arm")
+        cart = first_true(world.allProcesses(), None, lambda x: x.name() == "Cart")
+        carrier = first_true(world.allProcesses(), None, lambda x: x.name() == "Carrier")
+        annot = progTwistAndTurnAnnot(arm, cart, carrier)
+        mc = GlobalModelChecking(world, parsed, annot, debug = False)
+        mc.check()
+        end = datetime.datetime.now()
+        delta = end - start
+        print("RES twist and turn")
+        print("RES elapsed: ", delta)
+        print("RES #VC:", len(mc.vcs))
         pass
 
 if __name__ == '__main__':

@@ -154,10 +154,10 @@ class GlobalModelChecking():
             # inv
             inv = frame
             for p in self.processes:
-                self.logger.debug("invariant (1) for process %s", p.name())
                 motion = self.getMotion(mp, p)
                 f = motion.inv()
                 assert(self.isTimeInvariant(f))
+                self.logger.debug("invariant (1) for process %s is %s", p.name(), str(f))
                 inv = sp.And(inv, spec.deTimifyFormula(p.variables(), f))
             #inv is sat
             self.vcs.append( VC("inv is sat @ " + str(mp), [And(assumptions, inv)], True) )

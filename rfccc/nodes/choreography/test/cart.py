@@ -4,7 +4,6 @@ from mpmath import mp
 from spec import *
 from utils.geometry import *
 
-#TODO the 2nd cart of a cube 0.18 wide, 0.17 long, 0.16 high
 #when modeled as triangle then center 2 side is about 0.16
 
 # cart
@@ -31,6 +30,7 @@ class Cart(Process):
         MoveCart(self)
         StrafeCart(self)
         SetAngleCart(self)
+        Swipe(self)
 
     def position(self):
         f = self.frame()
@@ -57,6 +57,7 @@ class Cart(Process):
     def abstractResources(self, point, deltaXY = 0.01, deltaXYZ = 0.01):
         return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
 
+#the 2nd cart of a cube 0.18 wide, 0.17 long, 0.16 high
 class CartSquare(Cart):
 
     def __init__(self, name, world, index = 0):
@@ -73,7 +74,11 @@ class CartSquare(Cart):
     def ownResources(self, point):
         pos = self.position()
         o = pos.origin
-        return cube(pos, o.locate_new(-l2 * pos.i - w2 * pos.j), o.locate_new(l2 * pos.i + w2 * pos.j + self.height * pos.k), p)
+        l2 = self.length / 2
+        w2 = self.width / 2
+        lowerBackLeft = o.locate_new(self.name() + "_lowerBackLeft", -l2 * pos.i - w2 * pos.j)
+        upperFrontRight = o.locate_new(self.name() + "_upperFrontRight", l2 * pos.i + w2 * pos.j + self.height * pos.k)
+        return cube(pos, lowerBackLeft, upperFrontRight, point)
 
     def abstractResources(self, point, deltaXY = 0.01, deltaXYZ = 0.01):
         return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
@@ -91,7 +96,21 @@ class MoveFromTo(MotionPrimitiveFactory):
         return CartMove(self.name(), self._component, args[0], args[1])
 
 
-class CartMove(MotionPrimitive):
+class CartMotionPrimitive(MotionPrimitive):
+    
+    def __init__(self, name, component):
+        super().__init__(name, component)
+        
+    def _locAsVec(self, loc):
+        return loc.position_wrt(self._frame)
+
+    def _onGroundVec(self, vec):
+        return Eq(self._component.frame().k.dot(vec) , 0)
+    
+    def _onGround(self, loc):
+        return Eq(self._component.frame().k.dot(self._locAsVec(loc)) , 0)
+
+class CartMove(CartMotionPrimitive):
 
     def __init__(self, name, component, src, dst):
         super().__init__(name, component)
@@ -102,12 +121,6 @@ class CartMove(MotionPrimitive):
         self._dst = dst
         self._maxErrorPre = 0.1
         self._maxErrorPost = 0.01
-
-    def _locAsVec(self, loc):
-        return loc.position_wrt(self._frame)
-
-    def _onGround(self, loc):
-        return Eq(self._component.frame().k.dot(self._locAsVec(loc)) , 0)
 
     def _srcFrame(self):
         return self._frame.locate_new("src", self._locAsVec(self._src))
@@ -247,8 +260,8 @@ class StrafeCart(MotionPrimitiveFactory):
         assert(len(args) == 4)
         direction = self._component.position().j * args[3]
         return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], direction)
-        
-class CartMoveDirection(MotionPrimitive):
+
+class CartMoveDirection(CartMotionPrimitive):
     
     def __init__(self, name, component, x, y, t, direction):
         super().__init__(name, component)
@@ -262,21 +275,12 @@ class CartMoveDirection(MotionPrimitive):
         self._radius = component.radius
         self._height = component.height
 
-    def _locAsVec(self, loc):
-        return loc.position_wrt(self._frame)
-
     def _srcFrame(self):
         return self._frame.locate_new("src", self._frame.i * self.x + self._frame.j * self.y)
 
     def _dstFrame(self):
         return self._frame.locate_new("dst", self._frame.i * self.x + self._frame.j * self.y + self.d)
     
-    def _onGroundVec(self, vec):
-        return Eq(self._component.frame().k.dot(vec) , 0)
-    
-    def _onGround(self, loc):
-        return Eq(self._component.frame().k.dot(self._locAsVec(loc)) , 0)
-
     def modifies(self):
         return [self._component._x, self._component._y]
 
@@ -306,3 +310,88 @@ class CartMoveDirection(MotionPrimitive):
         dst_height = self._dstFrame().origin.locate_new('dsth', self._frame.k * self._height)
         i = cube(self._frame, self._srcFrame().origin, dst_height, point, self._maxErrorPost + self._radius, self._maxErrorPost + self._radius, 0.005)
         return self.timify(i)
+
+class Swipe(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ['x', 'y', 't', 'radius', 'angle']
+
+    def setParameters(self, args):
+        assert(len(args) == 5)
+        return CartSwipe(self.name(), self._component, args[0], args[1], args[2], args[3], args[4])
+
+class CartSwipe(CartMotionPrimitive):
+    
+    def __init__(self, name, component, x, y, t, radius, angle):
+        super().__init__(name, component)
+        self._frame = self._component.frame()
+        self.x = x
+        self.y = y
+        self.t = t
+        self.r = radius
+        self.a = angle
+        self._maxErrorPre = 0.01
+        self._maxErrorPost = 0.005
+    
+    def modifies(self):
+        return [self._component._x, self._component._y, self._component._theta]
+
+    def _src(self):
+        return self._frame.locate_new("src", self._frame.i * self.x + self._frame.j * self.y).origin
+    
+    def centerOfRotation(self):
+        f = self._frame
+        f2 = f.orient_new_axis("CoR_tmp", self.t, f.k, location = self._src().position_wrt(f.origin))
+        return f2.locate_new("CoR", f2.i * self.r)
+
+    def _dst(self):
+        cor = self.centerOfRotation()
+        rotated = cor.orient_new_axis("rCoR", self.a, cor.k)
+        return rotated.origin.locate_new("dst", rotated.i * self.x + rotated.j * self.y)
+
+    def _angleRange(self):
+        angleMin = min(self.t + self.a, self.t)
+        angleMax = max(self.t + self.a, self.t)
+        return And(self._component._theta >= angleMin, self._component._theta <= angleMax)
+
+    def pre(self):
+        onGround = self._onGround(self._component.position())
+        workSpace = distance(self._component.position().origin, self._src()) <= self._maxErrorPre #because δ-sat
+        return And(onGround, workSpace)
+
+    def post(self):
+        onGround = self._onGround(self._component.position())
+        workSpace = Eq(distance(self._component.position().origin, self._dst()), 0.0)
+        angleTarget = Eq(self._component._theta, self.t + self.a)
+        return And(onGround, workSpace, angleTarget)
+
+    def inv(self):
+        onGround = self._onGround(self._component.position())
+        d = distance(self._component.position().origin, self.centerOfRotation().origin)
+        workSpace = And(d >= self.r - self._maxErrorPost, d <= self.r + self._maxErrorPost)
+        return self.timify(And(onGround, workSpace, self._angleRange()))
+
+    def preFP(self, point):
+        return self._component.abstractResources(point, self._maxErrorPre, 0.005)
+
+    def postFP(self, point):
+        return self._component.abstractResources(point, self._maxErrorPost, 0.005)
+
+    def invFP(self, point):
+        cor = self.centerOfRotation()
+        v = point.position_wrt(cor.origin)
+        # Z
+        projK = cor.k.projection(v, scalar=True)
+        zRange = And(projK >= 0, projK <= self._component.height)
+        # distance from trajectory radius
+        projIJ = (v - cor.k.projection(v))
+        d = projIJ.magnitude()
+        rRanges = And(d <= self.r + self._component.radius + self._maxErrorPost,
+                      d >= self.r - self._component.radius - self._maxErrorPost)
+        # TODO angle
+        aRange = true
+        # together
+        return self.timify(And(rRanges, zRange, aRange))

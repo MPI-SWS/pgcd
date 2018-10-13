@@ -43,6 +43,9 @@ class Arm(Process):
         SetAngleCantilever(self)
         SetAngleAnchorPoint(self)
         RetractArm(self)
+        Rotate(self)
+        RotateAndGrab(self)
+        RotateAndPut(self)
         PutOnCart(self)
         GetFromCart(self)
 
@@ -265,7 +268,8 @@ class ArmPutInBin(MotionPrimitive):
         return self.neutral()
 
     def inv(self):
-        return And(self._component.gamma() >= self._minGamma, self._component.gamma() <= self._maxGamma)
+        f = And(self._component.gamma() >= self._minGamma, self._component.gamma() <= self._maxGamma)
+        return self.timify(f)
 
     def preFP(self, point):
         withoutGamma = self._component.abstractResources(point, 0.05)
@@ -359,7 +363,7 @@ class ArmMoveTo(MotionPrimitive):
     def inv(self):
         dist = distance(self._component._upper.origin, self._target)
         pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
-        return pos <= dist
+        return self.timify(pos <= dist)
 
     def preFP(self, point):
         return self._component.abstractResources(point, 0.05)
@@ -425,10 +429,98 @@ class ArmSetAngle(MotionPrimitive):
         return Eq(self.var, self.angle2 )
 
     def inv(self):
+        f = true
         if self.angle1 < self.angle2:
-            return And( self.var >= self.angle1, self.var <= self.angle2)
+            f = And( self.var >= self.angle1, self.var <= self.angle2)
         else:
-            return And( self.var >= self.angle2, self.var <= self.angle1)
+            f = And( self.var >= self.angle2, self.var <= self.angle1)
+        return self.timify(f)
+
+    def preFP(self, point):
+        return self._component.ownResources(point, 0.05)
+
+    def postFP(self, point):
+        return self._component.ownResources(point, 0.05)
+
+    def invFP(self, point):
+        i = self._component.ownResources(point, 0.05)
+        return self.timify(i)
+
+class RotateAndGrab(MotionPrimitiveFactory):
+
+    def parameters(self):
+        return ["source turntable", "source cantilever", "source anchor",
+                "target turntable", "target cantilever", "target anchor"]
+
+    def setParameters(self, args):
+        assert(len(args) == 6)
+        return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35)
+
+class RotateAndPut(MotionPrimitiveFactory):
+
+    def parameters(self):
+        return ["source turntable", "source cantilever", "source anchor",
+                "target turntable", "target cantilever", "target anchor"]
+
+    def setParameters(self, args):
+        assert(len(args) == 6)
+        return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35)
+
+class Rotate(MotionPrimitiveFactory):
+
+    def parameters(self):
+        return ["source turntable", "source cantilever", "source anchor",
+                "target turntable", "target cantilever", "target anchor"]
+
+    def setParameters(self, args):
+        assert(len(args) == 6)
+        return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.0)
+
+class ArmSetAllAngles(MotionPrimitive):
+
+    def __init__(self, name, component, angle1a, angle2a, angle3a, angle1b, angle2b, angle3b, delta):
+        super().__init__(name, component)
+        self.angle1a = angle1a
+        self.angle2a = angle2a
+        self.angle3a = angle3a
+        self.angle1b = angle1b
+        self.angle2b = angle2b
+        self.angle3b = angle3b
+        self.delta   = delta
+
+    def modifies(self):
+        return self._component.internalVariables()
+
+    def pre(self):
+        return And( self._component._a >= self.angle3a - 0.01, self._component._a <= self.angle3a + 0.01,
+                    self._component._b >= self.angle2a - 0.01, self._component._b <= self.angle2a + 0.01,
+                    self._component._c >= self.angle1a - 0.01, self._component._c <= self.angle1a + 0.01)
+
+    def post(self):
+        targetCanti = self.angle2b
+        if targetCanti <= 0.0:
+            targetCanti = targetCanti + self.delta
+        else:
+            targetCanti = targetCanti - self.delta
+        return And( Eq( self._component._a, self.angle3b ),
+                    Eq( self._component._b, targetCanti ),
+                    Eq( self._component._c, self.angle1b ))
+
+    def inv(self):
+        f = true
+        if self.angle1a < self.angle1b:
+            f = And(f, self._component._c >= self.angle1a, self._component._c <= self.angle1b)
+        else:
+            f = And(f, self._component._c >= self.angle1b, self._component._c <= self.angle1a)
+        if self.angle2a < self.angle2b:
+            f = And(f, self._component._b >= self.angle2a, self._component._b <= self.angle2b)
+        else:
+            f = And(f, self._component._b >= self.angle2b, self._component._b <= self.angle2a)
+        if self.angle3a < self.angle3b:
+            f = And(f, self._component._a >= self.angle3a, self._component._a <= self.angle3b)
+        else:
+            f = And(f, self._component._a >= self.angle3b, self._component._a <= self.angle3a)
+        return self.timify(f)
 
     def preFP(self, point):
         return self._component.ownResources(point, 0.05)

@@ -23,7 +23,7 @@ def xp1_world():
     w = World( (0,0,0, mp.pi/4), (-1.1, 0, 0, 0) )
     cart = Cart("Cart", w, 0)
     arm = Arm("Arm", cart)
-    carrier = Cart("Carrier", w, 1)
+    carrier = CartSquare("Carrier", w, 1)
     pillar = Cube( -0.5, 0.5, 0, mp.pi/4, 0.1, 0.3, 0.2)
     bridge = Cube( -0.5, 0.5, 0.2, mp.pi/4, 0.3, 0.03, 0.1)
     return w
