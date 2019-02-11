@@ -3,7 +3,7 @@ from ast_chor import *
 from ast_proj import *
 import ast_inter
 from sympy import *
-from DrealInterface import DrealInterface
+from utils.DrealInterface import DrealInterface
 from utils.vc import VC
 from utils.cfa import CFA
 from copy import *

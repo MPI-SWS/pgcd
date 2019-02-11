@@ -1,4 +1,4 @@
-from DrealInterface import DrealInterface
+from utils.DrealInterface import DrealInterface
 from sympy import *
 
 

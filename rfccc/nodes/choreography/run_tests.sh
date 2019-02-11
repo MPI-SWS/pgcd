@@ -1,8 +1,8 @@
 #! /bin/sh
 
-export PYTHONPATH=$PYTHONPATH:.:..:../..:../../interpreter:$HOME/work/projects/CableRobot/Utils
+export PYTHONPATH=$PYTHONPATH:.:..:../..:../../interpreter
 
-echo this needs CableRobot/Utils in the PYTHONPATH and dreal in the PATH
+echo These tests need dreal in the PATH to run.
 
 echo Running tests
 cd test
