@@ -4,7 +4,7 @@ import parser as rp
 from choreography.projection import Projection
 import unittest
 from experiments_setups import *
-from vectorize_chor import *
+from vectorize import *
 from copy import deepcopy
 
 

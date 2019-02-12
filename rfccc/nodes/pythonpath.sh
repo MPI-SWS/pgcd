@@ -1,3 +1,3 @@
 #!/bin/bash
 
-export PYTHONPATH=$PYTHONPATH:.:../:interpreter/:choreography:
+export PYTHONPATH=$PYTHONPATH:.:..:interpreter:motions:verification:

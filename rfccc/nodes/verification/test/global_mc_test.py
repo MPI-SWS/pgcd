@@ -2,7 +2,7 @@
 import unittest
 import parser
 import datetime
-from global_mc import *
+from modelchecker import *
 from experiments_setups import *
 from experiments_setups_2 import *
 import xp_handover_test

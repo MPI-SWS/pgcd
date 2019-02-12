@@ -5,7 +5,7 @@ from refinement import *
 from parser_chor import *
 from experiments_setups import *
 from parser_test import cartAndArmFetch, binSorting, armsHandover, ferry
-from vectorize_chor import *
+from vectorize import *
 from copy import deepcopy
 
 def prog1C():

@@ -5,7 +5,7 @@ from utils.vc import *
 from utils.cfa import *
 from utils.bbox import *
 from utils.predicate_tracker import *
-from vectorize_chor import Vectorizer
+from utils.vectorizer import Vectorizer
 import logging
 import spec
 

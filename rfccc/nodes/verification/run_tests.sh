@@ -1,6 +1,9 @@
-#! /bin/sh
+#!/bin/sh
 
-export PYTHONPATH=$PYTHONPATH:.:..:../..:../../interpreter
+# this path is relative to the test folder, not this folder
+export PYTHONPATH=$PYTHONPATH:.:..:../..:../../interpreter:../choreography:
+
+echo PYTHONPATH is $PYTHONPATH
 
 echo These tests need dreal in the PATH to run.
 

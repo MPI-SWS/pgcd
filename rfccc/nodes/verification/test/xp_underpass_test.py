@@ -4,7 +4,7 @@ from utils.geometry import *
 from cart import *
 from arm import *
 from refinement import *
-from vectorize_chor import *
+from vectorize import *
 from mpmath import mp
 from experiments_setups import World
 from copy import deepcopy
