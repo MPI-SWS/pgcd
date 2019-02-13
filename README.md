@@ -70,8 +70,8 @@ $ sudo apt-get install python3-dev
 
 ```
 $ cd ~/Dowloads
-$ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code.git rfccc
-$ cp -a rfccc/. ~/catkin_ws/src/
+$ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code.git pgcd
+$ cp -a pgcd/. ~/catkin_ws/src/
 ```
 
 * compile and source:
@@ -90,16 +90,16 @@ last listed command into your .bashrc file in "home/user/" directory.
 
 ### With PyCharm IDE
 
-If you have PyCharm you can open the rfccc directory as project:
-* set rfccc/nodes and rfccc/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
-* go to Settings -> Project: rfccc -> Project interpreter -> add python3 venv ([Picture](https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code/blob/master/readme/set_venv.png))
+If you have PyCharm you can open the pgcd directory as project:
+* set pgcd/nodes and pgcd/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
+* go to Settings -> Project: pgcd -> Project interpreter -> add python3 venv ([Picture](readme/set_venv.png))
 * import CableRobot project or modify the project to remove dependencies (will be done in future)
 
-Before running the example please set the "RFCCC_ROS_PROGRAMS" environment variable to your location of node programs (globally!)
+Before running the example please set the "PGCD_ROS_PROGRAMS" environment variable to your location of node programs (globally!)
 (or change the path manually in start.launch file), for example:
 
 ```
-RFCCC_ROS_PROGRAMS="/home/$USERNAME/catkin_ws/src/rfccc/nodes/programs/"
+PGCD_ROS_PROGRAMS="/home/$USERNAME/catkin_ws/src/pgcd/nodes/programs/"
 ```
 
 make sure that the path is set and that roslaunch will find it! 
@@ -113,7 +113,7 @@ To run the example you need to:
 * Run terminal command for starting roscore
 
 ```
-$ roslaunch rfccc start.launch
+$ roslaunch pgcd start.launch
 ```
 
 * Run terminal command for visualisation

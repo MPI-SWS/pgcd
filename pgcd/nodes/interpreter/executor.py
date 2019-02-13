@@ -2,7 +2,7 @@ import inspect
 import threading
 import _thread
 
-import rfccc.msg
+import pgcd.msg
 import rospy
 import tf2_ros
 import tf2_py
@@ -32,7 +32,7 @@ class Executor:
         self.msg_types = {}
         self.subs = {}
         self.lock = threading.Lock()
-        for name, obj in inspect.getmembers(rfccc.msg):
+        for name, obj in inspect.getmembers(pgcd.msg):
             if inspect.isclass(obj):
                 self.msg_types[obj.__name__] = obj
 

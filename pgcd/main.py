@@ -13,7 +13,7 @@ from choreography.parser_chor import *
 
 
 def start_ros_nodes():
-    package = 'rfccc'
+    package = 'pgcd'
     broadcaster_comp = 'component.py'
 
     launch = roslaunch.scriptapi.ROSLaunch()

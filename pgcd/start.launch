@@ -2,7 +2,7 @@
 
     <!--NAMES ARE GIVEN IN THE GRUOP TAG, ATTRIBUTE NS-->
     <group ns="cart">
-        <param name="program_location" type="string" value="/home/pi/ros_catkin_ws/src/rfccc/nodes/programs/"/>
+        <param name="program_location" type="string" value="/home/pi/ros_catkin_ws/src/pgcd/nodes/programs/"/>
         <param name="object_module_name" type="string" value="cartandarm"/>
         <param name="object_class_name" type="string" value="cart"/>
 
@@ -11,7 +11,7 @@
         <param name="frame_1_updater" type="string" value="getConfigurationMatrixCart"/>
     </group>
     <group ns="arm">
-        <param name="program_location" type="string" value="/home/pi/ros_catkin_ws/src/rfccc/nodes/programs/"/>
+        <param name="program_location" type="string" value="/home/pi/ros_catkin_ws/src/pgcd/nodes/programs/"/>
         <param name="object_module_name" type="string" value="cartandarm"/>
         <param name="object_class_name" type="string" value="arm"/>
 
@@ -32,7 +32,7 @@
         <param name="frame_4_updater" type="string" value="getConfigurationMatrixGripper"/>
     </group>
     <group ns="carrier">
-        <param name="program_location" type="string" value="/home/pi/ros_catkin_ws/src/rfccc/nodes/programs/"/>
+        <param name="program_location" type="string" value="/home/pi/ros_catkin_ws/src/pgcd/nodes/programs/"/>
         <param name="object_module_name" type="string" value="carrier"/>
         <param name="object_class_name" type="string" value="carrier"/>
 
