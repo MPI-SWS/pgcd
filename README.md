@@ -1,25 +1,24 @@
-# ROSL - Concurrent Control Code in ROS with resources and frames tracking
+# PGCD - robot Programming and verification with Geometry, Concurrency, and Dynamics
 
-ROSL is a programming language for communication and execution of motion primitives within ROS nodes.
+PGCD is a programming language and verifcation system for communication and execution of motion primitives within ROS nodes.
 
 ## Features
 
-Currently the main functionalities of ROSL are:
+Currently the main functionalities of PGCD are:
 * Communication between ROS nodes (ROS message & ROS topics)
 * Execute motion primitive (CableRobot project by Marcus Pirron)
 * Tracking frames (TF2 library)
 
 ## Project setup 
 
-The project uses python3 (3.6 for CableRobot integration), cause executing motion primitives need python3 (CableRobot project).
+The project uses python3.
 Therefore some tweaks have to be done.
 
 ### Ubuntu16.04 LTS or Debian GNU/Linux 8 (jessie)
 
-To run ROSL you need to:
+To run PGCD you need to:
 
-* install ROS ( reccomended ROS Kinetic: http://wiki.ros.org/kinetic/Installation)
-* install tf2 library with turtlesim 
+* install ROS (reccomended ROS Kinetic: http://wiki.ros.org/kinetic/Installation) with a few extra packages like tf2
 
 ```
 sudo apt-get install ros-$ROS_DISTRO-turtle-tf2 ros-$ROS_DISTRO-tf2-tools ros-$ROS_DISTRO-tf
