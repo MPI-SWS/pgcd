@@ -9,7 +9,7 @@ import drv8825
 import steppers
 import RPi.GPIO as GPIO
 from time import sleep, time
-import rospy
+import rclpy
 
 import sympy as sp
 
@@ -161,7 +161,7 @@ class carrier():
         #    setattr( self, angleName, sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ) )
         #    print( "getAttr", getattr( self, angleName ) )
         #    print( "------>", sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ))
-        #    rospy.sleep(0.1)
+        #    rclpy.sleep(0.1)
 
         #    now = time()
         setattr( self, angleName, sp.N(sp.rad(angle)))
@@ -180,7 +180,7 @@ class carrier():
         #    print( "getAttr", getattr( self, yName ) )
         #    print( "------>", sp.N( sp.cos( sp.rad(angle))* (now-cutoff)/(future-cutoff)*distance) )
         #    print( "------>", sp.N( sp.sin( sp.rad(angle))* (now-cutoff)/(future-cutoff)*distance) )
-        #    rospy.sleep(0.1)
+        #    rclpy.sleep(0.1)
 
         #    now = time()
         setattr( self, xName, sp.N( sp.cos( sp.rad(angle))*distance) )

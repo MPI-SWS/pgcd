@@ -1,6 +1,5 @@
 import geometry_msgs.msg
-import geometry_msgs.msg
-import rospy
+import rclpy
 import tf
 import tf2_msgs.msg
 import random
@@ -21,9 +20,9 @@ class TFUpdater:
         try:
             k = 1
             while True:
-                parent_name = rospy.get_param('~frame_' + str(k) + '_parent')
-                frame_name = rospy.get_param('~frame_' + str(k))
-                updt_func_name = rospy.get_param('~frame_' + str(k) + '_updater')
+                parent_name = rclpy.get_param('~frame_' + str(k) + '_parent')
+                frame_name = rclpy.get_param('~frame_' + str(k))
+                updt_func_name = rclpy.get_param('~frame_' + str(k) + '_updater')
                 k += 1
                 self.parent_ids.append(parent_name)
                 self.frames_ids.append(frame_name)
@@ -31,8 +30,8 @@ class TFUpdater:
         except Exception as e:
             pass
 
-        self.pub_tf = rospy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=4)
-        self.timer = rospy.Timer(rospy.Duration(nsecs=100000000), self.set_up_broadcaster)
+        self.pub_tf = rclpy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=4)
+        self.timer = rclpy.Timer(rclpy.Duration(nsecs=100000000), self.set_up_broadcaster)
 
     def set_up_broadcaster(self, _):
         for parent, frame, updater in zip(self.parent_ids, self.frames_ids, self.updater_func_names):
@@ -42,7 +41,7 @@ class TFUpdater:
         #print("Updating: ", id_frame, parent_frame, matrix)
         t = geometry_msgs.msg.TransformStamped()
         t.header.frame_id = parent_frame
-        t.header.stamp = rospy.Time.now()
+        t.header.stamp = rclpy.Time.now()
         t.child_frame_id = id_frame
         
         position = matrix

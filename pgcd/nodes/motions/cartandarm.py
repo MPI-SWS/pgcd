@@ -8,7 +8,7 @@ from __future__ import division
 import drv8825
 import steppers
 import RPi.GPIO as GPIO
-import rospy 
+import rclpy 
 from time import sleep, time
 
 import sympy as sp
@@ -245,7 +245,7 @@ class arm():
         #    setattr( self, angleName, sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ) )
         #    #print( "getAttr", getattr( self, angleName ) )
         #    #print( "------>", sp.N(sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle)) ))
-        #    rospy.sleep(0.1)
+        #    rclpy.sleep(0.1)
         #    now = time()
         setattr( self, angleName, sp.N(sp.rad(angle)))
 
@@ -345,7 +345,7 @@ class arm():
     def grip( self, cycle ):
         assert( cycle > 5 and cycle < 12.5 )
         self.p.ChangeDutyCycle( cycle )
-        rospy.sleep( 2 )
+        rclpy.sleep( 2 )
         #self.__updateAngleRos__( "angleGripper", -angle, 270, 10 )
 
     def getConfigurationMatrixGripper( self ):
@@ -385,7 +385,7 @@ class arm():
         self.__updateAngleRos__( "angleCantilever", 0, 270, 0 )
 
     def idle( self ):
-        rospy.sleep(0.1)
+        rclpy.sleep(0.1)
     
     # Simple Positioning of the arm
 

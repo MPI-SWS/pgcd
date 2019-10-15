@@ -3,7 +3,7 @@ import threading
 import _thread
 
 import pgcd.msg
-import rospy
+import rclpy
 import tf2_ros
 import tf2_py
 import geometry_msgs.msg as geom
@@ -106,7 +106,7 @@ class Executor:
             setattr(message, name, val)
 
         # print("/" + component, )
-        self.pub = rospy.Publisher("/" + component, msg_type, queue_size=1)
+        self.pub = rclpy.Publisher("/" + component, msg_type, queue_size=1)
         print(self.id + ' ', end='')
         while self.pub.get_num_connections() == 0:
             #print('visit_send wait connect')
@@ -124,7 +124,7 @@ class Executor:
         for action in actions:
             # print("/" + self.id)
             self.subs["/" + self.id + '/' + action['msg_type'].__name__] = \
-                rospy.Subscriber("/" + self.id, action['msg_type'],
+                rclpy.Subscriber("/" + self.id, action['msg_type'],
                                  self.process_msg,
                                  callback_args=action,
                                  queue_size=1)
@@ -163,7 +163,7 @@ class Executor:
             #print('transform_slots transform')
             try:
 
-                trans = tfBuffer.lookup_transform(getattr(msg, 'source_frame'), self.id, rospy.Time())
+                trans = tfBuffer.lookup_transform(getattr(msg, 'source_frame'), self.id, rclpy.Time())
                 x = tf.transformations.quaternion_matrix(np.array([trans.transform.rotation.x,
                                                                    trans.transform.rotation.y,
                                                                    trans.transform.rotation.z,
@@ -221,7 +221,7 @@ class Executor:
         except Exception as e:
             pass
             print( "visit_motion generated error", str(e) )
-        #rospy.sleep( 10 ) 
+        #rclpy.sleep( 10 ) 
 
     def visit_print(self, node):
         if isinstance(node.arg, str):

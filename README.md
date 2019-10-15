@@ -1,5 +1,7 @@
 # PGCD - robot Programming and verification with Geometry, Concurrency, and Dynamics
 
+__currently being ported to ROS 2 (not yert working)__
+
 PGCD is a programming language and verifcation system for communication and execution of motion primitives within ROS nodes.
 
 ## Features

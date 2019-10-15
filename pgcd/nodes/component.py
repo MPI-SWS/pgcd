@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import rospy
+import rclpy
 import _thread
 import tf_updater
 from executor import Executor
@@ -9,12 +9,12 @@ import importlib
 class Component(Executor):
 
     def __init__(self):
-        Executor.__init__(self, rospy.get_name())
-        self.id = rospy.get_name()[1:]
-        self.prog_path = rospy.get_param('~program_location') + self.id + '.rosl'
+        Executor.__init__(self, rclpy.get_name())
+        self.id = rclpy.get_name()[1:]
+        self.prog_path = rclpy.get_param('~program_location') + self.id + '.rosl'
 
-        module = importlib.import_module(rospy.get_param('~object_module_name'))
-        class_ = getattr(module, rospy.get_param('~object_class_name'))
+        module = importlib.import_module(rclpy.get_param('~object_module_name'))
+        class_ = getattr(module, rclpy.get_param('~object_class_name'))
         self.robot = class_()
 
         tf_updater.TFUpdater(self.robot)
@@ -29,6 +29,6 @@ class Component(Executor):
         #     print(str(e))
 
 if __name__ == '__main__':
-    rospy.init_node('fixed_tf2_broadcaster')
+    rclpy.init_node('fixed_tf2_broadcaster')
     tfb = Component()
-    rospy.spin()
+    rclpy.spin()
