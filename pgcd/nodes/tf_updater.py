@@ -3,9 +3,6 @@ import rclpy
 import tf
 import tf2_msgs.msg
 import random
-import numpy as np
-from cartandarm import cart, arm
-from carrier import carrier
 import sympy as sp
 
 
@@ -40,22 +37,21 @@ class TFUpdater:
     def updateMatrix(self, matrix, id_frame, parent_frame):
         #print("Updating: ", id_frame, parent_frame, matrix)
         t = geometry_msgs.msg.TransformStamped()
+        #header
         t.header.frame_id = parent_frame
         t.header.stamp = rclpy.Time.now()
         t.child_frame_id = id_frame
-        
-        position = matrix
+        #translation
+        t.transform.translation.x = matrix[0, 3]
+        t.transform.translation.y = matrix[1, 3]
+        t.transform.translation.z = matrix[2, 3]
+        #rotation
         x = [[matrix[j, i] for i in range(0, 4)] for j in range(0, 4)]
-
-        t.transform.translation.x = position[0, 3]
-        t.transform.translation.y = position[1, 3]
-        t.transform.translation.z = position[2, 3]
-        # q = tf.transformations.quaternion_from_euler(yaw, pitch, roll, 'rzyx') RADIANS
         q = tf.transformations.quaternion_from_matrix(x)
-
         t.transform.rotation.x = q[0]
         t.transform.rotation.y = q[1]
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]
+        #publish
         tfm = tf2_msgs.msg.TFMessage([t])
         self.pub_tf.publish(tfm)

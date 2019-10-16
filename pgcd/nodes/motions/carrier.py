@@ -5,7 +5,6 @@ Meccanum cart
 """
 
 from __future__ import division
-import drv8825
 import steppers
 import RPi.GPIO as GPIO
 from time import sleep, time
@@ -19,20 +18,13 @@ from multiprocessing import Process
 
 class carrier():
     def __init__( self ):
-        #self.motor1 = drv8825.drv8825( pinDir = 11, pinStep = 12, pinEnable = 3, waitingTime=0.002 )
-        #self.motor2 = drv8825.drv8825( pinDir = 13, pinStep = 15, pinEnable = 3, waitingTime=0.002 )
-        #self.motor3 = drv8825.drv8825( pinDir = 16, pinStep = 18, pinEnable = 3, waitingTime=0.002 )
-        #self.motor4 = drv8825.drv8825( pinDir = 22, pinStep = 7, pinEnable = 3, waitingTime=0.002 )
-
         self.motors = steppers.Steppers( 4, [11,13,16,22], [12,15,18,7], [3,3,3,3] )
-
 
         GPIO.setmode(GPIO.BOARD)
         self.pinEnable = 3
         self.pinMS1 = 5
         self.pinMS2 = 24
         self.pinMS3 = 26
-        
         
         GPIO.setup( self.pinEnable, GPIO.OUT )
         GPIO.setup( self.pinMS1, GPIO.OUT )
@@ -98,22 +90,6 @@ class carrier():
         max_steps = max( step_list )
         stepspertime = 1.6
         self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
-
-
-        #p1 = Process(target = f)
-        #p2 = Process(target = g)
-        #p3 = Process(target = h)
-        #p4 = Process(target = i)
-        #p1.start()
-        #p2.start()
-        #p3.start()
-        #p4.start()
-        #print("join processes")
-        #p1.join()
-        #p2.join()
-        #p3.join()
-        #p4.join()
-        #print("processes joined")
 
 
     def __setMSPins__( self, MS1, MS2, MS3 ):
