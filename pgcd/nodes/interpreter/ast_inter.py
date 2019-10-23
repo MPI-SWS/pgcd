@@ -46,6 +46,7 @@ class Node:
     def label(self, label_to_node):
         label_to_node[self.get_label()] = self
 
+
 class Statement(Node):
 
     def __init__(self, children):
@@ -59,9 +60,6 @@ class Statement(Node):
         for c in self.children:
             string += str(c) + '\n'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def label(self, label_to_node):
         super().label(label_to_node)
@@ -80,9 +78,6 @@ class Skip(Node):
         string += 'Skip'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
 class Print(Node):
 
     def __init__(self, arg):
@@ -95,9 +90,6 @@ class Print(Node):
             string += self._label + ": "
         string += 'Print' + str(arg)
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
 class Send(Node):
 
@@ -114,9 +106,6 @@ class Send(Node):
         string += 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + ''.join([str(a) for a in self.args]) + ')'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
 
 class Receive(Node):
 
@@ -131,9 +120,6 @@ class Receive(Node):
             string += self._label + ": "
         string += 'Receive(' + str(self.motion) + ') {' + ''.join(str(e) for e in self.actions) + '}'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def label(self, label_to_node):
         super().label(label_to_node)
@@ -159,9 +145,6 @@ class Action(Node):
         string += ') =>' + str(self.program)
         return string
 
-    def accept(self, visitor):
-        return visitor.visit(self)
-
     def label(self, label_to_node):
         super().label(label_to_node)
         self.program.label(label_to_node)
@@ -180,9 +163,6 @@ class If(Node):
             string += self._label + ": "
         string += '\n'.join([str(a) for a in self.if_list])
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def label(self, label_to_node):
         super().label(label_to_node)
@@ -218,9 +198,6 @@ class IfComponent(Node):
         string += 'if ' + str(self.condition) + ' then {' + str(self.program) + '}'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
     def label(self, label_to_node):
         super().label(label_to_node)
         program.label(label_to_node)
@@ -238,9 +215,6 @@ class While(Node):
             string += self._label + ": "
         string += 'while ' + str(self.condition) + ' do {' + str(self.program) + '}'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def label(self, label_to_node):
         super().label(label_to_node)
@@ -261,10 +235,6 @@ class Assign(Node):
         return string
 
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
-
 class Motion(Node):
 
     def __init__(self, value, exps=[]):
@@ -279,9 +249,6 @@ class Motion(Node):
         string += 'm_' + self.value + '(' + ', '.join(str(e) for e in self.exps) + ')'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
 class Exit(Node):
 
     def __init__(self, expr):
@@ -294,6 +261,3 @@ class Exit(Node):
             string += self._label + ": "
         string += 'exit(' + str(self.expr) + ')'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)

@@ -22,14 +22,18 @@ class Termination(Exception):
         self.value = value
 
 
+#TODO rename to runner
 class Executor:
 
     def __init__(self, component_id):
         self.id = component_id
         self.parser = Parser()
-        self.waiting_msg = False
         self.variables = {}
+        # messages
         self.msg_types = {}
+        self.send_to = {}
+        self.receive_from = {}
+        #
         self.subs = {}
         self.lock = threading.Lock()
         for name, obj in inspect.getmembers(pgcd.msg):
@@ -38,10 +42,20 @@ class Executor:
 
     def execute(self, code):
         try:
-            return self.parser.parse(code).accept(self)
+            program = self.parser.parse(code)
+            return self.visit(program)
         except Termination as t:
             return t.value
 
+    def get_send_info(self):
+        # TODO
+        assert False
+
+    def get_receive_info(self):
+        # TODO
+        assert False
+
+    #TODO that is slow. Instead we should compile the sympy expr (sympy.utilities.codegen).
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
         for fs in sympy_exp.free_symbols:
@@ -91,10 +105,13 @@ class Executor:
         elif node.tip == Type.exit:
             self.visit_exit(node)
 
+        else
+            assert False, "no visitor for " + node.tip
+
     def visit_statement(self, node):
         # print('\n'.join(str(c) for c in node.children))
         for stmt in node.children:
-            stmt.accept(self)
+            self.visit(stmt)
 
     def visit_send(self, node):
         component, msg_type = node.comp, self.msg_types[node.msg_type]
@@ -106,47 +123,30 @@ class Executor:
             setattr(message, name, val)
 
         # print("/" + component, )
-        self.pub = rclpy.Publisher("/" + component, msg_type, queue_size=1)
-        print(self.id + ' ', end='')
-        while self.pub.get_num_connections() == 0:
-            #print('visit_send wait connect')
-            pass
+        pub = self.send_to[component][msg_type.__name__]
+        pub.publish(message)
         print('sent> ' + component)
-        while self.pub.get_num_connections() != 0:
-            #print('visit_send wait disconnect')
-            self.pub.publish(message)
-        print('stop sending> ' + self.id)
-        self.pub.unregister()
+        ack = self.receive_from[component].get()
+        assert ack._type == String, "not an ack!?!"
 
     def visit_receive(self, node):
-        actions = [a.accept(self) for a in node.actions]
-        self.waiting_msg = True
-        for action in actions:
-            # print("/" + self.id)
-            self.subs["/" + self.id + '/' + action['msg_type'].__name__] = \
-                rclpy.Subscriber("/" + self.id, action['msg_type'],
-                                 self.process_msg,
-                                 callback_args=action,
-                                 queue_size=1)
-        while self.waiting_msg:
-            #print('visit_rceive wait')
-            self.visit_motion(node.motion)
-
-    def process_msg(self, msg, action):
-        if self.waiting_msg:
-            print('stop receiving> ' + self.id)
-            for key in self.subs.keys():
-                self.subs[key].unregister()
-
-            if 'source_frame' in msg.__slots__:
-                self.transform_slots(msg, action)
-            else:
-                for name, var in zip(msg.__slots__, action['data_name']):
-                    print("\nSetting:",  var, "to", name, getattr(msg, name))
-                    self.__setattr__(var, getattr(msg, name))
-            action['program'].accept(self)
-            self.waiting_msg = False
-
+        actions = [self.visit(a) for a in node.actions]
+        next_prog = Skip()
+        waiting_msg = True
+        while waiting_msg:
+            try:
+                msg = self.receive_from[node.sender].get_nowait()
+                waiting_msg = False
+                for action in actions:
+                    if action['msg_type'] == msg._type:
+                        for name, var in zip(msg.__slots__, action['data_name']):
+                            print("\nSetting:",  var, "to", name, getattr(msg, name))
+                            self.__setattr__(var, getattr(msg, name))
+                    next_prog = action['program']
+                    break
+            except queue.Empty:
+                self.visit_motion(node.motion)
+         self.visit(next_prog)
 
     def transform_slots(self, msg, args):
         # print("-----> 1")
@@ -197,13 +197,13 @@ class Executor:
         for if_stmt in node.if_list:
             val = self.calculate_sympy_exp(if_stmt.condition)
             if val:
-                if_stmt.program.accept(self)
+                self.visit(if_stmt.program)
                 break
 
     def visit_while(self, node):
         val = self.calculate_sympy_exp(node.condition)
         while val:
-            node.program.accept(self)
+            self.visit(node.program)
             val = self.calculate_sympy_exp(node.condition)
             #print('visit_while transform')
 
