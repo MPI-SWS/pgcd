@@ -104,12 +104,14 @@ class Refinement(CFA):
             return isinstance(node, SendMessage) and statment.comp == node.receiver and self.sameMsgName(statment.msg_type, node.msg_type) and self._refines(self.nextStatement(statmentL), node.end_state[0])
         elif isinstance(statment, ast_inter.Receive):
             if isinstance(node, ReceiveMessage):
+                #TODO check sender
                 #print("12")
                 return any(self._refines(rs.get_label(), nodeL) for rs in statment.actions)
             if isinstance(node, Motion):
                 #print("13")
                 return self._refines(statment.motion.get_label(), nodeL)
             elif isinstance(node, ExternalChoice):
+                #TODO check sender
                 #print("14")
                 def findOne(ns):
                     return self._refines(statment.motion.get_label(), ns) or any(self._refines(r.get_label(), ns) for r in statment.actions)

@@ -22,8 +22,7 @@ class Termination(Exception):
         self.value = value
 
 
-#TODO rename to runner
-class Executor:
+class Interpreter:
 
     def __init__(self, component_id):
         self.id = component_id
@@ -47,15 +46,71 @@ class Executor:
         except Termination as t:
             return t.value
 
+    # receiver name and message type name
     def get_send_info(self):
-        # TODO
+        infos = []
+        def visit(self, node):
+            if node.tip == Type.statement:
+                for stmt in node.children:
+                    visit(stmt)
+            elif node.tip == Type.skip:
+                pass
+            elif node.tip == Type.send:
+                infos.append((node.comp, node.msg_types))
+            elif node.tip == Type.receive:
+                for a in node.actions:
+                    visit(a.program)
+            elif node.tip == Type._if:
+                for if_stmt in node.if_list:
+                    visit(if_stmt.program)
+            elif node.tip == Type._print:
+                pass
+            elif node.tip == Type._while:
+                visit(node.program)
+            elif node.tip == Type.assign:
+                pass
+            elif node.tip == Type.motion:
+                pass
+            elif node.tip == Type.exit:
+                pass
+            else
+                assert False, "no visitor for " + node.tip
+        return infos
         assert False
 
+    # sender name and message type name
     def get_receive_info(self):
-        # TODO
-        assert False
+        infos = []
+        def visit(self, node):
+            if node.tip == Type.statement:
+                for stmt in node.children:
+                    visit(stmt)
+            elif node.tip == Type.skip:
+                pass
+            elif node.tip == Type.send:
+                pass
+            elif node.tip == Type.receive:
+                for a in node.actions:
+                    infos.append((node.sender, a.str_msg_type))
+                    visit(a.program)
+            elif node.tip == Type._if:
+                for if_stmt in node.if_list:
+                    visit(if_stmt.program)
+            elif node.tip == Type._print:
+                pass
+            elif node.tip == Type._while:
+                visit(node.program)
+            elif node.tip == Type.assign:
+                pass
+            elif node.tip == Type.motion:
+                pass
+            elif node.tip == Type.exit:
+                pass
+            else
+                assert False, "no visitor for " + node.tip
+        return infos
 
-    #TODO that is slow. Instead we should compile the sympy expr (sympy.utilities.codegen).
+    #TODO that is slow. Instead we should compile the sympy expr (sympy.utilities.codegen) and the use that function
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
         for fs in sympy_exp.free_symbols:
@@ -71,40 +126,28 @@ class Executor:
             return evaluated
 
     def visit(self, node):
-
         if node.tip == Type.statement:
             self.visit_statement(node)
-
         elif node.tip == Type.skip:
             pass
-
         elif node.tip == Type.send:
             self.visit_send(node)
-
         elif node.tip == Type.receive:
             self.visit_receive(node)
-
         elif node.tip == Type.action:
             return self.visit_action(node)
-
         elif node.tip == Type._if:
             self.visit_if(node)
-
         elif node.tip == Type._print:
             self.visit_print(node)
-
         elif node.tip == Type._while:
             self.visit_while(node)
-
         elif node.tip == Type.assign:
             self.visit_assign(node)
-
         elif node.tip == Type.motion:
             self.visit_motion(node)
-        
         elif node.tip == Type.exit:
             self.visit_exit(node)
-
         else
             assert False, "no visitor for " + node.tip
 
@@ -113,6 +156,7 @@ class Executor:
         for stmt in node.children:
             self.visit(stmt)
 
+    #TODO fix this proper handling of the stamped thing
     def visit_send(self, node):
         component, msg_type = node.comp, self.msg_types[node.msg_type]
         values = [self.calculate_sympy_exp(val) for val in node.args]
@@ -142,8 +186,10 @@ class Executor:
                         for name, var in zip(msg.__slots__, action['data_name']):
                             print("\nSetting:",  var, "to", name, getattr(msg, name))
                             self.__setattr__(var, getattr(msg, name))
-                    next_prog = action['program']
-                    break
+                        next_prog = action['program']
+                        break
+                else:
+                    assert False, "did not find handler for " + str(msg._type)
             except queue.Empty:
                 self.visit_motion(node.motion)
          self.visit(next_prog)
@@ -152,8 +198,10 @@ class Executor:
         # print("-----> 1")
         a = time.time()
         source_pt = np.ones([4])
-        source_pt[0], source_pt[1], source_pt[2], source_pt[3] = getattr(msg, 'x'), getattr(msg, 'y'), getattr(msg,
-                                                                                                               'z'), 1
+        source_pt[0] = msg.x
+        source_pt[1] = msg.y
+        source_pt[2] = msg.z
+        source_pt[3] = 1
         tfBuffer = tf2_ros.Buffer()
         # print("-----> 2")
         listener = tf2_ros.TransformListener(tfBuffer)

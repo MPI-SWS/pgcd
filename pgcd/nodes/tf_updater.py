@@ -8,12 +8,12 @@ import sympy as sp
 
 class TFUpdater:
 
-    def __init__(self, robot):
-        self.robot = robot
+    def __init__(self):
         self.parent_ids = []
         self.frames_ids = []
         self.updater_func_names = []
 
+    def tf2_setup(self, robot):
         try:
             k = 1
             while True:
@@ -23,14 +23,14 @@ class TFUpdater:
                 k += 1
                 self.parent_ids.append(parent_name)
                 self.frames_ids.append(frame_name)
-                self.updater_func_names.append(getattr(self.robot, updt_func_name))
+                self.updater_func_names.append(getattr(robot, updt_func_name))
         except Exception as e:
             pass
+        #self.pub_tf = rclpy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=4)
+        self.pub_tf = tf2_ros.StaticTransformBroadcaster()
 
-        self.pub_tf = rclpy.Publisher("/tf", tf2_msgs.msg.TFMessage, queue_size=4)
-        self.timer = rclpy.Timer(rclpy.Duration(nsecs=100000000), self.set_up_broadcaster)
-
-    def set_up_broadcaster(self, _):
+    #TODO avoid the sympy evaluation!!
+    def tf2_timer_callback(self):
         for parent, frame, updater in zip(self.parent_ids, self.frames_ids, self.updater_func_names):
             self.updateMatrix(sp.N(updater()), frame, parent)
 
@@ -53,5 +53,6 @@ class TFUpdater:
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]
         #publish
-        tfm = tf2_msgs.msg.TFMessage([t])
-        self.pub_tf.publish(tfm)
+        #tfm = tf2_msgs.msg.TFMessage([t])
+        #self.pub_tf.publish(tfm)
+        self.pub_tf.sendTransform(t)

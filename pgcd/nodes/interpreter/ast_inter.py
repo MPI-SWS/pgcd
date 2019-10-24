@@ -109,8 +109,9 @@ class Send(Node):
 
 class Receive(Node):
 
-    def __init__(self, motion, actions=None):
+    def __init__(self, sender, motion, actions=None):
         Node.__init__(self, Type.receive)
+        self.sender = sender
         self.motion = motion
         self.actions = actions
 
@@ -118,7 +119,7 @@ class Receive(Node):
         string = ''
         if self._label != None:
             string += self._label + ": "
-        string += 'Receive(' + str(self.motion) + ') {' + ''.join(str(e) for e in self.actions) + '}'
+        string += 'Receive(' + self.sender + ', ' + str(self.motion) + ') {' + ''.join(str(e) for e in self.actions) + '}'
         return string
 
     def label(self, label_to_node):

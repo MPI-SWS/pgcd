@@ -12,40 +12,40 @@ statement : statement SEMICOLON statement
           | print
           | SKIP
 
-    receive   : RECEIVE LPAREN motion RPAREN  LBRACE actions RBRACE
+receive   : RECEIVE LPAREN COMPONENT_ID COMMA motion RPAREN  LBRACE actions RBRACE
 
-    send      : SEND LPAREN COMPONENT_ID COMMA MSGTYPE COMMA expression RPAREN
+send      : SEND LPAREN COMPONENT_ID COMMA MSGTYPE COMMA expression RPAREN
 
-    if        : IF LPAREN expression RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE
+if        : IF LPAREN expression RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE
 
-    while     : WHILE LPAREN expression RPAREN LBRACE statement RBRACE
+while     : WHILE LPAREN expression RPAREN LBRACE statement RBRACE
 
-    assign    : ID EQUALS LBRACE keyvalue RBRACE
-              | ID DOT ID EQUALS expression
-              | ID EQUALS expression
+assign    : ID EQUALS LBRACE keyvalue RBRACE
+          | ID DOT ID EQUALS expression
+          | ID EQUALS expression
 
-    motion    : MOTION LPAREN args RPAREN
-              | MOTION
+motion    : MOTION LPAREN args RPAREN
+          | MOTION
 
-    print     : PRINT LPAREN args RPAREN
+print     : PRINT LPAREN args RPAREN
 
-        actions   : actions COMMA actions
-                  | LPAREN MSGTYPE COMMA ID COMMA LBRACE statement RBRACE RPAREN
+actions   : actions COMMA actions
+          | LPAREN MSGTYPE COMMA ID COMMA LBRACE statement RBRACE RPAREN
 
-        keyvalue  : keyvalue COMMA keyvalue
-                  | SCONST COLON expression
+keyvalue  : keyvalue COMMA keyvalue
+          | SCONST COLON expression
 
-        args      : args COMMA args
-                  | expression
+args      : args COMMA args
+          | expression
 
-        expression: expression PLUS/MINUS/TIMES/DIVIDE/MOD expression
-                  | expression AND/OR/GT/GE/LT/LE/EQ/NE expression
-                  | UNMINUS/NOT expression
-                  | SIN/COS/TAN/ABS/SQRT LPAREN expression RPAREN
-                  | LPAREN expression RPAREN
-                  | ICONST/DCONST/SCONST/BCONST
-                  | ID DOT ID
-                  | ID
+expression: expression PLUS/MINUS/TIMES/DIVIDE/MOD expression
+          | expression AND/OR/GT/GE/LT/LE/EQ/NE expression
+          | UNMINUS/NOT expression
+          | SIN/COS/TAN/ABS/SQRT LPAREN expression RPAREN
+          | LPAREN expression RPAREN
+          | ICONST/DCONST/SCONST/BCONST
+          | ID DOT ID
+          | ID
 
 
 

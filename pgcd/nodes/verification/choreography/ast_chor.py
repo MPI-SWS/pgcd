@@ -1,4 +1,3 @@
-from email.policy import strict
 from enum import Enum
 from sympy import And
 

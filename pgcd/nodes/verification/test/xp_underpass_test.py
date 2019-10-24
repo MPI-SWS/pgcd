@@ -78,7 +78,7 @@ def xp1_arm():
     setAngleAnchorPoint( 150 );
 
     #grab and lift piece
-    receive( Idle ){
+    receive(Carrier, Idle ){
         case OK() => skip;
     }
     setAngleCantilever(250);
@@ -91,7 +91,7 @@ def xp1_arm():
     setAngleTurntable( 0 );
 
     # 3, wait for the carrier to arrive, release piece
-    receive( Idle ){
+    receive(Carrier, Idle ){
         case OK() => skip;
     }
     setAngleCantilever( 250 );
@@ -113,7 +113,7 @@ def xp1_carrier():
     send( Arm, OK, 1.0 );
 
     # 2, Get release from arm and move to second position
-    receive( Idle ){
+    receive(Arm, Idle ){
         case OK() => skip;
     }
     setAngleCart( 45 );
@@ -124,7 +124,7 @@ def xp1_carrier():
     # 3, Send in position to arm 
     send( Arm, OK, 1.0 );
     # 4, Get release from arm and move to final position
-    receive( Idle ){
+    receive(Arm, Idle ){
         case OK() => skip;
     }
 

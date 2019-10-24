@@ -61,8 +61,8 @@ class Parser:
         p[0] = Statement(p[2])
 
     def p_receive_msg(self, p):
-        'receive   : RECEIVE LPAREN motion RPAREN LBRACE actions RBRACE'
-        p[0] = Receive(p[3], p[6])
+        'receive   : RECEIVE LPAREN ID COMMA motion RPAREN LBRACE actions RBRACE'
+        p[0] = Receive(p[3], p[5], p[8])
 
     def p_send_msg(self, p):
         '''send : SEND LPAREN ID COMMA ID COMMA args RPAREN'''

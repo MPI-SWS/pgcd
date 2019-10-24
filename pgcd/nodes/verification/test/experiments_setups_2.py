@@ -10,7 +10,7 @@ from arm import *
 def progFetchA():
     return '''
         while( true ) {
-        A0: receive(m_Idle) {
+        A0: receive(C, m_Idle) {
                 case fold() => {
         A1:         m_Fold;
                     send(C, folded, 0);
@@ -28,18 +28,18 @@ def progFetchA():
 def progFetchC():
     return '''
         send(A, fold, 0);
-        C0: receive(m_Idle){
+        C0: receive(A, m_Idle){
             case folded() => skip;
         }
         while (sqrt((C_x - 2)**2 + (C_y - 0)**2) > 0.1) {
         C1:    m_MoveFromTo(Pnt(0,0,0), Pnt(2,0,0));
         }
         send(A, grab, Pnt(2.2,0,0));
-        C2: receive(m_Idle){
+        C2: receive(A, m_Idle){
             case grabbed() => skip;
         }
         send(A, fold, 0);
-        C3: receive(m_Idle){
+        C3: receive(A, m_Idle){
             case folded() => skip;
         }
         while (sqrt((C_x)**2 + (C_y - 0)**2) > 0.1) {
@@ -69,7 +69,7 @@ def progFecthAnnot(arm, cart):
 
 def progHandoverArm():
     return '''
-    A0: receive( Idle ){
+    A0: receive(Cart, Idle ){
         case OK() => skip;
     }
     A1: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953);
@@ -83,11 +83,11 @@ def progHandoverArm():
 def progHandoverCart():
     return '''
     B0: MoveCart(0, 0, 0, 0.3);
-    B1: receive( Idle ){ 
+    B1: receive(Carrier, Idle ){ 
         case OK() => skip;
     }
     send( Arm, OK, 1.0 );
-    B2: receive( Idle ){
+    B2: receive(Arm, Idle ){
         case OK() => skip;
     }
     send( Carrier, OK, 1.0 );
@@ -98,7 +98,7 @@ def progHandoverCarrier():
     return '''
     C0: MoveCart(0, 0, 0, 0.5);
     send( Cart, OK, 1.0 );
-    C1: receive( Idle ){
+    C1: receive(Cart, Idle ){
         case OK() => skip;
     }
     C2: MoveCart(0.5, 0, 0, -0.5);
@@ -132,7 +132,7 @@ def progUnderpassArm():
     A0: SetAngleTurntable(0, 1.5707963267948966);
     A1: SetAngleCantilever(-2.2689280275926285, 1.3962634015954636);
     A2: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659);
-    A3: receive( Idle ){
+    A3: receive(Carrier, Idle ){
         case OK() => skip;
     }
     A4: SetAngleCantilever(1.3962634015954636, 2.0943951023931953);
@@ -140,7 +140,7 @@ def progUnderpassArm():
     A6: SetAngleCantilever(2.0943951023931953, 0.87266462599716477);
     send( Carrier, OK, 1.0 );
     A7: SetAngleTurntable(1.5707963267948966, 0);
-    A8: receive( Idle ){
+    A8: receive(Carrier, Idle ){
         case OK() => skip;
     }
     A9: SetAngleCantilever(0.87266462599716477, 2.0943951023931953 );
@@ -172,7 +172,7 @@ def progUnderpassCarrier():
     C1: Idle;
     C2: Idle;
     send( Arm, OK, 1.0 );
-    C3: receive( Idle ){
+    C3: receive(Arm, Idle ){
         case OK() => skip;
     }
     C4: SetAngleCart(0.78539816339744828);
@@ -180,7 +180,7 @@ def progUnderpassCarrier():
     C6: SetAngleCart(1.5707963267948966);
     C7: StrafeCart(1.023553390594, 0.353553390594, 1.5707963267948966, -0.085);
     send( Arm, OK, 1.0 );
-    C8: receive( Idle ){
+    C8: receive(Arm, Idle ){
         case OK() => skip;
     }
     C9: MoveCart(1.108553390594, 0.353553390594, 1.5707963267948966, 0.7);
@@ -240,18 +240,18 @@ def progTwistAndTurnWorld():
 
 def progTwistAndTurnArm():
     return '''
-    A0: receive( Idle ){
+    A0: receive(Arm, Idle ){
         case OK() => skip;
     }
     A1: RotateAndGrab( 0, -2.2689280275926285,  2.2689280275926285,
                        0,  2.0943951023931953, -0.3490658503988659);
     send( Cart, OK, 1.0 );
-    A2: receive( Idle ){
+    A2: receive(Arm, Idle ){
         case OK() => skip;
     }
     A3: Rotate( 0,                   1.7443951023931953, -0.3490658503988659,
                 1.5707963267948966, -1.7443951023931953,  0.3490658503988659);
-    A4: receive( Idle ){
+    A4: receive(Arm, Idle ){
         case OK() => skip;
     }
     A5: RotateAndPut( 1.5707963267948966, -1.7443951023931953, 0.3490658503988659,
@@ -261,13 +261,13 @@ def progTwistAndTurnArm():
 def progTwistAndTurnCart():
     return '''
     send( Arm, OK, 1.0 );
-    B0: receive( Idle ){
+    B0: receive(Arm, Idle ){
         case OK() => skip;
     }
     send( Carrier, OK, 1.0 );
     send( Arm, OK, 1.0 );
     B1: SetAngleCart( 1.5707963267948966 );
-    B2: receive( Idle ){
+    B2: receive(Carrier, Idle ){
         case OK() => skip;
     }
     send( Arm, OK, 1.0 );
@@ -276,7 +276,7 @@ def progTwistAndTurnCart():
 
 def progTwistAndTurnCarrier():
     return '''
-    C0: receive( Idle ){
+    C0: receive(Cart, Idle ){
         case OK() => skip;
     }
     C1: Swipe(0, 0, 0, 0.5, 1.5707963267948966);

@@ -5,16 +5,16 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 import tf2_ros
 import tf_updater
-from interpreter import Executor
+from interpreter import Interpreter
 import importlib
 from std_msgs.msg import String
 import queue
 
-class Component(Node,Executor):
+class Component(Node,Interpreter,TFUpdater):
 
     def __init__(self):
         Node.__init__(rclpy.get_name())
-        Executor.__init__(self, rclpy.get_name())
+        Interpreter.__init__(self, rclpy.get_name())
         # program
         self.id = rclpy.get_name()[1:]
         self.prog_path = rclpy.get_param('~program_location') + self.id + '.rosl'
@@ -22,9 +22,9 @@ class Component(Node,Executor):
         module = importlib.import_module(rclpy.get_param('~object_module_name'))
         class_ = getattr(module, rclpy.get_param('~object_class_name'))
         self.robot = class_()
-        # running
+        # runtime
+        self.tf2_setup(self.robot)
         self.setup_communication()
-        tf_updater.TFUpdater(self.robot)
         self.tfBuffer = tf2_ros.Buffer()
 
     def message_callback(self, msg):
@@ -58,8 +58,9 @@ class Component(Node,Executor):
             if name not in self.send_to:
                 self.send_to[name] = {}
             self.send_to[name][msg_name] = self.create_publisher(self.msg_types[msg_name], "/" + name + "/" + msg_name, 1)
-        # TODO tf2 stuff
-        pass
+        # tf2 stuff
+        timer_period = 0.1  # seconds
+        self.timer = self.create_timer(timer_period, self.tf2_timer_callback)
 
     def execute_prog(self):
         with open(self.prog_path, 'r') as content_file:
