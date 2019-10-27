@@ -34,7 +34,7 @@ class Interpreter:
         self.receive_from = {}
         #
         self.subs = {}
-        self.lock = threading.Lock()
+        # TODO automatically convert between normal and Stamped messages
         for name, obj in inspect.getmembers(pgcd.msg):
             if inspect.isclass(obj):
                 self.msg_types[obj.__name__] = obj
@@ -110,7 +110,7 @@ class Interpreter:
                 assert False, "no visitor for " + node.tip
         return infos
 
-    #TODO that is slow. Instead we should compile the sympy expr (sympy.utilities.codegen) and the use that function
+    #TODO that is slow. Instead we should compile the sympy expr (https://docs.sympy.org/latest/modules/utilities/lambdify.html) and the use that function
     def calculate_sympy_exp(self, sympy_exp):
         subs = {}
         for fs in sympy_exp.free_symbols:
@@ -156,17 +156,27 @@ class Interpreter:
         for stmt in node.children:
             self.visit(stmt)
 
-    #TODO fix this proper handling of the stamped thing
+    #TODO fix this: proper handling of the stamped thing
+    # look in geometry_msg, sensor_msg, tf2_msg for stamped version
+    # otherwise look for message with the right type
+    def resolve_message_type(self, msg):
+        return self.msg_types[msg], True
+
     def visit_send(self, node):
-        component, msg_type = node.comp, self.msg_types[node.msg_type]
+        component = node.comp
+        msg_type, stamped = self.resolve_message_type(node.msg_type)
         values = [self.calculate_sympy_exp(val) for val in node.args]
         message = msg_type()
-        if 'source_frame' in message.__slots__:
-            values.insert(message.__slots__.index('source_frame'), self.id)
-        for name, val in zip(message.__slots__, values):
-            setattr(message, name, val)
-
-        # print("/" + component, )
+        # fill the fields
+        if stamped:
+            message.header.frame_id = self.id
+            message.header.stamp = rclpy.Time.now()
+            for name, val in zip(message.__slots__[1].__slots__, values):
+                setattr(message.__slots__[1], name, val)
+        else
+            for name, val in zip(message.__slots__, values):
+                setattr(message, name, val)
+        #
         pub = self.send_to[component][msg_type.__name__]
         pub.publish(message)
         print('sent> ' + component)
@@ -184,6 +194,13 @@ class Interpreter:
                 for action in actions:
                     if action['msg_type'] == msg._type:
                         for name, var in zip(msg.__slots__, action['data_name']):
+                            print("\nSetting:",  var, "to", name, getattr(msg, name))
+                            self.__setattr__(var, getattr(msg, name))
+                        next_prog = action['program']
+                        break
+                    # was transformed in component
+                    elif action['msg_type'] + 'Stamped' == msg._type:
+                        for name, var in zip(msg.__slots__[1], action['data_name']):
                             print("\nSetting:",  var, "to", name, getattr(msg, name))
                             self.__setattr__(var, getattr(msg, name))
                         next_prog = action['program']

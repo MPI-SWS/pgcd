@@ -5,6 +5,7 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 import tf2_ros
 import tf_updater
+from geometry_msgs.msg import PoseStamped, Vector3Stamped, PointStamped, WrenchStamped
 from interpreter import Interpreter
 import importlib
 from std_msgs.msg import String
@@ -25,13 +26,22 @@ class Component(Node,Interpreter,TFUpdater):
         # runtime
         self.tf2_setup(self.robot)
         self.setup_communication()
-        self.tfBuffer = tf2_ros.Buffer()
+        self.tfBuffer = tf2_ros.Buffer(rclpy.Duration(600.0))
+        self.tf2_listener = tf2_ros.TransformListener(tfBuffer)
 
     def message_callback(self, msg):
         # make sure there is an header, get the sender (frame), convert to local frame, put in queue
-        trans = self.tfBuffer.lookup_transform(msg.source_frame, self.id, rclpy.Time())
-        #TODO convert the message content
-        self.get_logger().warning('TODO frame conversion')
+        try:
+            rate = rclpy.Rate(10.0)
+            while not rclpy.is_shutdown():
+                dummy = msg.header.frame_id
+                msg = self.tfBuffer.transform(msg, self.id)
+                break
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                rate.sleep()
+                continue
+        except AttributeError:
+            pass
         try:
             self.receive_from[msg.source_frame].put_nowait(msg)
         except queue.Full:
