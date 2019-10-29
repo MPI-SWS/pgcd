@@ -32,10 +32,10 @@ class Component(Node,Interpreter,TFUpdater):
     def message_callback(self, msg):
         # make sure there is an header, get the sender (frame), convert to local frame, put in queue
         try:
+            dummy = msg.header.frame_id #stupid way of checking if it is stamped
             rate = rclpy.Rate(10.0)
             while not rclpy.is_shutdown():
-                dummy = msg.header.frame_id
-                msg = self.tfBuffer.transform(msg, self.id)
+                msg = self.tfBuffer.transform(msg, self.id) #TODO add transform for pgcd.msg types: recurse through the defs and convert what we know how to convert
                 break
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                 rate.sleep()

@@ -44,11 +44,9 @@ find_package(common_msgs REQUIRED)
 
 # Generate messages in the 'msg' folder
 set(msg_files
-  "msg/Move.msg"
-  "msg/Rotate.msg"
-  "msg/Point.msg"
+  "msg/MoveTo.msg"
+  "msg/MoveToStamped.msg"
   "msg/OK.msg"
-  "msg/State.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
