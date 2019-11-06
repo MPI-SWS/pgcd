@@ -154,9 +154,43 @@ class Process(Component):
             counter += 1
         return factory.setParameters(params), params
 
+# Specification for the timing aspect of a motion primitive
+class DurationSpec():
+
+    def __init__(self, min, max, interruptible):
+        self.min = min
+        self.max = max
+        self.interruptible = interruptible
+
+    def valid(self):
+        return self.min <= self.max
+
+    def concat(self, ds):
+        assert(!self.interruptible, "cannot add something after an interruptible motion")
+        if ds.interruptible:
+            new_min = self.max + ds.min
+            new_max = self.min + ds.max
+            assert(new_min <= new_max)
+            return DurationSpec(new_min, new_max, ds.interruptible)
+        else
+            return DurationSpec(self.min + ds.min, self.max + ds.max, ds.interruptible)
+
+    def intersect(self, ds):
+        assert(self.interruptible or ds.interruptible)
+        if !self.interruptible:
+            assert(ds.min <= self.min)
+            assert(ds.max >= self.max)
+            return DurationSpec(self.min, self.max, True)
+        elif !ds.interruptible:
+            assert(self.min <= ds.min)
+            assert(self.max >= ds.max)
+            return DurationSpec(ds.min, ds.max, True)
+        else:
+            return DurationSpec(max(self.min, ds.min), min(self.max, ds.max), False)
+
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.
-
+# Currently the values should be concrete, formula not yet supported
 class MotionPrimitiveFactory(ABC):
 
     def __init__(self, component):
@@ -187,11 +221,8 @@ class MotionPrimitive():
         time = { var: timifyVar(var) for var in self._component.variables() }
         return pred.subs(time)
 
-    def isPreemptible(self):
-        return S.false
-
     def duration(self):
-        return Int(1)
+        return DurationSpec(1, 1, False)
 
     def modifies(self):
         '''some motion primitive (like idle) does not change all the variables'''
