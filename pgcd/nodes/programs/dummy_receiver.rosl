@@ -1,0 +1,5 @@
+receive(dummy_sender, idle){
+    (Point, pnt, {
+    	print("received: (", pnt.x, ", ", pnt.y, ", ", pnt.z, ")")
+    })
+};
