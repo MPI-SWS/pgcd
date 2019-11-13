@@ -35,11 +35,11 @@ class Component(Node,Interpreter,TFUpdater):
             dummy = msg.header.frame_id #stupid way of checking if it is stamped
             rate = rclpy.Rate(10.0)
             while not rclpy.is_shutdown():
-                msg = self.tfBuffer.transform(msg, self.id) #TODO add transform for pgcd.msg types: recurse through the defs and convert what we know how to convert
-                break
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                rate.sleep()
-                continue
+                try:
+                    msg = self.tfBuffer.transform(msg, self.id) #TODO add transform for pgcd.msg types: recurse through the defs and convert what we know how to convert
+                    break
+                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                    rate.sleep()
         except AttributeError:
             pass
         try:

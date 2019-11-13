@@ -1,0 +1,16 @@
+dummy_sender:
+    ros__parameters:
+        program_location: "nodes/programs/"
+        object_module_name: "dummy_robot"
+        object_class_name: "DummyRobot"
+        frame_1_parent: "dummy_sender"
+        frame_1: "sender_mounting_point"
+        frame_1_updater: "getConfigurationMatrix"
+dummy_receiver:
+    ros__parameters:
+        program_location: "nodes/programs/"
+        object_module_name: "dummy_robot"
+        object_class_name: "DummyRobot"
+        frame_1_parent: "dummy_receiver"
+        frame_1: "receiver_mounting_point"
+        frame_1_updater: "getConfigurationMatrix"

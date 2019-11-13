@@ -1,23 +1,30 @@
 <launch>
+        
+    <!-- set_env name="PYTHONPATH" value="$PYTHONPATH:.:nodes:nodes/interpreter:nodes/motions:nodes/verification"/ -->
+    <set_env name="PYTHONPATH" value="$PYTHONPATH:."/>
 
-    <group ns="dummy_sender">
+    <node pkg="pgcd" type="component.py" name="dummy_sender" ns="dummy_sender" output="screen">
         <param name="program_location" type="string" value="nodes/programs/"/>
         <param name="object_module_name" type="string" value="dummy_robot"/>
         <param name="object_class_name" type="string" value="DummyRobot"/>
 
-        <param name="frame_1_parent" type="string" value="world"/>
+        <param name="frame_1_parent" type="string" value="dummy_sender"/>
         <param name="frame_1" type="string" value="sender_mounting_point"/>
         <param name="frame_1_updater" type="string" value="getConfigurationMatrix"/>
-    </group>
+    </node>
 
-    <group ns="dummy_receiver">
+    <node pkg="pgcd" type="component.py" name="dummy_receiver" ns="dummy_receiver" output="screen">
         <param name="program_location" type="string" value="nodes/programs/"/>
         <param name="object_module_name" type="string" value="dummy_robot"/>
         <param name="object_class_name" type="string" value="DummyRobot"/>
 
-        <param name="frame_1_parent" type="string" value="world"/>
+        <param name="frame_1_parent" type="string" value="dummy_receiver"/>
         <param name="frame_1" type="string" value="receiver_mounting_point"/>
         <param name="frame_1_updater" type="string" value="getConfigurationMatrix"/>
-    </group>
+    </node>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="sender_frame" args="-1 0 0 0 0 0 1 world dummy_sender" />
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="receiver_frame" args="1 0 0 0 0 0 1 world dummy_receiver" />
 
 </launch>
