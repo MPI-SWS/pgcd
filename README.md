@@ -13,16 +13,17 @@ Currently the main functionalities of PGCD are:
 
 ## Project setup 
 
-1.  Install ROS 2 Dashing (tested with ubuntu 18.04)
-2.  Install some extra python package: `pip install arpeggio numpy sympy`
-3.  Checkout this repository:
+1.  Install ROS 2 Eloquent (tested with ubuntu 18.04)
+2.  Install colcon: `sudo apt install python3-colcon-common-extensions`
+3.  Install some extra python package: `pip install arpeggio numpy sympy`
+4.  Checkout this repository:
     ```
     $ cd
     $ git clone https://github.com/MPI-SWS/pgcd.git
     $ mkdir ~/ros2_ws
-    $ ln -s pgcd ~/ros2_ws/src
+    $ ln -s ~/pgcd ~/ros2_ws/src
     ```
-4.  Compile and source:
+5.  Compile and source:
     ```
     $ cd ~/ros2_ws
     $ colcon build --symlink-install
@@ -35,31 +36,12 @@ Currently the main functionalities of PGCD are:
 
 ## Running a Test
 
-TODO have two processes with a fram shit, one print and send, the other receive and print
-
-```
-sender cmd &
-receiver cmd &
-wait
-```
-
-make sure that the path is set and that roslaunch will find it! 
-(You can check it in the output of roslaunch)
+Let us run a simple example of two processes sending a message to each other.
 
 To run the example you need to:
 
-* Run main.py file
-
-* Run terminal command for starting roscore
-
 ```
-$ roslaunch pgcd start.launch
-```
-
-* Run terminal command for visualisation
-
-```
-$ rosrun rviz rviz -d `rospack find turtle_tf2`/rviz/turtle_rviz.rviz
+$ ros2 launch pgcd simple_example.launch.py
 ```
 
 ## PGCD Program structure
