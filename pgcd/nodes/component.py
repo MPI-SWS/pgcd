@@ -1,33 +1,43 @@
 #!/usr/bin/env python3
 
+# std lib
+import sys
+import importlib
+import queue
+# ros
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.logging import LoggingSeverity
+from rclpy.duration import Duration
 import tf2_ros
-import tf_updater
 from geometry_msgs.msg import PoseStamped, Vector3Stamped, PointStamped, WrenchStamped
-from interpreter import Interpreter
-import importlib
 from std_msgs.msg import String
-import queue
+# our
+from interpreter.interpreter import Interpreter
+from tf_updater import TFUpdater 
 
 class Component(Node,Interpreter,TFUpdater):
 
     def __init__(self):
-        Node.__init__(rclpy.get_name())
-        Interpreter.__init__(self, rclpy.get_name())
+        Node.__init__(self, "pgcd_comp",
+                allow_undeclared_parameters = True,
+                automatically_declare_parameters_from_overrides = True)
+        Interpreter.__init__(self, self.get_name())
+        TFUpdater.__init__(self)
         # program
-        self.id = rclpy.get_name()[1:]
-        self.prog_path = rclpy.get_param('~program_location') + self.id + '.rosl'
+        self.id = self.get_name()
+        self.prog_path = self.get_parameter('program_location')._value + self.id + '.rosl'
+        rclpy.logging._root_logger.log("PGCD creating " + self.id + " running " + self.prog_path, LoggingSeverity.INFO)
         # hardware
-        module = importlib.import_module(rclpy.get_param('~object_module_name'))
-        class_ = getattr(module, rclpy.get_param('~object_class_name'))
+        module = importlib.import_module(self.get_parameter('object_module_name')._value)
+        class_ = getattr(module, self.get_parameter('object_class_name')._value)
         self.robot = class_()
         # runtime
         self.tf2_setup(self.robot)
         self.setup_communication()
-        self.tfBuffer = tf2_ros.Buffer(rclpy.Duration(600.0))
-        self.tf2_listener = tf2_ros.TransformListener(tfBuffer)
+        self.tfBuffer = tf2_ros.Buffer()
+        self.tf2_listener = tf2_ros.TransformListener(self.tfBuffer, self)
 
     def message_callback(self, msg):
         # make sure there is an header, get the sender (frame), convert to local frame, put in queue
@@ -77,14 +87,19 @@ class Component(Node,Interpreter,TFUpdater):
             program = content_file.read()
         self.execute(program)
 
-    def run(self, executor=MultiThreadedExecutor()):
+    def run(self, executor=None):
+        if (executor == None):
+            executor = MultiThreadedExecutor()
         rclpy.spin(self, executor=executor)
         self.execute_prog()
 
-if __name__ == '__main__':
+def main(args=None):
     rclpy.init(args=args)
     #rclpy.init_node('fixed_tf2_broadcaster')
-    tfb = Component()
-    tfb.run()
-    tbf.destroy_node()
+    comp = Component()
+    comp.run()
+    comp.destroy_node()
     rclpy.shutdown()
+
+if __name__ == '__main__':
+    main(sys.argv)

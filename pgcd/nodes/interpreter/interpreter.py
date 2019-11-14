@@ -7,12 +7,11 @@ import rclpy
 import tf2_ros
 import tf2_py
 import geometry_msgs.msg
-import tf2_geometry_msgs
 import std_msgs.msg
 
 import numpy as np
 
-from parser import *
+from interpreter.parser import *
 
 class Termination(Exception):
     def __init__(self, value):
@@ -75,7 +74,7 @@ class Interpreter:
                 pass
             elif node.tip == Type.exit:
                 pass
-            else
+            else:
                 assert False, "no visitor for " + node.tip
         return infos
         assert False
@@ -108,7 +107,7 @@ class Interpreter:
                 pass
             elif node.tip == Type.exit:
                 pass
-            else
+            else:
                 assert False, "no visitor for " + node.tip
         return infos
 
@@ -150,7 +149,7 @@ class Interpreter:
             self.visit_motion(node)
         elif node.tip == Type.exit:
             self.visit_exit(node)
-        else
+        else:
             assert False, "no visitor for " + node.tip
 
     def visit_statement(self, node):
@@ -175,7 +174,7 @@ class Interpreter:
             unstamped = getattr(message, message.__slots__[1])
             for name, val in zip(unstamped.__slots__, values):
                 setattr(unstamped, name, val)
-        else
+        else:
             for name, val in zip(message.__slots__, values):
                 setattr(message, name, val)
         #
@@ -211,7 +210,7 @@ class Interpreter:
                     assert False, "did not find handler for " + str(msg._type)
             except queue.Empty:
                 self.visit_motion(node.motion)
-         self.visit(next_prog)
+        self.visit(next_prog)
 
     def visit_action(self, node):
         return {'msg_type': self.msg_types[node.str_msg_type], 'data_name': node.data_names, 'program': node.program}

@@ -3,7 +3,7 @@ import logging
 import ply.yacc as yacc
 
 import interpreter.lexer as rlex
-from ast_inter import *
+from interpreter.ast_inter import *
 from sympy import *
 
 class Parser:

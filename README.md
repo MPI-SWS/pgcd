@@ -15,7 +15,7 @@ Currently the main functionalities of PGCD are:
 
 1.  Install ROS 2 Eloquent (tested with ubuntu 18.04)
 2.  Install colcon: `sudo apt install python3-colcon-common-extensions`
-3.  Install some extra python package: `pip install arpeggio numpy sympy`
+3.  Install some extra python package: `pip3 install arpeggio numpy sympy ply`
 4.  Checkout this repository:
     ```
     $ cd

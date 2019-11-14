@@ -4,7 +4,7 @@ import launch.substitutions
 import launch_ros.actions
 from launch_ros.actions import Node
 
-parameters_file = 'simple_example_params.yaml'
+parameters_file = 'src/pgcd/launch/simple_example_params.yaml'
 
 def generate_launch_description():
     return launch.LaunchDescription([
