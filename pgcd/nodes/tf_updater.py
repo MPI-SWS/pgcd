@@ -5,6 +5,7 @@ import tf2_ros
 import tf2_msgs.msg
 import random
 import sympy as sp
+import math
 
 
 class TFUpdater:
@@ -48,12 +49,20 @@ class TFUpdater:
         t.transform.translation.y = float(matrix[1, 3])
         t.transform.translation.z = float(matrix[2, 3])
         #rotation
-        x = [[matrix[j, i] for i in range(0, 4)] for j in range(0, 4)]
-        q = tf2_py.transformations.quaternion_from_matrix(x) #FIXME
-        t.transform.rotation.x = q[0]
-        t.transform.rotation.y = q[1]
-        t.transform.rotation.z = q[2]
-        t.transform.rotation.w = q[3]
+        w = math.sqrt(1.0 + float(matrix[0,0]) + float(matrix[1,1]) + float(matrix[2,2])) / 2.0
+        x = (float(matrix[2,1]) - float(matrix[1,2])) / (4*w)
+        y = (float(matrix[0,1]) - float(matrix[2,0])) / (4*w)
+        z = (float(matrix[1,0]) - float(matrix[0,1])) / (4*w)
+        t.transform.rotation.x = x
+        t.transform.rotation.y = y
+        t.transform.rotation.z = z
+        t.transform.rotation.w = w
+        #x = [[matrix[j, i] for i in range(0, 4)] for j in range(0, 4)]
+        #q = tf2_py.transformations.quaternion_from_matrix(x) #FIXME
+        #t.transform.rotation.x = q[0]
+        #t.transform.rotation.y = q[1]
+        #t.transform.rotation.z = q[2]
+        #t.transform.rotation.w = q[3]
         #publish
         #tfm = tf2_msgs.msg.TFMessage([t])
         #self.pub_tf.publish(tfm)

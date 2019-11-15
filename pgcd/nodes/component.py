@@ -4,6 +4,7 @@
 import sys
 import importlib
 import queue
+import threading
 # ros
 import rclpy
 from rclpy.node import Node
@@ -90,8 +91,12 @@ class Component(Node,Interpreter,TFUpdater):
     def run(self, executor=None):
         if (executor == None):
             executor = MultiThreadedExecutor()
+        rclpy.logging._root_logger.log("PGCD creating " + self.id + " starting interpreter", LoggingSeverity.INFO)
+        t = threading.Thread(name='interpreter', target=self.execute_prog)
+        t.start()
         rclpy.spin(self, executor=executor)
-        self.execute_prog()
+        t.join()
+        #self.execute_prog()
 
 def main(args=None):
     rclpy.init(args=args)
