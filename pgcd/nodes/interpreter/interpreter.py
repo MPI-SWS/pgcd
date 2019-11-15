@@ -4,12 +4,14 @@ import inspect
 
 import pgcd.msg
 import rclpy
+from rclpy.logging import LoggingSeverity
 import tf2_ros
-import tf2_py
 import geometry_msgs.msg
 import std_msgs.msg
 
+import queue
 import numpy as np
+import sympy.core.numbers
 
 from interpreter.parser import *
 
@@ -24,6 +26,7 @@ class Interpreter:
         self.id = component_id
         self.parser = Parser()
         self.variables = {}
+        self.program = Skip()
         # messages
         self.msg_types = {}
         self.send_to = {}
@@ -40,24 +43,26 @@ class Interpreter:
         for name, obj in inspect.getmembers(geometry_msgs.msg): addMsg(obj)
         for name, obj in inspect.getmembers(std_msgs.msg): addMsg(obj)
 
-    def execute(self, code):
+    def execute(self):
         try:
-            program = self.parser.parse(code)
-            return self.visit(program)
+            return self.visit(self.program)
         except Termination as t:
             return t.value
+
+    def parse(self, code):
+        self.program = self.parser.parse(code)
 
     # receiver name and message type name
     def get_send_info(self):
         infos = []
-        def visit(self, node):
+        def visit(node):
             if node.tip == Type.statement:
                 for stmt in node.children:
                     visit(stmt)
             elif node.tip == Type.skip:
                 pass
             elif node.tip == Type.send:
-                infos.append((node.comp, node.msg_types))
+                infos.append((node.comp, node.msg_type))
             elif node.tip == Type.receive:
                 for a in node.actions:
                     visit(a.program)
@@ -76,13 +81,13 @@ class Interpreter:
                 pass
             else:
                 assert False, "no visitor for " + node.tip
+        visit(self.program)
         return infos
-        assert False
 
     # sender name and message type name
     def get_receive_info(self):
         infos = []
-        def visit(self, node):
+        def visit(node):
             if node.tip == Type.statement:
                 for stmt in node.children:
                     visit(stmt)
@@ -109,6 +114,7 @@ class Interpreter:
                 pass
             else:
                 assert False, "no visitor for " + node.tip
+        visit(self.program)
         return infos
 
     #TODO that is slow. Instead we should compile the sympy expr (https://docs.sympy.org/latest/modules/utilities/lambdify.html) and the use that function
@@ -120,10 +126,17 @@ class Interpreter:
             except AttributeError:
                 subs[fs] = self.robot.__getattribute__(str(fs))
         expr2 = sympy_exp.subs(subs)
-        if expr2 == S.true or expr2 == S.false:
-            return expr2
+        if expr2 == S.true:
+            return True
+        elif expr2 == S.false:
+            return False
         else:
             evaluated = N(expr2)
+            if type(evaluated) == numbers.Float:
+                return float(evaluated)
+            elif type(evaluated) == numbers.Zero or type(evaluated) == numbers.One or type(evaluated) == numbers.NegativeOne:
+                return float(evaluated)
+                #return int(evaluated)
             return evaluated
 
     def visit(self, node):
@@ -159,7 +172,7 @@ class Interpreter:
 
     def resolve_message_type(self, msg):
         obj = self.msg_types[msg]
-        stamped = obj.__slots__[0] == 'Header'
+        stamped = obj.__slots__[0] == '_header'
         return obj, stamped
 
     def visit_send(self, node):
@@ -170,19 +183,21 @@ class Interpreter:
         # fill the fields
         if stamped:
             message.header.frame_id = self.id
-            message.header.stamp = rclpy.Time.now()
+            #message.header.stamp = rclpy.Time.now() #FIXME
             unstamped = getattr(message, message.__slots__[1])
             for name, val in zip(unstamped.__slots__, values):
+                #print(name, val, type(val))
                 setattr(unstamped, name, val)
         else:
             for name, val in zip(message.__slots__, values):
                 setattr(message, name, val)
         #
-        pub = self.send_to[component][msg_type.__name__]
+        pub = self.send_to[component][node.msg_type]
         pub.publish(message)
-        print('sent> ' + component)
+        rclpy.logging._root_logger.log("sent to " + component + " " + str(message), LoggingSeverity.INFO)
         ack = self.receive_from[component].get()
-        assert ack._type == String, "not an ack!?!"
+        assert type(ack) == std_msgs.msg.String, "not an ack!?!"
+        assert ack.data == component, "not an ack!?!"
 
     def visit_receive(self, node):
         actions = [self.visit(a) for a in node.actions]
@@ -191,23 +206,28 @@ class Interpreter:
         while waiting_msg:
             try:
                 msg = self.receive_from[node.sender].get_nowait()
+                ack = std_msgs.msg.String()
+                ack.data = self.id
+                self.send_to[node.sender]["Ack"].publish(ack)
                 waiting_msg = False
                 for action in actions:
-                    if action['msg_type'] == msg._type:
-                        for name, var in zip(msg.__slots__, action['data_name']):
-                            print("\nSetting:",  var, "to", name, getattr(msg, name))
-                            self.__setattr__(var, getattr(msg, name))
-                        next_prog = action['program']
-                        break
-                    # was transformed in component
-                    elif action['msg_type'] + 'Stamped' == msg._type:
-                        for name, var in zip(msg.__slots__[1], action['data_name']):
-                            print("\nSetting:",  var, "to", name, getattr(msg, name))
-                            self.__setattr__(var, getattr(msg, name))
-                        next_prog = action['program']
+                    if action['msg_type'] == type(msg):
+                        if action['msg_type'].__name__.endswith("Stamped"):
+                            inner_msg = getattr(msg, msg.__slots__[1]) #assume header 1st
+                            for name, var in zip(inner_msg.__slots__, action['data_name']):
+                                val = getattr(inner_msg, name)
+                                rclpy.logging._root_logger.log("Setting: " + var + " to " + name + " = " + str(val), LoggingSeverity.DEBUG)
+                                self.__setattr__(var, val)
+                            next_prog = action['program']
+                        else:
+                            for name, var in zip(msg.__slots__, action['data_name']):
+                                val = getattr(msg, name)
+                                rclpy.logging._root_logger.log("Setting: " + var + " to " + name + " = " + str(val), LoggingSeverity.DEBUG)
+                                self.__setattr__(var, val)
+                            next_prog = action['program']
                         break
                 else:
-                    assert False, "did not find handler for " + str(msg._type)
+                    assert False, "did not find handler for " + str(msg)
             except queue.Empty:
                 self.visit_motion(node.motion)
         self.visit(next_prog)
@@ -234,22 +254,20 @@ class Interpreter:
 
     def visit_motion(self, node):
         if not hasattr(self.robot, node.value): pass
-        print( "visit_motion node:",node )
+        rclpy.logging._root_logger.log("visit_motion: " + str(node), LoggingSeverity.INFO)
         try:
-            print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
+            #print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
             #_thread.start_new_thread( getattr(self.robot, node.value), (*list(self.calculate_sympy_exp(x) for x in node.exps), ))
             getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
-            print( "success" )
+            #print( "success" )
         except Exception as e:
-            pass
-            print( "visit_motion generated error", str(e) )
-        #rclpy.sleep( 10 ) 
+            rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.WARNING)
 
     def visit_print(self, node):
         if isinstance(node.arg, str):
-            print("Output:", str(node.arg))
+            rclpy.logging._root_logger.log("print: " + str(node.arg), LoggingSeverity.INFO)
         else:
-            print("Output:", ','.join(str(self.calculate_sympy_exp(x)) for x in node.arg))
+            rclpy.logging._root_logger.log("print: " + ','.join(str(self.calculate_sympy_exp(x)) for x in node.arg), LoggingSeverity.INFO)
     
     def visit_exit(self, node):
         res = self.calculate_sympy_exp(node.expr)

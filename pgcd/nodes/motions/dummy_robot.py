@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import rclpy 
+import time
 import sympy as sp
 
 # Small example
@@ -21,14 +21,14 @@ class DummyRobot():
         return M
     
     def idle( self ):
-        rclpy.sleep(0.1)
+        time.sleep(0.1)
     
     def setAngle( self, angle ):
         delta = (angle - self.angle) / 10
         for i in range(0, 10):
             self.angle += delta
-            rclpy.sleep(0.1)
+            time.sleep(0.1)
         self.angle = angle
     
-    def wait( self, time ):
-        rclpy.sleep(time)
+    def wait( self, t ):
+        time.sleep(t)

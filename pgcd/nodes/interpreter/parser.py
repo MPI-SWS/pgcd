@@ -30,7 +30,8 @@ class Parser:
         self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
 
     def parse(self, text):
-        return Statement(self.parser.parse(text, self.lexer.lexer) + [Exit(S(0))])
+        parsed = self.parser.parse(text, self.lexer.lexer)
+        return Statement(parsed + [Exit(S(0))])
 
     # ------------------------------------- STATEMENT --------------------------------------
 

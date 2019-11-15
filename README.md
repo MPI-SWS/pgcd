@@ -41,6 +41,8 @@ Let us run a simple example of two processes sending a message to each other.
 To run the example you need to:
 
 ```
+$ cd ~/ros2_ws
+$ export PYTHONPATH=$PYTHONPATH:.
 $ ros2 launch pgcd simple_example.launch.py
 ```
 
