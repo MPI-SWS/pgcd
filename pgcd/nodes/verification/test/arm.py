@@ -19,6 +19,8 @@ class Arm(Process):
         self.gripperReach = 0.08
         self.maxAngleAB =  13*mp.pi()/18
         self.minAngleAB = -13*mp.pi()/18
+        #TODO angular speed
+        
         # variables
         self._a = symbols(name + '_a') # rotation along the Y-axis (upper arm to lower arm)
         self._b = symbols(name + '_b') # rotation along the Y-axis (base to upper arm)
@@ -122,6 +124,9 @@ class ArmFold(MotionPrimitive):
 
     def __init__(self, name, component):
         super().__init__(name, component)
+    
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO upper as function of the angle and speed
 
     def pre(self):
         return S.true
@@ -165,6 +170,39 @@ class ArmIdle(MotionPrimitive):
     def modifies(self):
         return [Symbol(self._component.name() + '_dummy')]
 
+    def duration(self):
+        return DurationSpec(0, float('inf'), True) 
+
+    def pre(self):
+        return S.true
+
+    def post(self):
+        return S.true
+
+    def inv(self):
+        return S.true
+
+    def preFP(self, point):
+        return self._component.abstractResources(point, 0.05)
+
+    def postFP(self, point):
+        return self._component.abstractResources(point, 0.05)
+
+    def invFP(self, point):
+        i = self._component.abstractResources(point, 0.05)
+        return self.timify(i)
+
+class ArmWait(MotionPrimitive):
+
+    def __init__(self, name, component):
+        super().__init__(name, component)
+
+    def modifies(self):
+        return [Symbol(self._component.name() + '_dummy')]
+    
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO
+
     def pre(self):
         return S.true
 
@@ -201,6 +239,9 @@ class ArmGrab(MotionPrimitive):
     def __init__(self, name, component, target):
         super().__init__(name, component)
         self._target = target
+
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO 
 
     def pre(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.upperArmRadius + self._component.gripperReach
@@ -258,6 +299,9 @@ class ArmPutInBin(MotionPrimitive):
             c = And(self._component.gamma() >= -maxError, self._component.gamma() <= maxError)
             return And(a,b,c)
 
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO 
+
     def pre(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.gripperReach
         maxDist = distance(self._component._upper.origin, self._target) <= maxRadius
@@ -303,9 +347,9 @@ class CloseGripper(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmIdle(self.name(), self._component)
+        return ArmWait(self.name(), self._component)
 
-# since we don't precisely model the gripper, it is like idle
+# since we don't precisely model the gripper, it is like waiting
 class OpenGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -316,9 +360,9 @@ class OpenGripper(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmIdle(self.name(), self._component)
+        return ArmWait(self.name(), self._component)
 
-# since we don't precisely model the gripper, it is like idle
+# since we don't precisely model the gripper, it is like waiting
 class Grip(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -329,7 +373,7 @@ class Grip(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 1)
-        return ArmIdle(self.name(), self._component)
+        return ArmWait(self.name(), self._component)
 
 class MoveTo(MotionPrimitiveFactory):
 
@@ -348,6 +392,9 @@ class ArmMoveTo(MotionPrimitive):
     def __init__(self, name, component, target):
         super().__init__(name, component)
         self._target = target
+
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO function of angle and speed
 
     def pre(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.gripperReach
@@ -422,6 +469,9 @@ class ArmSetAngle(MotionPrimitive):
     def modifies(self):
         return [self.var, Symbol(self._component.name() + '_dummy')]
 
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO function of angle and speed
+
     def pre(self):
         return And(self.var >= self.angle1 - 0.01, self.angle1 <= self.angle1 + 0.01 ) #deal with δ-sat
 
@@ -491,6 +541,9 @@ class ArmSetAllAngles(MotionPrimitive):
     def modifies(self):
         return self._component.internalVariables()
 
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO function of angle and speed
+
     def pre(self):
         return And( self._component._a >= self.angle3a - 0.01, self._component._a <= self.angle3a + 0.01,
                     self._component._b >= self.angle2a - 0.01, self._component._b <= self.angle2a + 0.01,
@@ -540,7 +593,7 @@ class PutOnCart(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmIdle(self.name(), self._component)
+        return ArmWait(self.name(), self._component)
 
 #TODO
 class GetFromCart(MotionPrimitiveFactory):
@@ -550,4 +603,4 @@ class GetFromCart(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmIdle(self.name(), self._component)
+        return ArmWait(self.name(), self._component)

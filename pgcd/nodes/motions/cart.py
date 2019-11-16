@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
-from __future__ import division
 import steppers
 import RPi.GPIO as GPIO
-import rclpy 
 import sympy as sp
 from multiprocessing import Process
 

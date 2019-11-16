@@ -178,15 +178,23 @@ class DurationSpec():
     def intersect(self, ds):
         assert(self.interruptible or ds.interruptible)
         if !self.interruptible:
-            assert(ds.min <= self.min)
-            assert(ds.max >= self.max)
+            assert(ds.min <= self.min and ds.max >= self.max)
             return DurationSpec(self.min, self.max, True)
         elif !ds.interruptible:
-            assert(self.min <= ds.min)
-            assert(self.max >= ds.max)
+            assert(self.min <= ds.min and self.max >= ds.max)
             return DurationSpec(ds.min, ds.max, True)
         else:
-            return DurationSpec(max(self.min, ds.min), min(self.max, ds.max), False)
+            new_min = max(self.min, ds.min)
+            new_max = min(self.max, ds.max)
+            assert(new_min <= new_max)
+            return DurationSpec(new_min, new_max, False)
+
+    def implements(self, ds):
+        same = self.interruptible == ds.interruptible
+        if self.interruptible:
+            return same and self.min <= ds.min and self.max >= ds.max
+        else:
+            return same and self.min >= ds.min and self.max <= ds.max
 
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.

@@ -127,6 +127,9 @@ class CartMove(CartMotionPrimitive):
 
     def _dstFrame(self):
         return self._frame.locate_new("dst", self._locAsVec(self._dst))
+    
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO upper as function of the distance and speed
 
     def pre(self):
         onGround = And(self._onGround(self._src), self._onGround(self._dst), self._onGround(self._component.position()))
@@ -174,6 +177,9 @@ class CartIdle(MotionPrimitive):
 
     def modifies(self):
         return []
+    
+    def duration(self):
+        return DurationSpec(0, float('inf'), True) 
 
     def pre(self):
         return S.true
@@ -215,6 +221,9 @@ class CartSetAngle(MotionPrimitive):
 
     def modifies(self):
         return [self.var]
+    
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO upper as function of the angle and angular speed
 
     def pre(self):
         return S.true
@@ -283,6 +292,9 @@ class CartMoveDirection(CartMotionPrimitive):
     
     def modifies(self):
         return [self._component._x, self._component._y]
+    
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO upper as function of the distance+angle and speed
 
     def pre(self):
         onGround = And(self._onGroundVec(self.d), self._onGround(self._component.position()))
@@ -356,6 +368,9 @@ class CartSwipe(CartMotionPrimitive):
         angleMin = min(self.t + self.a, self.t)
         angleMax = max(self.t + self.a, self.t)
         return And(self._component._theta >= angleMin, self._component._theta <= angleMax)
+    
+    def duration(self):
+        return DurationSpec(0, 1, False) #TODO upper as function of the angle and angular speed
 
     def pre(self):
         onGround = self._onGround(self._component.position())

@@ -4,11 +4,9 @@
 Meccanum cart 
 """
 
-from __future__ import division
 import steppers
 import RPi.GPIO as GPIO
 from time import sleep, time
-import rclpy
 
 import sympy as sp
 

@@ -4,11 +4,10 @@
 Calibrate arm first!
 """
 
-from __future__ import division
 import drv8825
 import steppers
 import RPi.GPIO as GPIO
-import rclpy 
+import time
 import sympy as sp
 from multiprocessing import Process
 
@@ -157,7 +156,7 @@ class arm():
     def grip( self, cycle ):
         assert( cycle > 5 and cycle < 12.5 )
         self.p.ChangeDutyCycle( cycle )
-        rclpy.sleep( 2 )
+        time.sleep( 2 )
         #self.__updateAngleRos__( "angleGripper", -angle, 270, 10 )
 
     def getConfigurationMatrixGripper( self ):
@@ -197,7 +196,7 @@ class arm():
         self.__updateAngleRos__( "angleCantilever", 0, 270, 0 )
 
     def idle( self ):
-        rclpy.sleep(0.1)
+        time.sleep(0.1)
     
     # Simple Positioning of the arm
 

@@ -88,11 +88,13 @@ class ChoreographyCheck:
         visited.add(state)
 
         if isinstance(node, Message):
+            #TODO the message sequence must touch all the process in the thread
             causality.p_message_q(node.sender, node.receiver, node.start_state)
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
         elif isinstance(node, Motion):
+            #TODO do the intersection of the durations and check one non-interruptible if next op is send (if join then check accross branches), the non-interruptible is the sender
             for comp_mot in node.motions:
                 self.process_motions_dictionary[process].add(comp_mot.id)
                 self.comps -= {comp_mot.id}
@@ -102,6 +104,7 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, GuardedChoice):
+            #TODO send/receive same for all after that
             p = self.choice_at(node)
             causality.choice_at_p(p)
             self.check_same_path_twice(node, visited, process, causality)
@@ -117,10 +120,11 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, Join):
+            #TODO send right after join and if motions before the join, one is non-interruptible
             self.check_joining_same_scope_and_threads(process, node, visited, causality)
             return
 
-        elif isinstance(node, End):
+        elif isinstance(node, End): #TODO no supported for the moment
             return
 
         self.check_all_threads_joined()
