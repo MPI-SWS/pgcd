@@ -1,0 +1,44 @@
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            moveCart( 500 );
+            setAngleCart( -90 );
+            strafeCart( -100 );
+            send(sensor,Ok);
+            receive(sensor, idle) {
+                case Red() => {
+                    send(franka, Ok);
+                    send(arm, Done);
+                    moveCart(400);
+                    send(franka, Ok);
+                    receive(franka, idle) {
+            	        case Ok() => {
+                            moveCart(-400);
+                            strafeCart( 100 );
+                            setAngleCart( 0 );
+                            moveCart( -500 );
+			}
+                    }
+                }
+                case Green() => {
+                    send(arm, Ok);
+                    send(franka, Done);
+                    moveCart(-340);
+                    send(arm, Ok);
+                    receive(arm, idle) {
+            	        case Ok() => {
+                            moveCart( 340 );
+                            strafeCart( 100 );
+                            setAngleCart( -0 );
+                            moveCart( -500 );
+                        }
+                    }
+                }
+            }
+        }
+        case Done() => {
+            stop( );
+            exit( 0 );
+        }
+    }
+}

@@ -66,12 +66,16 @@ class Parser:
         p[0] = Receive(p[3], p[5], p[8])
 
     def p_send_msg(self, p):
-        '''send : SEND LPAREN ID COMMA ID COMMA args RPAREN'''
-        p[0] = Send(p[3], p[5], p[7])
+        '''send : SEND LPAREN ID COMMA ID COMMA args RPAREN
+                | SEND LPAREN ID COMMA ID RPAREN'''
+        if len(p) > 8:
+            p[0] = Send(p[3], p[5], p[7])
+        else:
+            p[0] = Send(p[3], p[5], [])
 
     def p_if_code(self, p):
         'if : IF LPAREN expression RPAREN statement ELSE statement'
-        p[0] = If(sympify(p[3]), p[6], p[10])
+        p[0] = If(sympify(p[3]), p[5], p[7])
 
     def p_while_code(self, p):
         'while : WHILE LPAREN expression RPAREN statement'
@@ -85,7 +89,7 @@ class Parser:
         ''' motion : ID LPAREN args RPAREN
                    | ID LPAREN RPAREN
                    | ID '''
-        if len(p) > 2:
+        if len(p) > 4:
             p[0] = Motion(p[1], p[3])
         else:
             p[0] = Motion(p[1])

@@ -253,15 +253,16 @@ class Interpreter:
         self.__setattr__(node.id, self.calculate_sympy_exp(node.value))
 
     def visit_motion(self, node):
-        if not hasattr(self.robot, node.value): pass
-        rclpy.logging._root_logger.log("visit_motion: " + str(node), LoggingSeverity.INFO)
-        try:
-            #print( "visit_motion", node.value, list( (self.calculate_sympy_exp(x) for x in node.exps) ) )
-            #_thread.start_new_thread( getattr(self.robot, node.value), (*list(self.calculate_sympy_exp(x) for x in node.exps), ))
-            getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
-            #print( "success" )
-        except Exception as e:
-            rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.WARNING)
+        if not hasattr(self.robot, node.value):
+            rclpy.logging._root_logger.log("visit_motion: could not find " + node.value, LoggingSeverity.WARNING)
+            pass
+        else:
+            if node.value != "idle":
+                rclpy.logging._root_logger.log("visit_motion: " + str(node), LoggingSeverity.INFO)
+            try:
+                getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
+            except Exception as e:
+                rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.ERROR)
 
     def visit_print(self, node):
         if isinstance(node.arg, str):

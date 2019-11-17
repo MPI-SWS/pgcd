@@ -46,9 +46,8 @@ class Component(Node,Interpreter,TFUpdater):
     def message_callback(self, msg):
         # make sure there is an header, get the sender (frame), convert to local frame, put in queue
         rate = self.create_rate(5)
+        #while not rclpy.is_shutdown():
         try:
-            dummy = msg.header.frame_id #stupid way of checking if it is stamped
-            #while not rclpy.is_shutdown():
             while True:
                 try:
                     msg = self.tfBuffer.transform(msg, self.id)
@@ -57,10 +56,8 @@ class Component(Node,Interpreter,TFUpdater):
                 except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
                     print("PGCD message conversion 1 ", str(e))
                     rate.sleep()
-        except AttributeError as e:
-            print("PGCD message conversion 2 ", str(e))
         except Exception as e:
-            rclpy.logging._root_logger.log("PGCD message_callback" + str(e), LoggingSeverity.ERROR)
+            rclpy.logging._root_logger.log("PGCD message " + str(msg) + ": " + str(e), LoggingSeverity.ERROR)
         rate.destroy()
         try:
             self.receive_from[msg.header.frame_id].put_nowait(msg)
@@ -75,25 +72,34 @@ class Component(Node,Interpreter,TFUpdater):
     
     def setup_communication(self):
         ack = set()
+        topics = set()
         # subscriptions
+        rclpy.logging._root_logger.log("PGCD sub /" + self.id + "/Ack", LoggingSeverity.INFO)
         self.create_subscription(String, "/" + self.id + "/Ack", self.ack_callback, 1)
         for name, msg_name in self.get_receive_info():
             topic = "/" + self.id + "/" + msg_name
-            rclpy.logging._root_logger.log("PGCD sub " + topic + " " + str(self.msg_types[msg_name]), LoggingSeverity.INFO)
-            self.create_subscription(self.msg_types[msg_name], topic, self.message_callback, 1)
+            if not topic in topics:
+                topics.add(topic)
+                rclpy.logging._root_logger.log("PGCD sub " + topic + " " + str(self.msg_types[msg_name]), LoggingSeverity.INFO)
+                self.create_subscription(self.msg_types[msg_name], topic, self.message_callback, 1)
             if name not in ack:
                 self.receive_from[name] = queue.Queue(10)
                 self.send_to[name] = {}
+                rclpy.logging._root_logger.log("PGCD pub /" + name + "/Ack", LoggingSeverity.INFO)
                 self.send_to[name]["Ack"] = self.create_publisher(String, "/" + name + "/Ack", 1) #to emulate synchronous communication
+                ack.add(name)
         # publishers
         for name, msg_name in self.get_send_info():
             if name not in self.send_to:
                 self.send_to[name] = {}
             if name not in ack:
                 self.receive_from[name] = queue.Queue(10)
+                ack.add(name)
             topic = "/" + name + "/" + msg_name
-            rclpy.logging._root_logger.log("PGCD pub " + topic + " " + str(self.msg_types[msg_name]), LoggingSeverity.INFO)
-            self.send_to[name][msg_name] = self.create_publisher(self.msg_types[msg_name], topic, 1)
+            if not topic in topics:
+                topics.add(topic)
+                rclpy.logging._root_logger.log("PGCD pub " + topic + " " + str(self.msg_types[msg_name]), LoggingSeverity.INFO)
+                self.send_to[name][msg_name] = self.create_publisher(self.msg_types[msg_name], topic, 1)
         # tf2 stuff
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.tf2_timer_callback)

@@ -1,0 +1,31 @@
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            homePos( );
+            receive(carrier, idle) {
+                case Ok() => {
+                    # grab position
+                    setJoint( 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317 );
+                    receive(carrier, idle) {
+                        case Ok() => {
+                             grasp(0.02);
+                             homePos( );
+                             send(carrier, Ok);
+                             # drop position
+                             setJoint( 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354 );
+                             open( );
+                             homePos( );
+                        }
+                    }
+                }
+                case Done() => {
+                    skip;
+                }
+            }
+        }
+        case Done() => {
+            stop( );
+            exit( 0 );
+        }
+    }
+}

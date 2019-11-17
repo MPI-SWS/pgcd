@@ -1,0 +1,17 @@
+x = 0;
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            receive(carrier, idle) {
+                 case Ok() => {
+                     if (x == 0) send(carrier, Green);
+                     else send(carrier, Red);
+                     x = 1;
+                 }
+            }
+        }
+        case Done() => {
+            exit( 0 );
+        }
+    }
+}

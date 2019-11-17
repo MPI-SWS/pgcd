@@ -21,7 +21,10 @@ class DummyRobot():
         return M
     
     def idle( self ):
-        time.sleep(0.1)
+        time.sleep(0.2)
+    
+    def read( self ):
+        input('wait for next round ...')
     
     def setAngle( self, angle ):
         delta = (angle - self.angle) / 10

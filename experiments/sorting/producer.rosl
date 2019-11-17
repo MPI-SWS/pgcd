@@ -1,0 +1,18 @@
+read();
+send(sensor, Ok);
+send(cart, Ok);
+send(carrier, Ok);
+send(arm, Ok);
+send(franka, Ok);
+read();
+send(sensor, Ok);
+send(cart, Ok);
+send(carrier, Ok);
+send(arm, Ok);
+send(franka, Ok);
+read();
+send(sensor, Done);
+send(cart, Done);
+send(carrier, Done);
+send(arm, Done);
+send(franka, Done);

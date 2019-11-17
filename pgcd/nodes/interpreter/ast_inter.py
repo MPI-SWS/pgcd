@@ -171,17 +171,15 @@ class If(Node):
             if_stmt.label(label_to_node)
 
     def flatten(self, condition, statement):
-        node = statement.children[0]
-        if not isinstance(node, If):
+        if not isinstance(statement, If):
             return [IfComponent(condition, statement)]
-
-        statement.children.pop(0)
-        ifs = []
-        for if_stmt in statement.if_list:
-            cond = And(condition, if_stmt.condition)
-            prog = Statement(if_stmt.program.children + statement.children)
-            ifs.append(IfComponent(cond, prog))
-        return ifs
+        else:
+            ifs = []
+            for if_stmt in statement.if_list:
+                cond = And(condition, if_stmt.condition)
+                prog = Statement(if_stmt.program.children + statement.children)
+                ifs.append(IfComponent(cond, prog))
+            return ifs
 
 
 
