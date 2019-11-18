@@ -161,7 +161,9 @@ class DrealInterface:
     def run(self, exprs: List[Expr]):
         variables = { v for x in exprs for v in x.free_symbols }
         printer = DrealPrinter()
-        command = ["dreal", "--precision", str(self.precision), "--model", "--in"]
+        # cat test.smt2 |  dreal --in
+        command = ["docker", "run", "-i", "-a", "stdin", "-a", "stdout", "-a", "stderr", "dreal/dreal4", "dreal", "--precision", str(self.precision), "--model", "--in"]
+        #command = ["dreal", "--precision", str(self.precision), "--model", "--in"]
         proc = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
         # print the model
         self.write(proc.stdin, "(set-logic QF_NRA)\n")
