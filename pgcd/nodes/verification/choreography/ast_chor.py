@@ -1,5 +1,5 @@
 from enum import Enum
-from sympy import And
+import sympy as sp 
 
 
 class Type(Enum):
@@ -27,6 +27,7 @@ class Choreography():
         self.predicate = predicate
         self.start_state = start_state
         self.world = None # world is a spec.Component
+        self.state_to_processes = None # filled later but the analysis
 
     def __str__(self):
         string = "def " + self.id + " \n"
@@ -163,7 +164,7 @@ class GuardedChoice(DistributedStateNode):
             if isinstance(node, GuardedChoice):
                 successors = node.get_successors(state_to_node)
                 for s in successors:
-                    new_guard = GuardArg(And(g.expression, s.expression), s.id)
+                    new_guard = GuardArg(sp.And(g.expression, s.expression), s.id)
                     acc.append(new_guard)
             else:
                 acc.append(g)

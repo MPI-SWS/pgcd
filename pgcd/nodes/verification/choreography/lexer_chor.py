@@ -9,7 +9,7 @@ class ChoreographyLexer:
     http://www.dabeaz.com/ply/ply.html
     '''
 
-    functions = ('SIN', 'TAN', 'COS', 'ABS', 'SQRT')
+    functions = ('SIN', 'TAN', 'COS', 'ABS', 'SQRT', 'RAD')
 
     # RESERVED WORDS
     reserved = (

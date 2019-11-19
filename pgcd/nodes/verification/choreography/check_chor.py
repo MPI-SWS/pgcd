@@ -2,6 +2,7 @@ from ast_chor import *
 from compatibility import choiceAt
 from utils.causality_tracker import *
 from threads import *
+from spec import DurationSpec
 
 class ChoreographyCheck:
 
@@ -11,7 +12,7 @@ class ChoreographyCheck:
         self.state_to_node = chor.mk_state_to_node()
         self.scope = 0
         self.process_motions_dictionary = {self.chor.start_state: set()}
-        self.join_scope = {}
+        self.join_visited = {}
         self.join_node = {}
         self.join_causalities = {}
         self.motion_check = {}
@@ -26,6 +27,14 @@ class ChoreographyCheck:
         self.threadTrackers = None
         self.causality = CausalityTracker(self.comps)
 
+    def getProcess(self, name):
+        lst = [ p for p in self.world.allProcesses() if p.name() == name ]
+        if len(lst) > 0:
+            assert len(lst) == 1, "getProcess " + str(lst)
+            return lst[0]
+        else:
+            return None
+
     def check_well_formedness(self):
         self.syntacic_checks()
         self.thread_checks()
@@ -34,11 +43,20 @@ class ChoreographyCheck:
         self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
 
     def thread_checks(self):
+        if self.debug:
+            print("thread checks")
         if self.world != None:
             tc = ThreadChecks(self.chor, self.world.allProcesses())
         else:
             tc = ThreadChecks(self.chor, self.chor.getProcessNames())
         self.threadTrackers = tc.perform(self.debug)
+        if self.debug:
+            print("thread tracker result:")
+        self.chor.state_to_processes = dict()
+        for k,v in self.threadTrackers.items():
+            self.chor.state_to_processes[k] = v.processes
+            if self.debug:
+                print("\t" + k + ":\t" + ", ".join(v.processes))
 
     def syntacic_checks(self):
         if self.debug:
@@ -87,6 +105,9 @@ class ChoreographyCheck:
         node = self.state_to_node[state]
         visited.add(state)
 
+        if self.debug:
+            print("visiting: ", causality.time, node)
+
         if isinstance(node, Message):
             #TODO the message sequence must touch all the process in the thread
             causality.p_message_q(node.sender, node.receiver, node.start_state)
@@ -95,11 +116,21 @@ class ChoreographyCheck:
 
         elif isinstance(node, Motion):
             #TODO do the intersection of the durations and check one non-interruptible if next op is send (if join then check accross branches), the non-interruptible is the sender
+            assert len(node.motions) > 0
+            d = DurationSpec()
             for comp_mot in node.motions:
-                self.process_motions_dictionary[process].add(comp_mot.id)
-                self.comps -= {comp_mot.id}
+                name = comp_mot.id
+                self.process_motions_dictionary[process].add(name)
+                self.comps -= {name}
+                p = self.getProcess(name)
+                if p != None:
+                    motion = p.motionPrimitive(comp_mot.mp_name, *(comp_mot.mp_args))
+                    d2 = motion.duration()
+                    d = d.intersect(d2)
+                else:
+                    print("could not resolve", comp_mot)
             self.loop_has_motion = True
-            causality.motion(1) #TODO fix the duration
+            causality.motion(d)
             self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
@@ -121,13 +152,19 @@ class ChoreographyCheck:
 
         elif isinstance(node, Join):
             #TODO send right after join and if motions before the join, one is non-interruptible
-            self.check_joining_same_scope_and_threads(process, node, visited, causality)
+            if node not in self.join_visited:
+                self.join_visited[node] = len(node.start_state) -1
+                self.join_causalities[node] = causality
+            else:
+                self.join_visited[node] -= 1
+                self.join_causalities[node] = self.join_causalities[node].join(causality)
+            if self.join_visited[node] == 0:
+                self.traverse_graph(node.end_state[0], visited, process, self.join_causalities[node])
             return
 
         elif isinstance(node, End): #TODO no supported for the moment
             return
-
-        self.check_all_threads_joined()
+        
         self.check_no_disconnected_parts(visited)
         self.check_every_process_has_motion_in_one_thread()
         if self.debug:
@@ -149,27 +186,6 @@ class ChoreographyCheck:
     def check_no_disconnected_parts(self, visited):
         assert not len(self.state_to_node) != len(visited), 'There are some disconnected graph parts!'
 
-    def check_joining_same_scope_and_threads(self, process, node, visited, causality):
-        assert self.join_scope[self.scope].__contains__(
-            process), 'Cannot execute join whose states are not in the same scope.'
-
-        if not self.join_node.__contains__(self.scope):
-            self.join_node[self.scope] = node
-        assert self.join_node[self.scope] == node, 'Cannot join these threads: "' + ','.join(node.start_state) + '".'
-
-        self.join_scope[self.scope].remove(process)
-        if len(self.join_scope[self.scope]) == 0:
-            del self.join_scope[self.scope]
-            del self.motion_check[self.scope]
-            del self.join_node[self.scope]
-            causality.join_with_causalities(self.join_causalities[self.scope], node.start_state)
-            del self.join_causalities[self.scope]
-
-            self.scope -= 1
-            self.traverse_graph(node.end_state[0], visited, process, causality)
-        else:
-            self.join_causalities[self.scope].append(causality)
-
     def check_component_motion_is_in_only_one_forked_thread(self):
         for i in range(0, len(self.motion_check[self.scope]) - 1):
             for j in range(i, len(self.motion_check[self.scope]) - 1):
@@ -180,9 +196,6 @@ class ChoreographyCheck:
                                            self.motion_check[self.scope][
                                                i] + '" and "' + self.motion_check[self.scope][j] + '".'
 
-    def check_all_threads_joined(self):
-        assert len(self.join_scope) == 0, 'Failed to join all processes!'
-
     def check_loop_had_motion(self, visited, node):
         assert not((not self.loop_has_motion) and visited.__contains__(node.end_state[0])), 'Loop "' + ','.join(
             node.start_state) + '" has not any motion!'
@@ -190,8 +203,6 @@ class ChoreographyCheck:
 
     def check_each_process_and_set_check_vars(self, node, visited, causality):
         self.scope += 1
-        self.join_scope[self.scope] = node.end_state[:]
-        self.join_causalities[self.scope] = []
         self.motion_check[self.scope] = node.end_state[:]
         for s in node.end_state:
             var = causality.fork_new_thread()

@@ -85,6 +85,7 @@ class ProcessPredicatesTracker:
     def __str__(self):
         return str(self._process) + ": " + str(self.pred())
 
+# TODO extend to keep track of footprints
 
 # on predicate tracker for each process
 # everything is in place, the idea is to make a copy and apply the operation

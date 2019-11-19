@@ -228,7 +228,7 @@ class Grasp(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 1)
-        return ArmWait(self.name(), self._component)
+        return FrankaWait(self.name(), self._component)
 
 
 
@@ -240,7 +240,7 @@ class Open(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmWait(self.name(), self._component)
+        return FrankaWait(self.name(), self._component)
 
 class FrankaWait(MotionPrimitive):
 
@@ -274,7 +274,7 @@ class FrankaWait(MotionPrimitive):
 
 
 
-class MoveFromTo(MotionPrimitiveFactory):
+class MoveTo(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -285,11 +285,11 @@ class MoveFromTo(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 14)
-        return FrankaHomePos(self.name(), self._component,
+        return FrankaMoveTo( self.name(), self._component,
                              args[0], args[1], args[2], args[3], args[4], args[5], args[6],
                              args[7], args[8], args[9], args[10], args[11], args[12], args[13])
 
-class FrankaMoveFromTo(MotionPrimitive):
+class FrankaMoveTo(MotionPrimitive):
 
     def __init__(self, name, component, a0, b0, c0, d0, e0, f0, g0, a1, b1, c1, d1, e1, f1, g1):
         super().__init__(name, component)

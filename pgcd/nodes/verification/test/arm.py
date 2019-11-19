@@ -7,7 +7,7 @@ from utils.geometry import *
 # model for a generic arm as 3 linkage connected by revolute actuators
 class Arm(Process):
 
-    def __init__(self, name, parent, index = 0):
+    def __init__(self, name, parent, index = 0, a_ref = 0, b_ref = 0, c_ref = 0):
         super().__init__(name, parent, index)
         # default dimensions
         self.baseHeight = 0.23
@@ -19,6 +19,10 @@ class Arm(Process):
         self.gripperReach = 0.08
         self.maxAngleAB =  13*mp.pi()/18
         self.minAngleAB = -13*mp.pi()/18
+        # where if the 0 compared to the neutra joint position
+        self.a_ref = a_ref
+        self.b_ref = b_ref
+        self.c_ref = c_ref
         #TODO angular speed
         
         # variables
@@ -28,9 +32,9 @@ class Arm(Process):
         #TODO state of the gripper
         # frame and stuff
         self._frame = parent.mountingPoint(index)
-        self._base = self._frame.orient_new_axis(name + '_base', self._c, self._frame.k)
-        self._upper = self._base.orient_new_axis(name + '_upper', self._b, self._base.j, location= self.baseHeight * self._base.k)
-        self._lower = self._upper.orient_new_axis(name + '_lower', self._a, self._upper.j, location= self.upperArmLength * self._upper.k)
+        self._base = self._frame.orient_new_axis(name + '_base',    self._c + self.c_ref, self._frame.k)
+        self._upper = self._base.orient_new_axis(name + '_upper',   self._b + self.b_ref, self._base.j, location= self.baseHeight * self._base.k)
+        self._lower = self._upper.orient_new_axis(name + '_lower',  self._a + self.a_ref, self._upper.j, location= self.upperArmLength * self._upper.k)
         self._effector = self._lower.locate_new(name + '_effector', self.lowerArmLength * self._lower.k)
         # motion primitives
         Fold(self)
@@ -50,6 +54,15 @@ class Arm(Process):
         RotateAndPut(self)
         PutOnCart(self)
         GetFromCart(self)
+
+    def a_eff():
+        return self._a + self.a_ref
+
+    def b_eff():
+        return self._b + self.b_ref
+
+    def c_eff():
+        return self._c + self.c_ref
 
     def frame(self):
         return self._frame
@@ -79,8 +92,8 @@ class Arm(Process):
         f = self.frame()
         # that one is very abstract
         # r = self.baseHeight + self.upperArmLength + self.lowerArmLength + self.upperArmRadius
-        r1 = sqrt( self.baseHeight**2 + self.upperArmLength**2 - 2 * self.baseHeight * self.upperArmLength * cos(mp.pi - self._b))
-        r2 = sqrt( r1**2 + self.lowerArmLength**2 - 2 * r1 * self.lowerArmLength * cos(mp.pi - self._a))
+        r1 = sqrt( self.baseHeight**2 + self.upperArmLength**2 - 2 * self.baseHeight * self.upperArmLength * cos(mp.pi - self.b_eff()))
+        r2 = sqrt( r1**2 + self.lowerArmLength**2 - 2 * r1 * self.lowerArmLength * cos(mp.pi - self.a_eff()))
         r = r2 + self.upperArmRadius + delta
         return halfSphere(f, r, f.k, point)
 
@@ -90,9 +103,9 @@ class Arm(Process):
 
     def invariant(self):
         pi = mp.pi
-        domain_a = And(self._a >= self.minAngleAB, self._a <= self.maxAngleAB)
-        domain_b = And(self._b >= self.minAngleAB, self._b <= self.maxAngleAB)
-        domain_c = And(self._c >= -pi, self._c <= pi)
+        domain_a = And(self.a_eff() >= self.minAngleAB, self.a_eff() <= self.maxAngleAB)
+        domain_b = And(self.b_eff() >= self.minAngleAB, self.b_eff() <= self.maxAngleAB)
+        domain_c = And(self.c_eff() >= -pi, self.c_eff() <= pi)
         return And(domain_a, domain_b, domain_c)
 
 class Fold(MotionPrimitiveFactory):
@@ -132,9 +145,9 @@ class ArmFold(MotionPrimitive):
         return S.true
 
     def post(self):
-        a = Eq(self._component.alpha(), self._component.maxAngleAB)
-        b = Eq(self._component.beta(), self._component.minAngleAB)
-        c = Eq(self._component.gamma(), 0)
+        a = Eq(self._component.a_eff(), self._component.maxAngleAB)
+        b = Eq(self._component.b_eff(), self._component.minAngleAB)
+        c = Eq(self._component.c_eff(), 0)
         return And(a, b, c)
 
     def inv(self):
@@ -194,14 +207,19 @@ class ArmIdle(MotionPrimitive):
 
 class ArmWait(MotionPrimitive):
 
-    def __init__(self, name, component):
+    def __init__(self, name, component, t_min, t_max = -1):
         super().__init__(name, component)
+        self.t_min = t_min
+        if t_max < 0:
+            self.t_max = t_min
+        else:
+            self.t_max = t_max
 
     def modifies(self):
         return [Symbol(self._component.name() + '_dummy')]
     
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO
+        return DurationSpec(self.t_min, self.t_max, False)
 
     def pre(self):
         return S.true
@@ -289,14 +307,14 @@ class ArmPutInBin(MotionPrimitive):
 
     def neutral(self, maxError = 0.0):
         if maxError <= 0.0:
-            a = Eq(self._component.alpha(), mp.pi/2)
-            b = Eq(self._component.beta(), mp.pi/2)
-            c = Eq(self._component.gamma(), 0.0)
+            a = Eq(self._component.a_eff(), mp.pi/2)
+            b = Eq(self._component.b_eff(), mp.pi/2)
+            c = Eq(self._component.c_eff(), 0.0)
             return And(a,b,c)
         else:
-            a = And(self._component.alpha() >= mp.pi/2 - maxError, self._component.alpha() <= mp.pi/2 + maxError)
-            b = And(self._component.beta() >= mp.pi/2 - maxError, self._component.beta() <= mp.pi/2 + maxError)
-            c = And(self._component.gamma() >= -maxError, self._component.gamma() <= maxError)
+            a = And(self._component.a_eff() >= mp.pi/2 - maxError, self._component.a_eff() <= mp.pi/2 + maxError)
+            b = And(self._component.b_eff() >= mp.pi/2 - maxError, self._component.b_eff() <= mp.pi/2 + maxError)
+            c = And(self._component.c_eff() >= -maxError, self._component.c_eff() <= maxError)
             return And(a,b,c)
 
     def duration(self):
@@ -347,7 +365,7 @@ class CloseGripper(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmWait(self.name(), self._component)
+        return ArmWait(self.name(), self._component, 2)
 
 # since we don't precisely model the gripper, it is like waiting
 class OpenGripper(MotionPrimitiveFactory):
@@ -360,7 +378,7 @@ class OpenGripper(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmWait(self.name(), self._component)
+        return ArmWait(self.name(), self._component, 2)
 
 # since we don't precisely model the gripper, it is like waiting
 class Grip(MotionPrimitiveFactory):
@@ -373,7 +391,7 @@ class Grip(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 1)
-        return ArmWait(self.name(), self._component)
+        return ArmWait(self.name(), self._component, 2)
 
 class MoveTo(MotionPrimitiveFactory):
 
@@ -432,7 +450,7 @@ class SetAngleTurntable(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 2)
-        return ArmSetAngle(self.name(), self._component, self._component._c, args[0], args[1])
+        return ArmSetAngle(self.name(), self._component, self._component.c_eff(), args[0], args[1])
 
 class SetAngleCantilever(MotionPrimitiveFactory):
 
@@ -444,7 +462,7 @@ class SetAngleCantilever(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 2)
-        return ArmSetAngle(self.name(), self._component, self._component._b, args[0], args[1])
+        return ArmSetAngle(self.name(), self._component, self._component.b_eff(), args[0], args[1])
 
 class SetAngleAnchorPoint(MotionPrimitiveFactory):
 
@@ -456,7 +474,7 @@ class SetAngleAnchorPoint(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 2)
-        return ArmSetAngle(self.name(), self._component, self._component._a, args[0], args[1])
+        return ArmSetAngle(self.name(), self._component, self._component.a_eff(), args[0], args[1])
 
 class ArmSetAngle(MotionPrimitive):
 
@@ -545,9 +563,9 @@ class ArmSetAllAngles(MotionPrimitive):
         return DurationSpec(0, 1, False) #TODO function of angle and speed
 
     def pre(self):
-        return And( self._component._a >= self.angle3a - 0.01, self._component._a <= self.angle3a + 0.01,
-                    self._component._b >= self.angle2a - 0.01, self._component._b <= self.angle2a + 0.01,
-                    self._component._c >= self.angle1a - 0.01, self._component._c <= self.angle1a + 0.01)
+        return And( self._component.a_eff() >= self.angle3a - 0.01, self._component.a_eff() <= self.angle3a + 0.01,
+                    self._component.b_eff() >= self.angle2a - 0.01, self._component.b_eff() <= self.angle2a + 0.01,
+                    self._component.c_eff() >= self.angle1a - 0.01, self._component.c_eff() <= self.angle1a + 0.01)
 
     def post(self):
         targetCanti = self.angle2b
@@ -555,24 +573,24 @@ class ArmSetAllAngles(MotionPrimitive):
             targetCanti = targetCanti + self.delta
         else:
             targetCanti = targetCanti - self.delta
-        return And( Eq( self._component._a, self.angle3b ),
-                    Eq( self._component._b, targetCanti ),
-                    Eq( self._component._c, self.angle1b ))
+        return And( Eq( self._component.a_eff(), self.angle3b ),
+                    Eq( self._component.b_eff(), targetCanti ),
+                    Eq( self._component.c_eff(), self.angle1b ))
 
     def inv(self):
         f = true
         if self.angle1a < self.angle1b:
-            f = And(f, self._component._c >= self.angle1a, self._component._c <= self.angle1b)
+            f = And(f, self._component.c_eff() >= self.angle1a, self._component.c_eff() <= self.angle1b)
         else:
-            f = And(f, self._component._c >= self.angle1b, self._component._c <= self.angle1a)
+            f = And(f, self._component.c_eff() >= self.angle1b, self._component.c_eff() <= self.angle1a)
         if self.angle2a < self.angle2b:
-            f = And(f, self._component._b >= self.angle2a, self._component._b <= self.angle2b)
+            f = And(f, self._component.b_eff() >= self.angle2a, self._component.b_eff() <= self.angle2b)
         else:
-            f = And(f, self._component._b >= self.angle2b, self._component._b <= self.angle2a)
+            f = And(f, self._component.b_eff() >= self.angle2b, self._component.b_eff() <= self.angle2a)
         if self.angle3a < self.angle3b:
-            f = And(f, self._component._a >= self.angle3a, self._component._a <= self.angle3b)
+            f = And(f, self._component.a_eff() >= self.angle3a, self._component.a_eff() <= self.angle3b)
         else:
-            f = And(f, self._component._a >= self.angle3b, self._component._a <= self.angle3a)
+            f = And(f, self._component.a_eff() >= self.angle3b, self._component.a_eff() <= self.angle3a)
         return self.timify(f)
 
     def preFP(self, point):
@@ -593,7 +611,7 @@ class PutOnCart(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmWait(self.name(), self._component)
+        return ArmWait(self.name(), self._component, 10)
 
 #TODO
 class GetFromCart(MotionPrimitiveFactory):
@@ -603,4 +621,4 @@ class GetFromCart(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return ArmWait(self.name(), self._component)
+        return ArmWait(self.name(), self._component, 10)

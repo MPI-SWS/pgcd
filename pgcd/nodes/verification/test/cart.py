@@ -294,7 +294,7 @@ class CartMoveDirection(CartMotionPrimitive):
         return [self._component._x, self._component._y]
     
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO upper as function of the distance+angle and speed
+        return DurationSpec(3, 10, False) #TODO upper as function of the distance+angle and speed
 
     def pre(self):
         onGround = And(self._onGroundVec(self.d), self._onGround(self._component.position()))

@@ -6,6 +6,7 @@ import collections
 import lexer_chor as clexer
 from ast_chor import *
 from sympy import *
+import mpmath
 from check_chor import *
 
 import os
@@ -219,6 +220,7 @@ class ChoreographyParser:
                       | TAN LPAREN expression RPAREN
                       | ABS LPAREN expression RPAREN
                       | SQRT LPAREN expression RPAREN
+                      | RAD LPAREN expression RPAREN
                       | ID LPAREN funcargs RPAREN'''
         # p[1] = symbols('f g h', cls=Function)
         p[0] = str(p[1]) + str(p[2]) + str(p[3]) + str(p[4])
@@ -232,6 +234,8 @@ class ChoreographyParser:
             p[0] = Abs(p[3])
         elif p[1] == 'sqrt':
             p[0] = sqrt(p[3])
+        elif p[1] == 'rad':
+            p[0] = mpmath.radians(p[3])
         else:
             p[0] = Function(p[1])(*p[3])
 

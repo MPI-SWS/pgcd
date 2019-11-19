@@ -1,9 +1,10 @@
 from spec import *
 from compatibility import *
 from utils.geometry import *
-from cart import *
-from arm import *
-from franka import *
+from cart import CartSquare
+from arm import Arm
+from franka import FrankaEmikaPanda
+from static_process import StaticProcess
 from refinement import *
 from vectorize import *
 from mpmath import mp
@@ -15,16 +16,290 @@ import parser
 import unittest
 
 
-def world()
-    w = World(  (0, 0, 0, 0),     # cart
-                (1, 0, 0, mp.pi), # carrier
-                (1, 0, 0, mp.pi), # franka
-                (1, 0, 0, mp.pi), # producer
-                (1, 0, 0, mp.pi)) # sensor
-    cart = Cart("cart", w, 0)
-    arm = Arm("arm", cart)
-    carrier = CartSquare("carrier", w, 1)
-    franka = FrankaEmikaPanda("franka", w, 2)
-    producer = ...("producer", w, 3)
-    sensor = ...("senor", w, 4)
+def world():
+    # mounting pts:  x      y     z        θ     comp
+    w = World(  (    0,  -0.7, 0.08,       0), # arm
+                ( -0.6,     0,    0,       0), # carrier
+                ( -0.2,   1.1,    0, mp.pi/2), # franka
+                (-0.75,     0,    0,       0), # producer
+                (  0.1, -0.05,    0,       0)) # sensor
+    # specs
+    arm       = Arm("arm", w, 0, 2.2689280275926285, -2.2689280275926285, 0)
+    carrier   = CartSquare("carrier", w, 1)
+    franka    = FrankaEmikaPanda("franka", w, 2)
+    producer  = StaticProcess("producer", 0, 0, 0, 0, 0.2, 0.2, 0.05, w, 3)
+    sensor    = StaticProcess("sensor", 0, 0, 0, 0, 0.1, 0.1, 0.2, w, 4)
     return w
+
+# largest choreography ever ?
+# TODO add footprint annotations
+def choreo():
+    return ''' Sorting =
+        def start = (producer: Wait(1), arm: Idle(), franka: Idle(), carrier: Idle(), sensor: Idle()); x0
+            x0 + x17 = x1
+            x1 = producer -> carrier: Ok() ; x2
+            x2 = producer -> arm: Ok(); x3
+            x3 = producer -> franka: Ok(); x4
+            x4 = producer -> sensor: Ok(); fork_producer
+            fork_producer = x5 || x10a
+            x5 = x6a || x7a || x8a || x9a
+            #  carrier move, the other stay
+            x6a = (carrier: MoveCart(0, 0, 0, 0.5)) ; x6b
+            x6b = (carrier: SetAngleCart(rad(-90))) ; x6c
+            x6c = (carrier: StrafeCart(0, 0, rad(-90), 0.1)) ; x6z
+            x7a = (arm: Idle()) ; x7z
+            x8a = (franka: Idle()) ; x8z
+            x9a = (sensor: Idle()) ; x9z
+            x6z || x7z || x8z || x9z = x11
+            # carrier meets with the sensor and informs the arm+franka
+            x11 = carrier -> sensor: Ok() ; choice_sensor
+            # make the choice local at the sensor
+            choice_sensor = [sensor_dummy == 0] x13a + [sensor_dummy != 0] x14a
+            # go to franka side
+            x13a = sensor -> carrier: Green() ; x13b
+            x13b = carrier -> franka: Ok() ; x13c
+            x13c = carrier -> arm: Done() ; x13d
+            x13d = x13d1a || x13d2a || x13d3a
+            x13d1a = frank_fast1 || carrier_slow_green1
+            frank_fast1 = (franka: MoveTo(0, 0, 0, 0, 0, 0, 0, 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317)); frank_fast2
+            frank_fast2 = (franka: Idle()); frank_fast3
+            carrier_slow_green1 = (carrier: MoveCart(0.6, 0, rad(-90), 0.4)); carrier_slow_green2
+            frank_fast3 || carrier_slow_green2 = x13d1b
+            x13d1b = carrier -> franka: Ok() ; x13d1c
+            x13d1c = (franka: Grasp(0.02), carrier: Idle()) ; x13d1d
+            x13d1d = (franka: MoveTo(0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317, 0, 0, 0, 0, 0, 0, 0), carrier: Idle()); x13d1e
+            x13d1e = franka -> carrier: Ok() ; fork_franka_carrier
+            fork_franka_carrier = x13d1f1a || x13d1f2a
+            x13d1f1a = (franka: MoveTo(0, 0, 0, 0, 0, 0, 0, 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354)); x13d1f1b
+            x13d1f1b = (franka: Open()); x13d1f1c
+            x13d1f1c = (franka: MoveTo(0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354, 0, 0, 0, 0, 0, 0, 0)); x13d1f1d
+            x13d1f1d = (franka: Idle()); x13d1f1z
+            x13d1f2a = (carrier: MoveCart(0.6, 0.4, rad(-90), -0.4)); x13d1f2b
+            x13d1f2b = (carrier: StrafeCart(0.6, 0.0, rad(-90), -0.1)); x13d1f2c
+            x13d1f2c = (carrier: SetAngleCart(0)); x13d1f2d
+            x13d1f2d = (carrier: MoveCart(0.5, 0.0, 0, -0.5)); x13d1f2z
+            x13d2a = (arm: Idle()) ; x13d2z
+            x13d3a = (sensor: Idle()) ; x13d3z
+            x13d1f1z || x13d1f2z = join_franka_carrier
+            join_franka_carrier || x13d2z || x13d3z  = x13z
+            # go to arm side
+            x14a = sensor -> carrier: Red() ; x14b
+            x14b = carrier -> arm: Ok() ; x14c
+            x14c = carrier -> franka: Done() ; x14d
+            x14d = x14d1a || x14d2a || x14d3a
+            x14d1a = (arm: Rotate(0, 0, 0, rad(-90), 0, rad(90)), carrier: MoveCart(0.6, 0, rad(-90), -0.4)); x14d1b
+            x14d1b = carrier -> arm: Ok() ; x14d1c
+            x14d1c = (arm: Rotate(rad(-90), 0, rad(90), rad(-90), 0, rad(150)), carrier: Idle()); x14d1d
+            x14d1d = (arm: Grip(), carrier: Idle()) ; x14d1e
+            x14d1e = (arm: Rotate(rad(-90), 0, rad(150), rad(-45), rad(210), rad(150)), carrier: Idle()) ; x14d1f
+            x14d1f = (arm: Open(), carrier: Idle()) ; x14d1g
+            x14d1g = arm -> carrier: Ok() ; fork_arm_carrier
+            fork_arm_carrier = x14d1h1a || x14d1h2a
+            x14d1h1a = (arm: Rotate(rad(-45), rad(210), rad(150), 0, 0, 0)); x14d1h1b
+            x14d1h1b = (arm: Idle()); x14d1h1z
+            x14d1h2a = (carrier: MoveCart(0.6, 0.4, rad(-90), 0.4)); x14d1h2b
+            x14d1h2b = (carrier: StrafeCart(0.6, 0.0, rad(-90), -0.1)); x14d1h2c
+            x14d1h2c = (carrier: SetAngleCart(0)); x14d1h2d
+            x14d1h2d = (carrier: MoveCart(0.5, 0.0, 0, -0.5)); x14d1h2z
+            x14d2a = (franka: Idle()) ; x14d2z
+            x14d3a = (sensor: Idle()) ; x14d3z
+            x14d1h1z || x14d1h2z = join_arm_carrier
+            join_arm_carrier || x14d2z || x14d3z  = x14z
+            # merge franka + arm
+            x13z + x14z = merge_sensor
+            x10a = (producer: Idle()) ; x10z
+            # join, notify the producer, and repeat
+            merge_sensor || x10z = join_producer
+            join_producer = carrier -> producer: Ok() ; x17
+        in [
+          (franka_a == 0.0) && (franka_b == 0.0) && (franka_c == 0.0) && (franka_d == 0.0) && (franka_e == 0.0) && (franka_f == 0.0) && (franka_g == 0.0) && 
+          (carrier_theta == 0) && (carrier_x == 0) && (carrier_y == 0) &&
+          (arm_a == 0) && (arm_b == 0) && (arm_c == 0) 
+        ] start
+    '''
+
+def code_arm():
+    return '''
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            receive(carrier, idle) {
+                case Ok() => {
+                    moveTo( -90, 0, 90 );
+                    moveTo( -90, 0, 150 );
+                    receive(carrier, idle) {
+                        case Ok() => {
+                             gripAndMove(10.5, -45, 210, 150, 5.5);
+                             send(carrier, Ok);
+                             retractArm( );
+                        }
+                    }
+                }
+                case Done() => {
+                    skip;
+                }
+            }
+        }
+        case Done() => {
+            stop( );
+            exit( 0 );
+        }
+    }
+}
+    '''
+
+def code_franka():
+    return '''
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            homePos( );
+            receive(carrier, idle) {
+                case Ok() => {
+                    # grab position
+                    setJoint( 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317 );
+                    receive(carrier, idle) {
+                        case Ok() => {
+                             grasp(0.02);
+                             homePos( );
+                             send(carrier, Ok);
+                             # drop position
+                             setJoint( 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354 );
+                             open( );
+                             homePos( );
+                        }
+                    }
+                }
+                case Done() => {
+                    skip;
+                }
+            }
+        }
+        case Done() => {
+            stop( );
+            exit( 0 );
+        }
+    }
+}
+    '''
+
+def code_carrier():
+    return '''
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            moveCart( 500 );
+            setAngleCart( -90 );
+            strafeCart( -100 );
+            send(sensor,Ok);
+            receive(sensor, idle) {
+                case Red() => {
+                    send(franka, Ok);
+                    send(arm, Done);
+                    moveCart(400);
+                    send(franka, Ok);
+                    receive(franka, idle) {
+            	        case Ok() => {
+                            moveCart(-400);
+                            strafeCart( 100 );
+                            setAngleCart( 0 );
+                            moveCart( -500 );
+			}
+                    }
+                }
+                case Green() => {
+                    send(arm, Ok);
+                    send(franka, Done);
+                    moveCart(-340);
+                    send(arm, Ok);
+                    receive(arm, idle) {
+            	        case Ok() => {
+                            moveCart( 340 );
+                            strafeCart( 100 );
+                            setAngleCart( -0 );
+                            moveCart( -500 );
+                        }
+                    }
+                }
+            }
+        }
+        case Done() => {
+            stop( );
+            exit( 0 );
+        }
+    }
+}
+    '''
+
+def code_sensor():
+    return '''
+x = 0;
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            receive(carrier, idle) {
+                 case Ok() => {
+                     if (x == 0) send(carrier, Green);
+                     else send(carrier, Red);
+                     x = 1;
+                 }
+            }
+        }
+        case Done() => {
+            exit( 0 );
+        }
+    }
+}
+    '''
+
+def code_producer():
+    return '''
+Wait(1);
+while (true) {
+    send(sensor, Ok);
+    send(carrier, Ok);
+    send(arm, Ok);
+    send(franka, Ok);
+    receive(carrier, idle) {
+        case Ok() => skip;
+    }
+}
+    '''
+
+
+
+class XpSortingTest(unittest.TestCase):
+
+    def test_sorting(self, debug = True):
+        w = world()
+        ch = choreo()
+        progs = { "arm": code_arm(),
+                  "franka": code_franka(),
+                  "carrier": code_carrier(),
+                  "sensor": code_sensor(),
+                  "producer": code_producer()}
+        visitor = Projection()
+        visitor.execute(ch, w, debug)
+        chor = visitor.choreography
+        vectorize(chor, w)
+        checker = CompatibilityCheck(chor, w)
+        checker.localChoiceChecks()
+        checker.generateTotalGuardsChecks()
+        processes = w.allProcesses()
+        checker.computePreds(debug)
+        checker.generateCompatibilityChecks()
+        for vc in checker.vcs:
+            if not vc.discharge(debug=debug):
+                raise Exception(str(vc))
+        print("#VC:", len(checker.vcs))
+        for p in processes:
+            visitor.choreography = deepcopy(chor)
+            proj = visitor.project(p.name(), p, debug)
+            prser = parser.Parser()
+            prog = prser.parse(progs[p.name()])
+            ref = Refinement(prog, proj, debug)
+            if not ref.check():
+                raise Exception("Refinement:" + p.name())
+
+if __name__ == '__main__':
+    unittest.main()

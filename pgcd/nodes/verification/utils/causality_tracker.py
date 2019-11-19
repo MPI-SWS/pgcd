@@ -1,10 +1,11 @@
 import numpy as np
 from copy import copy
+from spec import DurationSpec
 
 class CausalityTracker:
 
     def __init__(self, process_id_set):
-        self.time = 0
+        self.time = DurationSpec(0, 0, False)
         self.process_to_vclock = {}
         self.process_set = copy(process_id_set)
         self.init_vclocks()
@@ -12,7 +13,7 @@ class CausalityTracker:
             self.lastEvent = copy(self.process_to_vclock[p][0])
 
     def copy(self, tracker):
-        self.time = tracker.time
+        self.time = tracker.time.copy()
         idx = 0
         for proc in self.process_set:
             self.process_to_vclock[proc] = (np.copy(tracker.process_to_vclock[proc][0]), idx)
@@ -50,6 +51,8 @@ class CausalityTracker:
 
         self.process_to_vclock[q] = (np.copy(self.process_to_vclock[p][0]), self.process_to_vclock[q][1])
         self.lastEvent = self.process_to_vclock[q][0]
+        # as the message sync we can pick one time (here max) and make it non interruptible, so we can concat again
+        self.time = DurationSpec(self.time.max, self.time.max, False)
         #self.inc_thread_vclock(q)
 
     def choice_at_p(self, p):
@@ -60,18 +63,20 @@ class CausalityTracker:
 
     def motion(self, duration):
         #print("motion", 1)
-        self.time += duration
+        self.time = self.time.concat(duration)
         self.init_vclocks()
         for p in self.process_set:
             self.lastEvent = copy(self.process_to_vclock[p][0])
 
-    def join_with_causalities(self, causalities, end_states):
-        for i in range(len(causalities)):
-            assert self.time == causalities[i].time, 'Cannot join states: "' + ' , '.join(end_states) + '" because time doesn\'t match: "' + str(self.time) + ' != ' + str(causalities[i].time) + '".'
-            for proc in self.process_set:
-                self.process_to_vclock[proc] = (
-                np.maximum(self.process_to_vclock[proc][0], causalities[i].process_to_vclock[proc][0]),
+    def join(self, causality):
+        cl = CausalityTracker(self.process_set)
+        cl.copy(self)
+        for proc in self.process_set:
+            cl.process_to_vclock[proc] = (
+                np.maximum(self.process_to_vclock[proc][0], causality.process_to_vclock[proc][0]),
                 self.process_to_vclock[proc][1])
+            cl.time = self.time.intersect(causality.time)
+        return cl
 
     def fork_new_thread(self):
         cl = CausalityTracker(self.process_set)
