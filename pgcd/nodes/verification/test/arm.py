@@ -24,7 +24,6 @@ class Arm(Process):
         self.b_ref = b_ref
         self.c_ref = c_ref
         #TODO angular speed
-        
         # variables
         self._a = symbols(name + '_a') # rotation along the Y-axis (upper arm to lower arm)
         self._b = symbols(name + '_b') # rotation along the Y-axis (base to upper arm)
@@ -55,13 +54,13 @@ class Arm(Process):
         PutOnCart(self)
         GetFromCart(self)
 
-    def a_eff():
+    def a_eff(self):
         return self._a + self.a_ref
 
-    def b_eff():
+    def b_eff(self):
         return self._b + self.b_ref
 
-    def c_eff():
+    def c_eff(self):
         return self._c + self.c_ref
 
     def frame(self):
@@ -390,7 +389,7 @@ class Grip(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 1)
+        assert(len(args) <= 1)
         return ArmWait(self.name(), self._component, 2)
 
 class MoveTo(MotionPrimitiveFactory):

@@ -38,6 +38,7 @@ class ChoreographyParser:
 
     def parse(self, text, world = None, debug = False):
         choreography = self.parser.parse(text, self.lexer.lexer)
+        choreography.world = world
         self.check_well_formedness(choreography, world, debug)
         return choreography
 

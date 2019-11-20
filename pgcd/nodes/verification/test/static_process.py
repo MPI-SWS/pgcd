@@ -30,11 +30,14 @@ class StaticProcess(Process):
     def internalVariables(self):
         return [self.dummyVar]
     
-    def footprint(self, point):
+    def ownResources(self, point, maxError = 0.0):
         f = self.frame()
         cf = f.orient_new_axis(self.name(), self.theta, f.k, location = self.x * f.i + self.y * f.j + self.z * f.k)
-        return cube(cubeFrame, cf.origin, cf.origin.locate_new(self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point)
+        return cube(cf, cf.origin, cf.origin.locate_new(self.name() + "_ufr", self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point, maxError, maxError, maxError)
     
+    def abstractResources(self, point, maxError = 0.0):
+        return self.ownResources(point, maxError)
+
     def mountingPoint(self, index):
         return ValueException(self.name() + " does not have mounting moints.")
 
@@ -71,13 +74,13 @@ class StaticIdle(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.0, 0.005)
+        return self._component.abstractResources(point, 0.001) #FIXME deal with δ-sat
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.0, 0.005)
+        return self._component.abstractResources(point, 0.0)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.0, 0.005)
+        i = self._component.abstractResources(point, 0.0)
         return self.timify(i)
 
 class Wait(MotionPrimitiveFactory):

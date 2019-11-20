@@ -117,16 +117,16 @@ class FrankaEmikaPanda(Process):
         return And(domain_a, domain_b, domain_c, domain_d, domain_e, domain_f, domain_g)
         
     def ownResources(self, point, delta = 0.0):
-        lowerBackLeft1   = -self.base_x * self._frame.i / 2 - self.base_y * self._frame.j / 2
-        upperFrontRight1 =  self.base_x * self._frame.i / 2 + self.base_y * self._frame.j / 2 + self.base_z * self._frame.k
+        lowerBackLeft1   = self._frame.origin.locate_new('franka_base_lbl',-self.base_x * self._frame.i / 2 - self.base_y * self._frame.j / 2 )
+        upperFrontRight1 = self._frame.origin.locate_new('franka_base_ufr', self.base_x * self._frame.i / 2 + self.base_y * self._frame.j / 2 + self.base_z * self._frame.k )
         baseFP = cube(self._frame, lowerBackLeft1, upperFrontRight1, point, delta)
         #
-        abFP = cylinder(self._af, self.upperArmRadius, self.upperArmLength, point, delta)
-        cdFP = cylinder(self._cf, self.lowerArmRadius, self.lowerArmLength, point, delta)
-        efFP = cylinder(self._ef, self.lowerArmRadius, self.lowerArmLength, point, delta)
+        abFP = cylinder(self._af, self.ab_r, self.ab_h, point, delta)
+        cdFP = cylinder(self._cf, self.cd_r, self.cd_h, point, delta)
+        efFP = cylinder(self._ef, self.ef_r, self.ef_h, point, delta)
         #
-        lowerBackLeft2   = -self.base_x * self._effector.i / 2 - self.base_y * self._effector.j / 2 - self.base_z / 2 * self._effector.k
-        upperFrontRight2 =  self.base_x * self._effector.i / 2 + self.base_y * self._effector.j / 2 + self.base_z / 2 * self._effector.k
+        lowerBackLeft2   = self._effector.origin.locate_new('franka_effector_lbl',-self.base_x * self._effector.i / 2 - self.base_y * self._effector.j / 2 - self.base_z / 2 * self._effector.k )
+        upperFrontRight2 = self._effector.origin.locate_new('franka_effector_ufr', self.base_x * self._effector.i / 2 + self.base_y * self._effector.j / 2 + self.base_z / 2 * self._effector.k )
         effectorFP = cube(self._effector, lowerBackLeft2, upperFrontRight2, point, delta)
         return Or(baseFP, abFP, cdFP, efFP, effectorFP)
     
@@ -312,31 +312,31 @@ class FrankaMoveTo(MotionPrimitive):
         return DurationSpec(0, 2, False) #TODO upper as function of the angle and speed
 
     def pre(self, err = 0.1):
-        return And(self.a0 - err <= self.component._a, self.component._a <= self.a0 + err,
-                   self.b0 - err <= self.component._b, self.component._b <= self.b0 + err,
-                   self.c0 - err <= self.component._c, self.component._c <= self.c0 + err,
-                   self.d0 - err <= self.component._d, self.component._d <= self.d0 + err,
-                   self.e0 - err <= self.component._e, self.component._e <= self.e0 + err,
-                   self.f0 - err <= self.component._f, self.component._f <= self.f0 + err,
-                   self.g0 - err <= self.component._g, self.component._g <= self.g0 + err)
+        return And(self.a0 - err <= self._component._a, self._component._a <= self.a0 + err,
+                   self.b0 - err <= self._component._b, self._component._b <= self.b0 + err,
+                   self.c0 - err <= self._component._c, self._component._c <= self.c0 + err,
+                   self.d0 - err <= self._component._d, self._component._d <= self.d0 + err,
+                   self.e0 - err <= self._component._e, self._component._e <= self.e0 + err,
+                   self.f0 - err <= self._component._f, self._component._f <= self.f0 + err,
+                   self.g0 - err <= self._component._g, self._component._g <= self.g0 + err)
 
     def inv(self, err = 0.1):
-        return And(Min(self.a0, self.a1) - err <= self.component._a, self.component._a <= Max(self.a0, self.a1) + err,
-                   Min(self.b0, self.b1) - err <= self.component._b, self.component._b <= Max(self.b0, self.b1) + err,
-                   Min(self.c0, self.c1) - err <= self.component._c, self.component._c <= Max(self.c0, self.c1) + err,
-                   Min(self.d0, self.d1) - err <= self.component._d, self.component._d <= Max(self.d0, self.d1) + err,
-                   Min(self.e0, self.e1) - err <= self.component._e, self.component._e <= Max(self.e0, self.e1) + err,
-                   Min(self.f0, self.f1) - err <= self.component._f, self.component._f <= Max(self.f0, self.f1) + err,
-                   Min(self.g0, self.g1) - err <= self.component._g, self.component._g <= Max(self.g0, self.g1) + err)
+        return And(Min(self.a0, self.a1) - err <= self._component._a, self._component._a <= Max(self.a0, self.a1) + err,
+                   Min(self.b0, self.b1) - err <= self._component._b, self._component._b <= Max(self.b0, self.b1) + err,
+                   Min(self.c0, self.c1) - err <= self._component._c, self._component._c <= Max(self.c0, self.c1) + err,
+                   Min(self.d0, self.d1) - err <= self._component._d, self._component._d <= Max(self.d0, self.d1) + err,
+                   Min(self.e0, self.e1) - err <= self._component._e, self._component._e <= Max(self.e0, self.e1) + err,
+                   Min(self.f0, self.f1) - err <= self._component._f, self._component._f <= Max(self.f0, self.f1) + err,
+                   Min(self.g0, self.g1) - err <= self._component._g, self._component._g <= Max(self.g0, self.g1) + err)
 
     def post(self, err = 0.0):
-        return And(self.a1 - err <= self.component._a, self.component._a <= self.a1 + err,
-                   self.b1 - err <= self.component._b, self.component._b <= self.b1 + err,
-                   self.c1 - err <= self.component._c, self.component._c <= self.c1 + err,
-                   self.d1 - err <= self.component._d, self.component._d <= self.d1 + err,
-                   self.e1 - err <= self.component._e, self.component._e <= self.e1 + err,
-                   self.f1 - err <= self.component._f, self.component._f <= self.f1 + err,
-                   self.g1 - err <= self.component._g, self.component._g <= self.g1 + err)
+        return And(self.a1 - err <= self._component._a, self._component._a <= self.a1 + err,
+                   self.b1 - err <= self._component._b, self._component._b <= self.b1 + err,
+                   self.c1 - err <= self._component._c, self._component._c <= self.c1 + err,
+                   self.d1 - err <= self._component._d, self._component._d <= self.d1 + err,
+                   self.e1 - err <= self._component._e, self._component._e <= self.e1 + err,
+                   self.f1 - err <= self._component._f, self._component._f <= self.f1 + err,
+                   self.g1 - err <= self._component._g, self._component._g <= self.g1 + err)
 
     def preFP(self, point):
         return self._component.abstractResources(point, 0.05)

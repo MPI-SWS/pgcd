@@ -54,6 +54,24 @@ class Choreography():
                 for m in s.motions:
                     procs.add(m.id)
         return procs
+    
+    def getProcess(self, name):
+        if self.world == None:
+            return None
+        lst = [ p for p in self.world.allProcesses() if p.name() == name ]
+        if len(lst) > 0:
+            assert len(lst) == 1, "getProcess " + str(lst)
+            return lst[0]
+        else:
+            return None
+    
+    def getProcessesAt(self, n):
+        if isinstance(n, type('  ')):
+            name = n
+        else: # a node
+            name = n.start_state[0]
+        procs = self.state_to_processes[name]
+        return { self.getProcess(p) for p in procs }
 
     def hasParallel(self):
         return any( isinstance(node, Fork) for node in self.statements )

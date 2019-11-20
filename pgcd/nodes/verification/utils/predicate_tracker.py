@@ -92,6 +92,7 @@ class ProcessPredicatesTracker:
 class ProcessesPredicatesTracker:
 
     def __init__(self, process_set, value = S.true):
+        assert type(process_set) is set, str(process_set)
         self._process_set = process_set
         self._process_to_pred = { p : ProcessPredicatesTracker(p, value) for p in self._process_set }
         self._var_to_process = {}
@@ -101,6 +102,10 @@ class ProcessesPredicatesTracker:
                 self._var_to_process[v] = p
 
     def copy(self):
+        #print("COPY")
+        #print(self._process_set)
+        #print(self._process_to_pred)
+        #print(str(self))
         cpy = copy.copy(self)
         cpy._process_to_pred = {}
         for p in self._process_set:
@@ -144,17 +149,39 @@ class ProcessesPredicatesTracker:
             self._process_to_pred[p].relaxVariables(vs)
 
     def merge(self, tracker):
+        #print("MERGE")
+        #print(str(self))
+        #print(str(tracker))
+        assert self._process_set == tracker._process_set, str(self._process_set) + " ≠ " + str(tracker._process_set)
         for p in self._process_set:
             self._process_to_pred[p].merge(tracker._process_to_pred[p])
     
     def join(self, tracker):
-        self.merge(tracker) #TODO fixed once we have the thread partition info!!
+        #assert self._process_set.issubset(tracker._process_set), str(self) + "\n" + str(tracker)
+        all_procs = self._process_set.union(tracker._process_set)
+        for p in tracker._process_set:
+            if p in self._process_set:
+                self._process_to_pred[p].merge(tracker._process_to_pred[p])
+            else:
+                self._process_to_pred[p] = tracker._process_to_pred[p]
+        self._process_set = all_procs
 
     def contains(self, tracker):
         return all([ self._process_to_pred[p].contains(tracker._process_to_pred[p]) for p in self._process_set])
 
     def equals(self, tracker):
         return all([ self._process_to_pred[p].equals(tracker._process_to_pred[p]) for p in self._process_set])
+
+    def restrictTo(self, process_set):
+        names = { p.name() for p in self._process_set }
+        assert process_set.issubset(names), "restricting " + str(names) + " to " + str(process_set)
+        new_proc = set()
+        for p in self._process_set:
+            if p.name() not in process_set:
+                del self._process_to_pred[p]
+            else:
+                new_proc.add(p)
+        self._process_set = new_proc
 
     def __str__(self):
         acc = "ProcessPredicatesTracker:"

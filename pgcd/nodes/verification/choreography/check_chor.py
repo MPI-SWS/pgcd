@@ -27,14 +27,6 @@ class ChoreographyCheck:
         self.threadTrackers = None
         self.causality = CausalityTracker(self.comps)
 
-    def getProcess(self, name):
-        lst = [ p for p in self.world.allProcesses() if p.name() == name ]
-        if len(lst) > 0:
-            assert len(lst) == 1, "getProcess " + str(lst)
-            return lst[0]
-        else:
-            return None
-
     def check_well_formedness(self):
         self.syntacic_checks()
         self.thread_checks()
@@ -122,7 +114,7 @@ class ChoreographyCheck:
                 name = comp_mot.id
                 self.process_motions_dictionary[process].add(name)
                 self.comps -= {name}
-                p = self.getProcess(name)
+                p = self.chor.getProcess(name)
                 if p != None:
                     motion = p.motionPrimitive(comp_mot.mp_name, *(comp_mot.mp_args))
                     d2 = motion.duration()

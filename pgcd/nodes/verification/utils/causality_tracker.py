@@ -51,6 +51,7 @@ class CausalityTracker:
 
         self.process_to_vclock[q] = (np.copy(self.process_to_vclock[p][0]), self.process_to_vclock[q][1])
         self.lastEvent = self.process_to_vclock[q][0]
+        # FIXME more complex tracking of the elapsed time accross parallel branches
         # as the message sync we can pick one time (here max) and make it non interruptible, so we can concat again
         self.time = DurationSpec(self.time.max, self.time.max, False)
         #self.inc_thread_vclock(q)

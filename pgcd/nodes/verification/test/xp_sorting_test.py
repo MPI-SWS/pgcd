@@ -92,7 +92,7 @@ def choreo():
             x14d1c = (arm: Rotate(rad(-90), 0, rad(90), rad(-90), 0, rad(150)), carrier: Idle()); x14d1d
             x14d1d = (arm: Grip(), carrier: Idle()) ; x14d1e
             x14d1e = (arm: Rotate(rad(-90), 0, rad(150), rad(-45), rad(210), rad(150)), carrier: Idle()) ; x14d1f
-            x14d1f = (arm: Open(), carrier: Idle()) ; x14d1g
+            x14d1f = (arm: OpenGripper(), carrier: Idle()) ; x14d1g
             x14d1g = arm -> carrier: Ok() ; fork_arm_carrier
             fork_arm_carrier = x14d1h1a || x14d1h2a
             x14d1h1a = (arm: Rotate(rad(-45), rad(210), rad(150), 0, 0, 0)); x14d1h1b
@@ -287,7 +287,7 @@ class XpSortingTest(unittest.TestCase):
         checker.generateTotalGuardsChecks()
         processes = w.allProcesses()
         checker.computePreds(debug)
-        checker.generateCompatibilityChecks()
+        checker.generateCompatibilityChecks(debug)
         for vc in checker.vcs:
             if not vc.discharge(debug=debug):
                 raise Exception(str(vc))
