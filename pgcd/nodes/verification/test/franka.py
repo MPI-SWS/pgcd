@@ -95,7 +95,7 @@ class FrankaEmikaPanda(Process):
         # motion primitives
         Idle(self)
         HomePos(self)
-        MoveTo(self)
+        SetJoints(self)
         Grasp(self)
         Open(self)
     
@@ -162,7 +162,7 @@ class FrankaHomePos(MotionPrimitive):
         return S.true
 
     def post(self):
-        return And(Eq(self._a, 0), Eq(self._b, 0), Eq(self._c, 0), Eq(self._d, 0), Eq(self._e, 0), Eq(self._f, 0), Eq(self._g, 0))
+        return And(Eq(self._component._a, 0), Eq(self._component._b, 0), Eq(self._component._c, 0), Eq(self._component._d, 0), Eq(self._component._e, 0), Eq(self._component._f, 0), Eq(self._component._g, 0))
 
     def preFP(self, point):
         return self._component.abstractResources(point, 0.05)
@@ -274,7 +274,7 @@ class FrankaWait(MotionPrimitive):
 
 
 
-class MoveTo(MotionPrimitiveFactory):
+class SetJoints(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)

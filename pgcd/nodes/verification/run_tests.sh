@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # this path is relative to the test folder, not this folder
-export PYTHONPATH=$PYTHONPATH:.:..:../..:../../interpreter:../choreography:
+export PYTHONPATH=$PYTHONPATH:.:..:../..:../choreography:
 
 echo PYTHONPATH is $PYTHONPATH
 

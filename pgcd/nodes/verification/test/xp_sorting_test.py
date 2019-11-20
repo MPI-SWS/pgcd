@@ -11,7 +11,7 @@ from mpmath import mp
 from experiments_setups import World
 from copy import deepcopy
 from choreography.projection import Projection
-import parser
+import interpreter.parser as parser
 
 import unittest
 
@@ -48,7 +48,8 @@ def choreo():
             x6b = (carrier: SetAngleCart(rad(-90))) ; x6c
             x6c = (carrier: StrafeCart(0, 0, rad(-90), 0.1)) ; x6z
             x7a = (arm: Idle()) ; x7z
-            x8a = (franka: Idle()) ; x8z
+            x8a = (franka: HomePos()) ; x8b
+            x8b = (franka: Idle()) ; x8z
             x9a = (sensor: Idle()) ; x9z
             x6z || x7z || x8z || x9z = x11
             # carrier meets with the sensor and informs the arm+franka
@@ -61,18 +62,18 @@ def choreo():
             x13c = carrier -> arm: Done() ; x13d
             x13d = x13d1a || x13d2a || x13d3a
             x13d1a = frank_fast1 || carrier_slow_green1
-            frank_fast1 = (franka: MoveTo(0, 0, 0, 0, 0, 0, 0, 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317)); frank_fast2
+            frank_fast1 = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317)); frank_fast2
             frank_fast2 = (franka: Idle()); frank_fast3
             carrier_slow_green1 = (carrier: MoveCart(0.6, 0, rad(-90), 0.4)); carrier_slow_green2
             frank_fast3 || carrier_slow_green2 = x13d1b
             x13d1b = carrier -> franka: Ok() ; x13d1c
             x13d1c = (franka: Grasp(0.02), carrier: Idle()) ; x13d1d
-            x13d1d = (franka: MoveTo(0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317, 0, 0, 0, 0, 0, 0, 0), carrier: Idle()); x13d1e
+            x13d1d = (franka: SetJoints(0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317, 0, 0, 0, 0, 0, 0, 0), carrier: Idle()); x13d1e
             x13d1e = franka -> carrier: Ok() ; fork_franka_carrier
             fork_franka_carrier = x13d1f1a || x13d1f2a
-            x13d1f1a = (franka: MoveTo(0, 0, 0, 0, 0, 0, 0, 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354)); x13d1f1b
+            x13d1f1a = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354)); x13d1f1b
             x13d1f1b = (franka: Open()); x13d1f1c
-            x13d1f1c = (franka: MoveTo(0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354, 0, 0, 0, 0, 0, 0, 0)); x13d1f1d
+            x13d1f1c = (franka: HomePos()); x13d1f1d
             x13d1f1d = (franka: Idle()); x13d1f1z
             x13d1f2a = (carrier: MoveCart(0.6, 0.4, rad(-90), -0.4)); x13d1f2b
             x13d1f2b = (carrier: StrafeCart(0.6, 0.0, rad(-90), -0.1)); x13d1f2c
@@ -125,13 +126,15 @@ while (true) {
         case Ok() => {
             receive(carrier, idle) {
                 case Ok() => {
-                    moveTo( -90, 0, 90 );
-                    moveTo( -90, 0, 150 );
+                    rotate( -90, 0, 90 );
                     receive(carrier, idle) {
                         case Ok() => {
-                             gripAndMove(10.5, -45, 210, 150, 5.5);
-                             send(carrier, Ok);
-                             retractArm( );
+                            rotate( -90, 0, 150 );
+                            grip();
+                            rotate(-45, 210, 150);
+                            openGripper();
+                            send(carrier, Ok);
+                            rotate(0, 0, 0);
                         }
                     }
                 }
@@ -157,14 +160,14 @@ while (true) {
             receive(carrier, idle) {
                 case Ok() => {
                     # grab position
-                    setJoint( 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317 );
+                    setJoints( 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317 );
                     receive(carrier, idle) {
                         case Ok() => {
                              grasp(0.02);
-                             homePos( );
+                             setJoints( 0, 0, 0, 0, 0, 0, 0 );
                              send(carrier, Ok);
                              # drop position
-                             setJoint( 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354 );
+                             setJoints( 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354 );
                              open( );
                              homePos( );
                         }
@@ -193,7 +196,7 @@ while (true) {
             strafeCart( -100 );
             send(sensor,Ok);
             receive(sensor, idle) {
-                case Red() => {
+                case Green() => {
                     send(franka, Ok);
                     send(arm, Done);
                     moveCart(400);
@@ -204,10 +207,10 @@ while (true) {
                             strafeCart( 100 );
                             setAngleCart( 0 );
                             moveCart( -500 );
-			}
+                        }
                     }
                 }
-                case Green() => {
+                case Red() => {
                     send(arm, Ok);
                     send(franka, Done);
                     moveCart(-340);
@@ -222,6 +225,7 @@ while (true) {
                     }
                 }
             }
+            send(producer, Ok);
         }
         case Done() => {
             stop( );
@@ -233,15 +237,15 @@ while (true) {
 
 def code_sensor():
     return '''
-x = 0;
+sensor_dummy = 0;
 while (true) {
     receive(producer, idle) {
         case Ok() => {
             receive(carrier, idle) {
                  case Ok() => {
-                     if (x == 0) send(carrier, Green);
+                     if (sensor_dummy == 0) send(carrier, Green);
                      else send(carrier, Red);
-                     x = 1;
+                     sensor_dummy = 1;
                  }
             }
         }
@@ -256,10 +260,10 @@ def code_producer():
     return '''
 Wait(1);
 while (true) {
-    send(sensor, Ok);
     send(carrier, Ok);
     send(arm, Ok);
     send(franka, Ok);
+    send(sensor, Ok);
     receive(carrier, idle) {
         case Ok() => skip;
     }
@@ -299,7 +303,7 @@ class XpSortingTest(unittest.TestCase):
             prog = prser.parse(progs[p.name()])
             ref = Refinement(prog, proj, debug)
             if not ref.check():
-                raise Exception("Refinement:" + p.name())
+                raise Exception("Refinement: " + p.name())
 
 if __name__ == '__main__':
     unittest.main()

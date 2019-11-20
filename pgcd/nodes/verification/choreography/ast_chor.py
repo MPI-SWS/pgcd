@@ -65,12 +65,15 @@ class Choreography():
         else:
             return None
     
-    def getProcessesAt(self, n):
+    def getProcessesNamesAt(self, n):
         if isinstance(n, type('  ')):
             name = n
         else: # a node
             name = n.start_state[0]
-        procs = self.state_to_processes[name]
+        return self.state_to_processes[name]
+
+    def getProcessesAt(self, n):
+        procs = self.getProcessesNamesAt(n)
         return { self.getProcess(p) for p in procs }
 
     def hasParallel(self):

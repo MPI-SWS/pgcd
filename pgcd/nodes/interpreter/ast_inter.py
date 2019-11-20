@@ -199,7 +199,7 @@ class IfComponent(Node):
 
     def label(self, label_to_node):
         super().label(label_to_node)
-        program.label(label_to_node)
+        self.program.label(label_to_node)
 
 class While(Node):
 

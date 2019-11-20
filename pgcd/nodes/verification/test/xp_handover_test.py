@@ -9,7 +9,7 @@ from mpmath import mp
 from experiments_setups import World
 from copy import deepcopy
 from choreography.projection import Projection
-import parser
+import interpreter.parser as parser
 
 import unittest
 

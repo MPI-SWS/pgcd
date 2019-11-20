@@ -34,7 +34,7 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
             return [ s for succ in node.end_state for s in findMp(succ) ]
     def hasAction(state, first = True):
         node = state_to_node[state]
-        if isinstance(node, Motion) and not isPlaceholderMp(node.motions[0]):
+        if isinstance(node, Motion):
             return True
         elif isinstance(node, SendMessage) or isinstance(node, GuardedChoice) or isinstance(node, ReceiveMessage):
             return True
