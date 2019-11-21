@@ -3,6 +3,7 @@ from compatibility import choiceAt
 from utils.causality_tracker import *
 from threads import *
 from spec import DurationSpec
+from propagate_footprints import *
 
 class ChoreographyCheck:
 
@@ -33,6 +34,10 @@ class ChoreographyCheck:
         if self.debug:
             print("causality, local choice, connectedness, and ... checks")
         self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
+        if self.debug:
+            print("propagate footprint")
+        fill_fp = PropagateFootprint(self.chor, self.debug)
+        fill_fp.perform()
 
     def thread_checks(self):
         if self.debug:

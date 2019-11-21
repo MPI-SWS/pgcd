@@ -562,9 +562,9 @@ class ArmSetAllAngles(MotionPrimitive):
         return DurationSpec(0, 1, False) #TODO function of angle and speed
 
     def pre(self):
-        return And( self._component.a_eff() >= self.angle3a - 0.01, self._component.a_eff() <= self.angle3a + 0.01,
-                    self._component.b_eff() >= self.angle2a - 0.01, self._component.b_eff() <= self.angle2a + 0.01,
-                    self._component.c_eff() >= self.angle1a - 0.01, self._component.c_eff() <= self.angle1a + 0.01)
+        return And( self._component._a >= self.angle3a - 0.01, self._component._a <= self.angle3a + 0.01,
+                    self._component._b >= self.angle2a - 0.01, self._component._b <= self.angle2a + 0.01,
+                    self._component._c >= self.angle1a - 0.01, self._component._c <= self.angle1a + 0.01)
 
     def post(self):
         targetCanti = self.angle2b
@@ -572,24 +572,25 @@ class ArmSetAllAngles(MotionPrimitive):
             targetCanti = targetCanti + self.delta
         else:
             targetCanti = targetCanti - self.delta
-        return And( Eq( self._component.a_eff(), self.angle3b ),
-                    Eq( self._component.b_eff(), targetCanti ),
-                    Eq( self._component.c_eff(), self.angle1b ))
+        a = Eq( self._component._a, self.angle3b )
+        b = Eq( self._component._b, targetCanti )
+        c = Eq( self._component._c, self.angle1b )
+        return And(a, b, c)
 
     def inv(self):
         f = true
         if self.angle1a < self.angle1b:
-            f = And(f, self._component.c_eff() >= self.angle1a, self._component.c_eff() <= self.angle1b)
-        else:
-            f = And(f, self._component.c_eff() >= self.angle1b, self._component.c_eff() <= self.angle1a)
-        if self.angle2a < self.angle2b:
-            f = And(f, self._component.b_eff() >= self.angle2a, self._component.b_eff() <= self.angle2b)
-        else:
-            f = And(f, self._component.b_eff() >= self.angle2b, self._component.b_eff() <= self.angle2a)
-        if self.angle3a < self.angle3b:
-            f = And(f, self._component.a_eff() >= self.angle3a, self._component.a_eff() <= self.angle3b)
-        else:
-            f = And(f, self._component.a_eff() >= self.angle3b, self._component.a_eff() <= self.angle3a)
+            f = And(f, self._component._c >= self.angle1a, self._component._c <= self.angle1b)
+        else:                           
+            f = And(f, self._component._c >= self.angle1b, self._component._c <= self.angle1a)
+        if self.angle2a < self.angle2b: 
+            f = And(f, self._component._b >= self.angle2a, self._component._b <= self.angle2b)
+        else:                           
+            f = And(f, self._component._b >= self.angle2b, self._component._b <= self.angle2a)
+        if self.angle3a < self.angle3b: 
+            f = And(f, self._component._a >= self.angle3a, self._component._a <= self.angle3b)
+        else:                           
+            f = And(f, self._component._a >= self.angle3b, self._component._a <= self.angle3a)
         return self.timify(f)
 
     def preFP(self, point):

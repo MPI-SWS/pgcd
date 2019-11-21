@@ -106,6 +106,10 @@ class CompatibilityCheck:
         cp = ComputePreds(self.chor, self.processes, debug = debug)
         cp.perform()
         self.state_to_pred = cp.result()
+        if debug:
+            print("PREDS")
+            for k, v in self.state_to_pred.items():
+                print(k, v)
         self.predComputed = True
 
     def isTimeInvariant(self, formula):
@@ -190,6 +194,19 @@ class CompatibilityCheck:
                     #process resources are included in invFP
                     fs = [And(assumptions, inv, pointDomain, p.abstractResources(point), Not(f1)), And(assumptions, inv, pointDomain, p.ownResources(point), Not(f1))]
                     self.vcs.append( VC("inv resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
+                # invFP are in the overall FP
+                overallFpSpec = self.chor.state_to_footprints[node.start_state[0]]
+                fpFormula = overallFpSpec.fpOver(px, py, pz)
+                for p in processes:
+                    if debug:
+                        print("invariant (3) for process " + p.name())
+                    motion = motionForProcess(node.motions, p)
+                    mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
+                    f1 = mp.invFP(point)
+                    assert(self.isTimeInvariant(f1))
+                    f1 = deTimifyFormula(p.variables(), f1)
+                    fs = [And(assumptions, inv, pointDomain, f1, Not(fpFormula))]
+                    self.vcs.append( VC("inv FP in overall FP for " + p.name() + " @ " + str(node.start_state[0]), fs) )
                 #post:
                 post = frame
                 for p in processes:
@@ -218,8 +235,33 @@ class CompatibilityCheck:
                     #process resources are included in postFP
                     fs = [And(assumptions, post, pointDomain, p.abstractResources(point), Not(f1)), And(assumptions, post, pointDomain, p.ownResources(point), Not(f1))]
                     self.vcs.append( VC("post resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
+                # postFP is in the overall FP
+                for p in processes:
+                    if debug:
+                        print("post (3) for process " + p.name())
+                    motion = motionForProcess(node.motions, p)
+                    mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
+                    f1 = mp.postFP(point)
+                    assert(self.isTimeInvariant(f1))
+                    f1 = deTimifyFormula(p.variables(), f1)
+                    fs = [And(assumptions, inv, pointDomain, f1, Not(fpFormula))]
+                    self.vcs.append( VC("post FP in overall FP for " + p.name() + " @ " + str(node.start_state[0]), fs) )
             if isinstance(node, Fork):
-                assert False, "TODO partition of the footprint"
+                if debug:
+                   print("fork FP", str(node))
+                overallFpSpec = self.chor.state_to_footprints[node.start_state[0]]
+                fpFormula = overallFpSpec.fpOver(px, py, pz)
+                for e1 in node.end_state:
+                    e1FpSpec = self.chor.state_to_footprints[e1]
+                    e1Fp = e1FpSpec.fpOver(px, py, pz)
+                    fs = [And(pointDomain, e1Fp, Not(fpFormula))]
+                    self.vcs.append( VC("fork to " + e1 + " @ " + str(node.start_state[0]), fs) )
+                    for e2 in node.end_state:
+                        if e1 > e2:
+                            e2FpSpec = self.chor.state_to_footprints[e2]
+                            e2Fp = e2FpSpec.fpOver(px, py, pz)
+                            fs = [And(pointDomain, e1Fp, e2Fp)] 
+                            self.vcs.append( VC("fork split " + e1 + " and " + e2 + " @ " + str(node.start_state[0]), fs) )
 
     def localChoiceChecks(self):
         for node in self.state_to_node.values():

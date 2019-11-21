@@ -133,7 +133,8 @@ class FrankaEmikaPanda(Process):
     # overapproax of the workspace in https://www.franka.de/Panda_Datasheet_May_2019.pdf
     def abstractResources(self, point, delta = 0.0):
         # delta makes it bigger
-        return cylinder(self.frame(), 0.855, 1.26, point, delta)
+        bottom = self._frame.locate_new('franka_bottom_workspace', -0.4 * self._frame.k)
+        return cylinder(bottom, 0.9, 1.66, point, delta)
     
     def mountingPoint(self, index):
         assert(index == 0)
@@ -321,13 +322,41 @@ class FrankaMoveTo(MotionPrimitive):
                    self.g0 - err <= self._component._g, self._component._g <= self.g0 + err)
 
     def inv(self, err = 0.1):
-        return And(Min(self.a0, self.a1) - err <= self._component._a, self._component._a <= Max(self.a0, self.a1) + err,
-                   Min(self.b0, self.b1) - err <= self._component._b, self._component._b <= Max(self.b0, self.b1) + err,
-                   Min(self.c0, self.c1) - err <= self._component._c, self._component._c <= Max(self.c0, self.c1) + err,
-                   Min(self.d0, self.d1) - err <= self._component._d, self._component._d <= Max(self.d0, self.d1) + err,
-                   Min(self.e0, self.e1) - err <= self._component._e, self._component._e <= Max(self.e0, self.e1) + err,
-                   Min(self.f0, self.f1) - err <= self._component._f, self._component._f <= Max(self.f0, self.f1) + err,
-                   Min(self.g0, self.g1) - err <= self._component._g, self._component._g <= Max(self.g0, self.g1) + err)
+        cstr = S.true
+        cstr = And(cstr, Min(self.a0, self.a1) - err <= self._component._a )
+        cstr = And(cstr, self._component._a <= Max(self.a0, self.a1) + err )
+        cstr = And(cstr, Min(self.b0, self.b1) - err <= self._component._b )
+        cstr = And(cstr, self._component._b <= Max(self.b0, self.b1) + err )
+        cstr = And(cstr, Min(self.c0, self.c1) - err <= self._component._c )
+        cstr = And(cstr, self._component._c <= Max(self.c0, self.c1) + err )
+        cstr = And(cstr, Min(self.d0, self.d1) - err <= self._component._d )
+        cstr = And(cstr, self._component._d <= Max(self.d0, self.d1) + err )
+        cstr = And(cstr, Min(self.e0, self.e1) - err <= self._component._e )
+        cstr = And(cstr, self._component._e <= Max(self.e0, self.e1) + err )
+        cstr = And(cstr, Min(self.f0, self.f1) - err <= self._component._f )
+        cstr = And(cstr, self._component._f <= Max(self.f0, self.f1) + err )
+        cstr = And(cstr, Min(self.g0, self.g1) - err <= self._component._g )
+        cstr = And(cstr, self._component._g <= Max(self.g0, self.g1) + err )
+        changing = []
+        if self.a0 != self.a1:
+            changing.append( (self.a0,self.a1,self._component._a) )
+        if self.b0 != self.b1:
+            changing.append( (self.b0,self.b1,self._component._b) )
+        if self.c0 != self.c1:
+            changing.append( (self.c0,self.c1,self._component._c) )
+        if self.d0 != self.d1:
+            changing.append( (self.d0,self.d1,self._component._d) )
+        if self.e0 != self.e1:
+            changing.append( (self.e0,self.e1,self._component._e) )
+        if self.f0 != self.f1:
+            changing.append( (self.f0,self.f1,self._component._f) )
+        if self.g0 != self.g1:
+            changing.append( (self.g0,self.g1,self._component._g) )
+        for i in range(1, len(changing)):
+            a0, a1, a = changing[0]
+            b0, b1, b = changing[i] 
+            cstr = And(cstr, Eq( (a - a0) / (a1 - a0), (b - b0) / (b1 - b0) ) )
+        return cstr
 
     def post(self, err = 0.0):
         return And(self.a1 - err <= self._component._a, self._component._a <= self.a1 + err,

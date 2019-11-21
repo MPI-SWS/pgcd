@@ -12,6 +12,7 @@ from experiments_setups import World
 from copy import deepcopy
 from choreography.projection import Projection
 import interpreter.parser as parser
+import time
 
 import unittest
 
@@ -21,10 +22,10 @@ def world():
     w = World(  (    0,  -0.7, 0.08,       0), # arm
                 ( -0.6,     0,    0,       0), # carrier
                 ( -0.2,   1.1,    0, mp.pi/2), # franka
-                (-0.75,     0,    0,       0), # producer
-                (  0.1, -0.05,    0,       0)) # sensor
+                (-0.95,     0,    0,       0), # producer
+                ( 0.15, -0.05,    0,       0)) # sensor
     # specs
-    arm       = Arm("arm", w, 0, 2.2689280275926285, -2.2689280275926285, 0)
+    arm       = Arm("arm", w, 0, -2.2689280275926285, -2.2689280275926285, 0)
     carrier   = CartSquare("carrier", w, 1)
     franka    = FrankaEmikaPanda("franka", w, 2)
     producer  = StaticProcess("producer", 0, 0, 0, 0, 0.2, 0.2, 0.05, w, 3)
@@ -32,7 +33,8 @@ def world():
     return w
 
 # largest choreography ever ?
-# TODO add footprint annotations
+# TODO footprint annotations
+# if no annotation given: take the union of the component footprint without restriction on their state variables
 def choreo():
     return ''' Sorting =
         def start = (producer: Wait(1), arm: Idle(), franka: Idle(), carrier: Idle(), sensor: Idle()); x0
@@ -41,12 +43,16 @@ def choreo():
             x2 = producer -> arm: Ok(); x3
             x3 = producer -> franka: Ok(); x4
             x4 = producer -> sensor: Ok(); fork_producer
-            fork_producer = x5 || x10a
-            x5 = x6a || x7a || x8a || x9a
+            fork_producer = { fpx > -0.71 } x5 ||   # all - producer
+                            { fpx < -0.72 } x10a    # producer
+            x5 = { (fpx > -0.7) && (fpx < 0.1) && (fpy > -0.2) && (fpy < 0.2) } x6a ||  # carrier
+                 { (fpx > -0.4) && (fpy < -0.3) } x7a ||                                # arm
+                 { (fpx > -0.7) && (fpy > 0.3) } x8a ||                                 # franka
+                 { (fpx >  0.1) && (fpy > -0.15) && (fpy < 0.15) } x9a                  # sensor
             #  carrier move, the other stay
             x6a = (carrier: MoveCart(0, 0, 0, 0.5)) ; x6b
             x6b = (carrier: SetAngleCart(rad(-90))) ; x6c
-            x6c = (carrier: StrafeCart(0, 0, rad(-90), 0.1)) ; x6z
+            x6c = (carrier: StrafeCart(0.5, 0, rad(-90), -0.1)) ; x6z
             x7a = (arm: Idle()) ; x7z
             x8a = (franka: HomePos()) ; x8b
             x8b = (franka: Idle()) ; x8z
@@ -60,23 +66,30 @@ def choreo():
             x13a = sensor -> carrier: Green() ; x13b
             x13b = carrier -> franka: Ok() ; x13c
             x13c = carrier -> arm: Done() ; x13d
-            x13d = x13d1a || x13d2a || x13d3a
-            x13d1a = frank_fast1 || carrier_slow_green1
-            frank_fast1 = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317)); frank_fast2
+            x13d = { (fpx > -0.7) && (fpy > -0.2) && ( (fpy > 0.2) || (fpx < 0.1) ) } x13d1a || # franka + carrier
+                   { (fpx > -0.7) && (fpy < -0.3)  } x13d2a ||                                  # arm
+                   { (fpx >  0.1) && (fpy > -0.15) && (fpy < 0.15) } x13d3a                     # sensor
+            x13d1a = { (fpx > -0.6) && (fpy > 0.3) && ( (fpy > 0.6) || (fpz > 0.25) ) } frank_fast1 ||
+                     { (fpx > -0.6) && (fpx < 0.1) && (fpy > -0.2) && (fpy < 0.5) && (fpz < 0.2) } carrier_slow_green1
+            #frank_fast1 = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317)); frank_fast2
+            frank_fast1 = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.178310,0.635300,-0.449920,-0.234,2.866786,2.016097,1.141317)); frank_fast2
             frank_fast2 = (franka: Idle()); frank_fast3
-            carrier_slow_green1 = (carrier: MoveCart(0.6, 0, rad(-90), 0.4)); carrier_slow_green2
+            carrier_slow_green1 = (carrier: MoveCart(0.6, 0, rad(-90), -0.4)); carrier_slow_green2
             frank_fast3 || carrier_slow_green2 = x13d1b
             x13d1b = carrier -> franka: Ok() ; x13d1c
             x13d1c = (franka: Grasp(0.02), carrier: Idle()) ; x13d1d
-            x13d1d = (franka: SetJoints(0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317, 0, 0, 0, 0, 0, 0, 0), carrier: Idle()); x13d1e
+            #x13d1d = (franka: SetJoints(0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317, 0, 0, 0, 0, 0, 0, 0), carrier: Idle()); x13d1e
+            x13d1d = (franka: SetJoints(0.178310,0.635300,-0.449920,-0.234,2.866786,2.016097,1.141317, 0, 0, 0, 0, 0, 0, 0), carrier: Idle()); x13d1e
             x13d1e = franka -> carrier: Ok() ; fork_franka_carrier
-            fork_franka_carrier = x13d1f1a || x13d1f2a
-            x13d1f1a = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354)); x13d1f1b
+            fork_franka_carrier = { (fpx > -0.6) && (fpy > 0.3) && ( (fpy > 0.6) || (fpz > 0.25) ) } x13d1f1a ||            # franka
+                                  { (fpx > -0.6) && (fpx < 0.1) && (fpy > -0.2) && (fpy < 0.5) && (fpz < 0.2) } x13d1f2a    # carrier
+            #x13d1f1a = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354)); x13d1f1b
+            x13d1f1a = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.926170,-0.908281,1.469714,-0.35425,1.511592,1.437029,0.573354)); x13d1f1b
             x13d1f1b = (franka: Open()); x13d1f1c
             x13d1f1c = (franka: HomePos()); x13d1f1d
             x13d1f1d = (franka: Idle()); x13d1f1z
-            x13d1f2a = (carrier: MoveCart(0.6, 0.4, rad(-90), -0.4)); x13d1f2b
-            x13d1f2b = (carrier: StrafeCart(0.6, 0.0, rad(-90), -0.1)); x13d1f2c
+            x13d1f2a = (carrier: MoveCart(0.6, 0.4, rad(-90), 0.4)); x13d1f2b
+            x13d1f2b = (carrier: StrafeCart(0.6, 0.0, rad(-90), 0.1)); x13d1f2c
             x13d1f2c = (carrier: SetAngleCart(0)); x13d1f2d
             x13d1f2d = (carrier: MoveCart(0.5, 0.0, 0, -0.5)); x13d1f2z
             x13d2a = (arm: Idle()) ; x13d2z
@@ -87,19 +100,22 @@ def choreo():
             x14a = sensor -> carrier: Red() ; x14b
             x14b = carrier -> arm: Ok() ; x14c
             x14c = carrier -> franka: Done() ; x14d
-            x14d = x14d1a || x14d2a || x14d3a
-            x14d1a = (arm: Rotate(0, 0, 0, rad(-90), 0, rad(90)), carrier: MoveCart(0.6, 0, rad(-90), -0.4)); x14d1b
+            x14d = { (fpx > -0.7) && (fpy < 0.2) && ( (fpy < -0.2) || (fpx < 0.1) ) } x14d1a || # arm + carrier
+                   { (fpx > -0.7) && (fpy > 0.3) } x14d2a ||                                    # franka
+                   { (fpx >  0.1) && (fpy > -0.15) && (fpy < 0.15) } x14d3a                     # sensor
+            x14d1a = (arm: Rotate(0, 0, 0, rad(-90), 0, rad(90)), carrier: MoveCart(0.6, 0, rad(-90), 0.4)); x14d1b
             x14d1b = carrier -> arm: Ok() ; x14d1c
             x14d1c = (arm: Rotate(rad(-90), 0, rad(90), rad(-90), 0, rad(150)), carrier: Idle()); x14d1d
             x14d1d = (arm: Grip(), carrier: Idle()) ; x14d1e
             x14d1e = (arm: Rotate(rad(-90), 0, rad(150), rad(-45), rad(210), rad(150)), carrier: Idle()) ; x14d1f
             x14d1f = (arm: OpenGripper(), carrier: Idle()) ; x14d1g
             x14d1g = arm -> carrier: Ok() ; fork_arm_carrier
-            fork_arm_carrier = x14d1h1a || x14d1h2a
+            fork_arm_carrier = { (fpx > -0.7) && (fpy < 0.2) && ( (fpy < -0.2) || (fpx < 0.1) ) } x14d1h1a ||           # arm
+                               { (fpx > -0.7) && (fpx < 0.1) && (fpy > -0.5) && (fpy < 0.2) && (fpz < 0.2) } x14d1h2a   # carrir
             x14d1h1a = (arm: Rotate(rad(-45), rad(210), rad(150), 0, 0, 0)); x14d1h1b
             x14d1h1b = (arm: Idle()); x14d1h1z
-            x14d1h2a = (carrier: MoveCart(0.6, 0.4, rad(-90), 0.4)); x14d1h2b
-            x14d1h2b = (carrier: StrafeCart(0.6, 0.0, rad(-90), -0.1)); x14d1h2c
+            x14d1h2a = (carrier: MoveCart(0.6, -0.4, rad(-90), -0.4)); x14d1h2b
+            x14d1h2b = (carrier: StrafeCart(0.6, 0.0, rad(-90), 0.1)); x14d1h2c
             x14d1h2c = (carrier: SetAngleCart(0)); x14d1h2d
             x14d1h2d = (carrier: MoveCart(0.5, 0.0, 0, -0.5)); x14d1h2z
             x14d2a = (franka: Idle()) ; x14d2z
@@ -274,7 +290,7 @@ while (true) {
 
 class XpSortingTest(unittest.TestCase):
 
-    def test_sorting(self, debug = True):
+    def test_sorting(self, debug = False):
         w = world()
         ch = choreo()
         progs = { "arm": code_arm(),
@@ -282,20 +298,35 @@ class XpSortingTest(unittest.TestCase):
                   "carrier": code_carrier(),
                   "sensor": code_sensor(),
                   "producer": code_producer()}
+        start = time.time()
         visitor = Projection()
         visitor.execute(ch, w, debug)
         chor = visitor.choreography
         vectorize(chor, w)
+        end = time.time()
+        print("Syntactic checks:", end - start)
+        start = end
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        processes = w.allProcesses()
         checker.computePreds(debug)
         checker.generateCompatibilityChecks(debug)
-        for vc in checker.vcs:
+        end = time.time()
+        print("VC generation:", end - start)
+        start = end
+        print("#VC:", len(checker.vcs))
+# VC status
+# 3: ? (expensive!!)
+        for i in range(4, len(checker.vcs)):
+            vc = checker.vcs[i]
+            if debug or True:
+                print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
                 raise Exception(str(vc))
-        print("#VC:", len(checker.vcs))
+        end = time.time()
+        print("VC solving:", end - start)
+        start = end
+        processes = w.allProcesses()
         for p in processes:
             visitor.choreography = deepcopy(chor)
             proj = visitor.project(p.name(), p, debug)
@@ -304,6 +335,9 @@ class XpSortingTest(unittest.TestCase):
             ref = Refinement(prog, proj, debug)
             if not ref.check():
                 raise Exception("Refinement: " + p.name())
+        end = time.time()
+        print("refinement:", end - start)
+        start = end
 
 if __name__ == '__main__':
     unittest.main()

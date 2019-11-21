@@ -27,7 +27,8 @@ class Choreography():
         self.predicate = predicate
         self.start_state = start_state
         self.world = None # world is a spec.Component
-        self.state_to_processes = None # filled later but the analysis
+        self.state_to_processes = None # filled later by the analysis
+        self.state_to_footprints = None # filled later by the analysis
 
     def __str__(self):
         string = "def " + self.id + " \n"
@@ -231,15 +232,19 @@ class Merge(DistributedStateNode):
 
 class Fork(DistributedStateNode):
 
-    def __init__(self, start_state, continue_state):
+    def __init__(self, start_state, footprints, continue_state):
         DistributedStateNode.__init__(self, Type.fork, start_state, continue_state)
+        self.footprints = footprints
 
     def __str__(self):
         string = ''.join(self.start_state) + ' = '
-        for x in self.end_state:
+        for fp, x in zip(self.footprints, self.end_state):
+            if fp != None:
+                string += str(fp)
+                string += ' '
             string += str(x)
             if x != self.end_state[-1]:
-                string += '||'
+                string += ' || '
         return string
 
     def accept(self, visitor):
@@ -248,6 +253,22 @@ class Fork(DistributedStateNode):
     def shift_delay_check(self, node):
         return  self == node
 
+class Footprint():
+
+    def __init__(self, x, y, z, expr):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.expr = expr
+
+    def point(self, frame):
+        return frame.locate_new("fp", frame.i * self.x + frame.j * self.y + frame.k * self.z)
+
+    def fpOver(self, x, y, z):
+        return self.expr.subs([(self.x, x), (self.y, y), (self.z, z)])
+
+    def __str__(self):
+        return "{ (" + str(self.x) + ", " +  str(self.y) + ", " + str(self.z) + ") : " + str(self.expr) + " }"
 
 class Join(DistributedStateNode):
 

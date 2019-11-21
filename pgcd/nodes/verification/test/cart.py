@@ -255,7 +255,9 @@ class MoveCart(MotionPrimitiveFactory):
     def setParameters(self, args):
         assert(len(args) == 4)
         direction = self._component.position().i * args[3]
-        return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], direction)
+        dx = cos(args[2]) * args[3]
+        dy = sin(args[2]) * args[3]
+        return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy)
 
 class StrafeCart(MotionPrimitiveFactory):
 
@@ -268,17 +270,20 @@ class StrafeCart(MotionPrimitiveFactory):
     def setParameters(self, args):
         assert(len(args) == 4)
         direction = self._component.position().j * args[3]
-        return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], direction)
+        dx = sin(args[2]) * args[3]
+        dy = cos(args[2]) * args[3]
+        return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy)
 
 class CartMoveDirection(CartMotionPrimitive):
     
-    def __init__(self, name, component, x, y, t, direction):
+    def __init__(self, name, component, x, y, t, x1, y1):
         super().__init__(name, component)
         self._frame = self._component.frame()
         self.x = x
         self.y = y
         self.t = t
-        self.d = direction
+        self.x1 = x1
+        self.y1 = y1
         self._maxErrorPre = 0.01
         self._maxErrorPost = 0.005
         self._radius = component.radius
@@ -288,7 +293,7 @@ class CartMoveDirection(CartMotionPrimitive):
         return self._frame.locate_new("src", self._frame.i * self.x + self._frame.j * self.y)
 
     def _dstFrame(self):
-        return self._frame.locate_new("dst", self._frame.i * self.x + self._frame.j * self.y + self.d)
+        return self._frame.locate_new("dst", self._frame.i * self.x1 + self._frame.j * self.y1)
     
     def modifies(self):
         return [self._component._x, self._component._y]
@@ -297,7 +302,7 @@ class CartMoveDirection(CartMotionPrimitive):
         return DurationSpec(3, 10, False) #TODO upper as function of the distance+angle and speed
 
     def pre(self):
-        onGround = And(self._onGroundVec(self.d), self._onGround(self._component.position()))
+        onGround = self._onGround(self._component.position())
         workSpace = distance(self._component.position().origin, self._srcFrame().origin) <= 0.01 #because δ-sat
         return And(onGround, workSpace)
 
