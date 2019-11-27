@@ -1,17 +1,23 @@
 # PGCD - robot Programming and verification with Geometry, Concurrency, and Dynamics
 
-__currently being ported to ROS 2 (partially working)__
+PGCD is a programming language and verifcation system for programming and verification of robotic chroeographies.
 
-PGCD is a programming language and verifcation system for communication and execution of motion primitives within ROS nodes.
 
 ## Features
 
-Currently the main functionalities of PGCD are:
-* Communication between ROS nodes (ROS message & ROS topics)
-* Execute motion primitive (CableRobot project by Marcus Pirron)
-* Tracking frames (TF2 library)
+TODO ...
 
-## Project setup 
+## Status
+
+Recently ported to ROS 2.
+__Partially working.__
+
+Currently there is some issue with the frame conversion.
+(I cannot import `tf2_geometry_msgs` for some reason.)
+
+The current workaround is to manually implement the appropriate transform and manually register it with `tf2_ros`.
+
+## Project Setup 
 
 1.  Install ROS 2 Eloquent (tested with ubuntu 18.04)
 2.  Install colcon: `sudo apt install python3-colcon-common-extensions`
@@ -33,24 +39,20 @@ Currently the main functionalities of PGCD are:
     ```
     $ echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
     ```
-
-## Running a Test
-
-Let us run a simple example of two processes sending a message to each other.
-
-To run the example you need to:
-
-```
-$ cd ~/ros2_ws
-$ export PYTHONPATH=$PYTHONPATH:.
-$ ros2 launch pgcd simple_example.launch.py
-```
+6.  Running a Test.
+    Let us run a simple example of two processes sending a message to each other.
+    To run the example you need to:
+    ```
+    $ cd ~/ros2_ws
+    $ export PYTHONPATH=$PYTHONPATH:.
+    $ ros2 launch pgcd simple_example.launch.py
+    ```
 
 ## PGCD Program structure
 
 TODO:
 - program
-- motion primitive
+- motion primitives (integration of the code, specification)
 - frame dependencies and shift
 - launch file
 - choreographic specification
