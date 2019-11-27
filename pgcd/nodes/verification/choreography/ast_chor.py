@@ -1,6 +1,5 @@
-from email.policy import strict
 from enum import Enum
-from sympy import And
+import sympy as sp 
 
 
 class Type(Enum):
@@ -28,6 +27,8 @@ class Choreography():
         self.predicate = predicate
         self.start_state = start_state
         self.world = None # world is a spec.Component
+        self.state_to_processes = None # filled later by the analysis
+        self.state_to_footprints = None # filled later by the analysis
 
     def __str__(self):
         string = "def " + self.id + " \n"
@@ -54,6 +55,27 @@ class Choreography():
                 for m in s.motions:
                     procs.add(m.id)
         return procs
+    
+    def getProcess(self, name):
+        if self.world == None:
+            return None
+        lst = [ p for p in self.world.allProcesses() if p.name() == name ]
+        if len(lst) > 0:
+            assert len(lst) == 1, "getProcess " + str(lst)
+            return lst[0]
+        else:
+            return None
+    
+    def getProcessesNamesAt(self, n):
+        if isinstance(n, type('  ')):
+            name = n
+        else: # a node
+            name = n.start_state[0]
+        return self.state_to_processes[name]
+
+    def getProcessesAt(self, n):
+        procs = self.getProcessesNamesAt(n)
+        return { self.getProcess(p) for p in procs }
 
     def hasParallel(self):
         return any( isinstance(node, Fork) for node in self.statements )
@@ -164,7 +186,7 @@ class GuardedChoice(DistributedStateNode):
             if isinstance(node, GuardedChoice):
                 successors = node.get_successors(state_to_node)
                 for s in successors:
-                    new_guard = GuardArg(And(g.expression, s.expression), s.id)
+                    new_guard = GuardArg(sp.And(g.expression, s.expression), s.id)
                     acc.append(new_guard)
             else:
                 acc.append(g)
@@ -210,15 +232,19 @@ class Merge(DistributedStateNode):
 
 class Fork(DistributedStateNode):
 
-    def __init__(self, start_state, continue_state):
+    def __init__(self, start_state, footprints, continue_state):
         DistributedStateNode.__init__(self, Type.fork, start_state, continue_state)
+        self.footprints = footprints
 
     def __str__(self):
         string = ''.join(self.start_state) + ' = '
-        for x in self.end_state:
+        for fp, x in zip(self.footprints, self.end_state):
+            if fp != None:
+                string += str(fp)
+                string += ' '
             string += str(x)
             if x != self.end_state[-1]:
-                string += '||'
+                string += ' || '
         return string
 
     def accept(self, visitor):
@@ -227,6 +253,22 @@ class Fork(DistributedStateNode):
     def shift_delay_check(self, node):
         return  self == node
 
+class Footprint():
+
+    def __init__(self, x, y, z, expr):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.expr = expr
+
+    def point(self, frame):
+        return frame.locate_new("fp", frame.i * self.x + frame.j * self.y + frame.k * self.z)
+
+    def fpOver(self, x, y, z):
+        return self.expr.subs([(self.x, x), (self.y, y), (self.z, z)])
+
+    def __str__(self):
+        return "{ (" + str(self.x) + ", " +  str(self.y) + ", " + str(self.z) + ") : " + str(self.expr) + " }"
 
 class Join(DistributedStateNode):
 

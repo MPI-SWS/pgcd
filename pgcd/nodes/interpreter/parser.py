@@ -3,7 +3,7 @@ import logging
 import ply.yacc as yacc
 
 import interpreter.lexer as rlex
-from ast_inter import *
+from interpreter.ast_inter import *
 from sympy import *
 
 class Parser:
@@ -30,7 +30,8 @@ class Parser:
         self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
 
     def parse(self, text):
-        return Statement(self.parser.parse(text, self.lexer.lexer) + [Exit(S(0))])
+        parsed = self.parser.parse(text, self.lexer.lexer)
+        return Statement(parsed + [Exit(S(0))])
 
     # ------------------------------------- STATEMENT --------------------------------------
 
@@ -61,16 +62,20 @@ class Parser:
         p[0] = Statement(p[2])
 
     def p_receive_msg(self, p):
-        'receive   : RECEIVE LPAREN motion RPAREN LBRACE actions RBRACE'
-        p[0] = Receive(p[3], p[6])
+        'receive   : RECEIVE LPAREN ID COMMA motion RPAREN LBRACE actions RBRACE'
+        p[0] = Receive(p[3], p[5], p[8])
 
     def p_send_msg(self, p):
-        '''send : SEND LPAREN ID COMMA ID COMMA args RPAREN'''
-        p[0] = Send(p[3], p[5], p[7])
+        '''send : SEND LPAREN ID COMMA ID COMMA args RPAREN
+                | SEND LPAREN ID COMMA ID RPAREN'''
+        if len(p) > 8:
+            p[0] = Send(p[3], p[5], p[7])
+        else:
+            p[0] = Send(p[3], p[5], [])
 
     def p_if_code(self, p):
         'if : IF LPAREN expression RPAREN statement ELSE statement'
-        p[0] = If(sympify(p[3]), p[6], p[10])
+        p[0] = If(sympify(p[3]), p[5], p[7])
 
     def p_while_code(self, p):
         'while : WHILE LPAREN expression RPAREN statement'
@@ -84,7 +89,7 @@ class Parser:
         ''' motion : ID LPAREN args RPAREN
                    | ID LPAREN RPAREN
                    | ID '''
-        if len(p) > 2:
+        if len(p) > 4:
             p[0] = Motion(p[1], p[3])
         else:
             p[0] = Motion(p[1])

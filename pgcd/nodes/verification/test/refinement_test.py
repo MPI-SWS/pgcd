@@ -1,6 +1,6 @@
 from choreography.projection import Projection
 import unittest
-import parser
+import interpreter.parser as parser
 from refinement import *
 from parser_chor import *
 from experiments_setups import *

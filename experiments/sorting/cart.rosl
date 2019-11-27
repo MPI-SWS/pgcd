@@ -1,0 +1,10 @@
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            skip;
+        }
+        case Done() => {
+            exit( 0 );
+	}
+    }
+}

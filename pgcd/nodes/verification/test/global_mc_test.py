@@ -1,6 +1,6 @@
 
 import unittest
-import parser
+import interpreter.parser as parser
 import datetime
 from modelchecker import *
 from experiments_setups import *

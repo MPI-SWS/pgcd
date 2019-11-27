@@ -1,5 +1,5 @@
 import unittest
-import parser
+import interpreter.parser as parser
 import spin
 from experiments_setups_2 import progFetchA, progFetchC
 

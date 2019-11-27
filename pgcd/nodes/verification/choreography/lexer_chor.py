@@ -9,7 +9,7 @@ class ChoreographyLexer:
     http://www.dabeaz.com/ply/ply.html
     '''
 
-    functions = ('SIN', 'TAN', 'COS', 'ABS', 'SQRT')
+    functions = ('SIN', 'TAN', 'COS', 'ABS', 'SQRT', 'RAD')
 
     # RESERVED WORDS
     reserved = (
@@ -24,7 +24,7 @@ class ChoreographyLexer:
         'ARROW', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'POW', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
         # OTHER
-        'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'COMMA', 'SEMI', 'COLON'
+        'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON'
     )
 
     # Operators
@@ -49,6 +49,8 @@ class ChoreographyLexer:
     t_RPAREN = r'\)'
     t_LSQUARE = r'\['
     t_RSQUARE = r'\]'
+    t_LBRACE = r'\{'
+    t_RBRACE = r'\}'
     t_COMMA = r','
     t_SEMI = r';'
     t_COLON = r':'

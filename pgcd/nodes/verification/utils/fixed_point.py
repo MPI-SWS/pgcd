@@ -7,7 +7,10 @@ class FixedPointDataflowAnalysis(ABC):
     def __init__(self, chor, processes, forward = True, debug = False):
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
-        self.processes = processes
+        if type(processes) is set:
+            self.processes = processes
+        else:
+            self.processes = set(processes)
         self.state_to_element = {}
         self._mergeMap = {}
         self.forward = forward

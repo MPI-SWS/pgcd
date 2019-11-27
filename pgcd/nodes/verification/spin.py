@@ -155,6 +155,7 @@ class McMessages:
             for c in statement.children:
                 self.print_stmt(i, name_to_id, c, indent + 4, ";")
         elif isinstance(statement, ast_inter.Receive): # Action
+            #TODO update to restrict by sender!
             self.write_indent(indent, "do")
             for a in statement.actions:
                 self.write_indent(indent, ":: channel_" + str(i) + "?" + self.as_msg(a.str_msg_type) + " ->")

@@ -9,7 +9,7 @@ from mpmath import mp
 from experiments_setups import World
 from copy import deepcopy
 from choreography.projection import Projection
-import parser
+import interpreter.parser as parser
 
 import unittest
 
@@ -42,12 +42,12 @@ def xp2_cart():
     return '''
     #1,  go to meeting position
     moveCart( -300 );
-    receive( Idle ){ 
+    receive(Carrier, Idle ){ 
         case OK() => skip;
     }
     send( Arm, OK, 1.0 );
     # 2, wait and return
-    receive( Idle ){
+    receive(Arn, Idle ){
         case OK() => skip;
     }
     send( Carrier, OK, 1.0 );
@@ -57,7 +57,7 @@ def xp2_cart():
 def xp2_arm():
     return '''
     # 1, start to grab 
-    receive( Idle ){
+    receive(Cart, Idle ){
         case OK() => skip;
     }
     setAngleCantilever( 250 );
@@ -75,7 +75,7 @@ def xp2_carrier():
     moveCart( 500 );
     send( Cart, OK, 1.0 );
     # 2, wait for arm to grab
-    receive( Idle ){
+    receive(Cart, Idle ){
         case OK() => skip;
     }
     # 3, return home

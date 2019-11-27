@@ -35,8 +35,12 @@ TODO LIST
 
 ### Damien
 
+* ROS 2 port
+  - test
+  - take advantage of discovery (`export ROS_DOMAIN_ID=PGCD` ?)
 * frontend
   - parser keep track of positions (line/col) for error messages
+  - automatically generate frame shift for custom messages (currently limited to some predefined types from geometry package)
 * type system
   - process declaration: `name: type`
   - componenent signature: `name, var (id: type)*, mp ( id(arg: type [, arg: type]*) )*`
@@ -50,6 +54,6 @@ TODO LIST
   - variable duration mp (idle): generalize the causality for time intervals
 * runtime performance
   - have 1 thread for the program/ROS and 1 thread for the motion primitive
-  - how long does sending/receive a message take in the current version?
   - more efficient interaction with tf (apply some code gen rather than sympy all the way, http://www.sympy.org/scipy-2017-codegen-tutorial/)
-  - ROS melodic
+  - interpreter.py, `visit_receive` and `visit_motion`: better way to execute motions with messages (spawn a separate thread/process for the motion and interrupt it when done)
+

@@ -6,6 +6,7 @@ import collections
 import lexer_chor as clexer
 from ast_chor import *
 from sympy import *
+import mpmath
 from check_chor import *
 
 import os
@@ -21,22 +22,19 @@ class ChoreographyParser:
         ('right', 'UMINUS', 'SIN', 'TAN', 'COS', 'ABS', 'SQRT')
     )
 
-    def __init__(self, debug = False):
-        log = None
-        if debug:
-            logging.basicConfig(
-                level=logging.DEBUG,
-                filename="chor_parselog.txt",
-                filemode="w",
-                format="%(filename)10s:%(lineno)4d:%(message)s"
-            )
-            log = logging.getLogger()
-        self.lexer = clexer.ChoreographyLexer(debuglog=log, debug=debug)
+    def __init__(self):
+        self.lexer = clexer.ChoreographyLexer()
         self.tokens = self.lexer.tokens
-        self.parser = yacc.yacc(module=self, debuglog=log, debug=debug)
+        self.parser = yacc.yacc(module=self)
 
     def parse(self, text, world = None, debug = False):
-        choreography = self.parser.parse(text, self.lexer.lexer)
+        if debug:
+            logging.basicConfig(level = logging.INFO)
+            log = logging.getLogger()
+            choreography = self.parser.parse(text, self.lexer.lexer, debug=log)
+        else:
+            choreography = self.parser.parse(text, self.lexer.lexer)
+        choreography.world = world
         self.check_well_formedness(choreography, world, debug)
         return choreography
 
@@ -114,7 +112,7 @@ class ChoreographyParser:
             p[0] = []
 
     def p_guard(self, p):
-        ''' guard   : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs '''
+        ''' guard : ID EQUALS LSQUARE expression RSQUARE ID PLUS gargs '''
         p[0] = GuardedChoice([p[1]], [GuardArg(sympify(p[4]), p[6])] + p[8])
 
     def p_gargs(self, p):
@@ -138,16 +136,38 @@ class ChoreographyParser:
             p[0] = [p[1]]
 
     def p_fork(self, p):
-        ''' fork : ID EQUALS ID OR fargs '''
-        p[0] = Fork([p[1]], [p[3]] + p[5])
+        ''' fork : ID EQUALS fp ID OR fargs
+                 | ID EQUALS ID OR fargs '''
+        if len(p) > 6:
+            fps = [a for a,b in p[6]]
+            ids = [b for a,b in p[6]]
+            p[0] = Fork([p[1]], [p[3]] + fps, [p[4]] + ids)
+        else:
+            fps = [a for a,b in p[5]]
+            ids = [b for a,b in p[5]]
+            p[0] = Fork([p[1]], [None] + fps, [p[3]] + ids)
 
     def p_fargs(self, p):
-        ''' fargs : ID OR fargs
-                  | ID '''
-        if len(p) > 2:
-            p[0] = [p[1]] + p[3]
+        ''' fargs : fp ID OR fargs
+                  | fp ID '''
+        if len(p) > 3:
+            p[0] = [(p[1], p[2])] + p[4]
         else:
-            p[0] = [p[1]]
+            p[0] = [(p[1], p[2])]
+
+    def p_fp(self, p):
+        ''' fp : LBRACE ID ID ID COLON expression RBRACE
+               | LBRACE expression RBRACE 
+               | LBRACE RBRACE 
+               | '''
+        if len(p) > 7:
+            p[0] = Footprint(Symbol(p[2]), Symbol(p[3]), Symbol(p[4]), sympify(p[6]))
+        elif len(p) > 3:
+            p[0] = Footprint(Symbol('fpx'), Symbol('fpy'), Symbol('fpz'), sympify(p[2]))
+        elif len(p) > 2:
+            p[0] = Footprint(Symbol('fpx'), Symbol('fpy'), Symbol('fpz'), sympify(True))
+        else:
+            p[0] = None
 
     def p_join(self, p):
         ''' join : ID OR jargs EQUALS ID '''
@@ -166,6 +186,7 @@ class ChoreographyParser:
         p[0] = End([p[1]])
 
     # ------------------------------------EXPRESSIONS--------------------------------------
+    # TODO better handling of priority
 
     def p_expression_ft(self, p):
         '''expression : expression PLUS expression
@@ -184,7 +205,7 @@ class ChoreographyParser:
                   | expression NE expression'''
         if p[2] == '&&':
             p[0] = And(p[1], p[3])
-        elif p[2] == '\|\|':
+        elif p[2] == '||':
             p[0] = Or(p[1], p[3])
         elif p[2] == '+':
             p[0] = p[1] + p[3]
@@ -219,6 +240,7 @@ class ChoreographyParser:
                       | TAN LPAREN expression RPAREN
                       | ABS LPAREN expression RPAREN
                       | SQRT LPAREN expression RPAREN
+                      | RAD LPAREN expression RPAREN
                       | ID LPAREN funcargs RPAREN'''
         # p[1] = symbols('f g h', cls=Function)
         p[0] = str(p[1]) + str(p[2]) + str(p[3]) + str(p[4])
@@ -232,6 +254,8 @@ class ChoreographyParser:
             p[0] = Abs(p[3])
         elif p[1] == 'sqrt':
             p[0] = sqrt(p[3])
+        elif p[1] == 'rad':
+            p[0] = mpmath.radians(p[3])
         else:
             p[0] = Function(p[1])(*p[3])
 
@@ -264,26 +288,4 @@ class ChoreographyParser:
         else:
             print("Syntax error at EOF")
         raise Exception("Parser encountered an error.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

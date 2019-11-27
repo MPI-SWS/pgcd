@@ -3,12 +3,6 @@ from sympy import *
 from spec import *
 from copy import *
 
-def isPlaceholderMp(mp):
-    return mp.mp_name == "__wait__"
-
-def mkPlaceholderMp(process, duration):
-    return MotionArg(process.name(), "__wait__", [duration])
-
 
 def CreateProjectionFromChoreography(choreography, projection_name, process):
     ''' Creates a projection of a choreography on process '''
@@ -35,9 +29,10 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
             for x in node.motions:
                 if x.id == process.name():
                     motions.append(x)
-            if motions == []:
-                motions.append(mkPlaceholderMp(process, sympify(1))) # TODO DZ: fix the duration later
-            n2 = Motion(node.start_state, motions, node.end_state)
+            if motions != []:
+                n2 = Motion(node.start_state, motions, node.end_state)
+            else: 
+                n2 = Indirection(node.start_state, node.end_state)
             chor_proj.statements.append(n2)
 
         elif isinstance(node, GuardedChoice):
@@ -45,6 +40,16 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
                 chor_proj.statements.append(node)
             else:
                 chor_proj.statements.append(ExternalChoice(node.start_state, [x.id for x in node.guarded_states]))
+
+        elif isinstance(node, Fork):
+            for e in node.end_state:
+                if process.name() in choreography.getProcessesNamesAt(e):
+                    chor_proj.statements.append(Indirection(node.start_state, [e]))
+
+        elif isinstance(node, Join):
+            for s in node.start_state:
+                if process.name() in choreography.getProcessesNamesAt(s):
+                    chor_proj.statements.append(Indirection([s], node.end_state))
 
         else:
             chor_proj.statements.append(copy(node))

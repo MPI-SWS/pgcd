@@ -65,6 +65,11 @@ class ComputeThreads(FixedPointDataflowAnalysis):
         else:
             return ThreadTracker([], set())
 
+    def message(self, tracker, msg):
+        tracker.addProcess(msg.sender)
+        tracker.addProcess(msg.receiver)
+        return tracker
+
     def motion(self, tracker, motions):
         for mp in motions:
             tracker.addProcess(mp.id)
@@ -94,6 +99,23 @@ class ThreadChecks():
         self.chor = chor
         self.processes = processes
 
+    def fillBackward(self, node_to_trackers, state_to_node, debug):
+        again = True
+        while again:
+            again = False
+            for state in node_to_trackers.keys():
+                node = state_to_node[state]
+                if not isinstance(node, Join):
+                    for s in node.start_state:
+                        for e in node.end_state:
+                            for p in node_to_trackers[e].processes:
+                                ns = node_to_trackers[s]
+                                if p not in ns.processes:
+                                    again = True
+                                    ns.addProcess(p)
+                                    if debug:
+                                        print("adding", p, "to", s, "from", e)
+
     def perform(self, debug = False):
         if debug:
             print("thread correctness and partition")
@@ -101,6 +123,7 @@ class ThreadChecks():
         cp.perform()
         node_to_trackers = cp.result()
         state_to_node = self.chor.mk_state_to_node()
+        self.fillBackward(node_to_trackers, state_to_node, debug)
         def getPreds(node):
             return [ node_to_trackers[s] for s in node.start_state ]
         for state in node_to_trackers.keys():
@@ -112,7 +135,7 @@ class ThreadChecks():
             elif isinstance(node, Merge):
                 t = node_to_trackers[state]
                 preds = getPreds(node)
-                assert all( p.equals(t) for p in preds )
+                assert all( p.equals(t) for p in preds ), "merge with processes: " + ",".join(map(str, preds))
             elif isinstance(node, Join):
                 preds = getPreds(node)
                 rep = preds[0]

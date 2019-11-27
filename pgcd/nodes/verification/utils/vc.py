@@ -33,7 +33,7 @@ class VC:
             sat = "unsat"
         return "VC(" + self.title + ", " + str(self.formulas) + "," + sat + ")"
 
-    def discharge(self, timeout = 120, debug = False):
+    def discharge(self, timeout = 240, debug = False):
         if debug:
             sat = ""
             if self.sat:

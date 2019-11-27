@@ -1,134 +1,68 @@
 # PGCD - robot Programming and verification with Geometry, Concurrency, and Dynamics
 
-PGCD is a programming language and verifcation system for communication and execution of motion primitives within ROS nodes.
+PGCD is a programming language and verifcation system for programming and verification of robotic chroeographies.
+
 
 ## Features
 
-Currently the main functionalities of PGCD are:
-* Communication between ROS nodes (ROS message & ROS topics)
-* Execute motion primitive (CableRobot project by Marcus Pirron)
-* Tracking frames (TF2 library)
+TODO ...
 
-## Project setup 
+## Status
 
-The project uses python3.
-Therefore some tweaks have to be done.
+Recently ported to ROS 2.
+__Partially working.__
 
-### Ubuntu16.04 LTS or Debian GNU/Linux 8 (jessie)
+Currently there is some issue with the frame conversion.
+(I cannot import `tf2_geometry_msgs` for some reason.)
 
-To run PGCD you need to:
+The current workaround is to manually implement the appropriate transform and manually register it with `tf2_ros`.
 
-* install ROS (reccomended ROS Kinetic: http://wiki.ros.org/kinetic/Installation) with a few extra packages like tf2
+## Project Setup 
 
-```
-sudo apt-get install ros-$ROS_DISTRO-turtle-tf2 ros-$ROS_DISTRO-tf2-tools ros-$ROS_DISTRO-tf
-```
+1.  Install ROS 2 Eloquent (tested with ubuntu 18.04)
+2.  Install colcon: `sudo apt install python3-colcon-common-extensions`
+3.  Install some extra python package: `pip3 install arpeggio numpy sympy ply`
+4.  Checkout this repository:
+    ```
+    $ cd
+    $ git clone https://github.com/MPI-SWS/pgcd.git
+    $ mkdir ~/ros2_ws
+    $ ln -s ~/pgcd ~/ros2_ws/src
+    ```
+5.  Compile and source:
+    ```
+    $ cd ~/ros2_ws
+    $ colcon build --symlink-install
+    $ . install/setup.bash
+    ```
+    If you use PGCD often you can add the last operation to your `.bashrc`.
+    ```
+    $ echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
+    ```
+6.  Running a Test.
+    Let us run a simple example of two processes sending a message to each other.
+    To run the example you need to:
+    ```
+    $ cd ~/ros2_ws
+    $ export PYTHONPATH=$PYTHONPATH:.
+    $ ros2 launch pgcd simple_example.launch.py
+    ```
 
-* create a catkin workspace having in mind python3 (compile geometry package with python3):
+## PGCD Program structure
 
-```
-$ mkdir catkin_ws
-$ cd catkin_ws
-$ mkdir src
-$ cd src 
-$ git clone https://github.com/ros/geometry
-$ git clone https://github.com/ros/geometry2
-$ cd ..
-$ sudo apt-get install python3.6-tk
-$ sudo apt-get install python3.6-venv
-$ python3.6 -m venv venv3.6
-$ source venv3.6/bin/activate
-$ pip install catkin_pkg pyyaml empy rospkg ply enum34 defusedxml # if it isn't working try in pycharm
-```
-
-* CableRobot project dependencies:
- 
-```
-pip install  z3-solver arpeggio numpy sympy
-```
-
-* make sure you have installed eigen3 and bullet library:
-
-```
-$ sudo apt install libeigen3-dev
-```
-
-```
-$ sudo apt-get install libbullet-dev
-```
-
-or follow: https://answers.ros.org/question/220676/how-to-install-bullet-on-indigo-in-ubuntu/
-
-* also make sure you installed python3 header files (or python2 will be used and you won't find the bug easily):
- 
-```
-$ sudo apt-get install python3-dev
-```
-
-* download this project in your catkin workspace
-
-```
-$ cd ~/Dowloads
-$ git clone https://gitlab.mpi-sws.org/gbbanusic/chor-and-frames-for-conc-ctrl-code.git pgcd
-$ cp -a pgcd/. ~/catkin_ws/src/
-```
-
-* compile and source:
-
-```
-$ cd ~/catkin_ws
-$ catkin_make --force-cmake
-$ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
-```
-
-For more details how to compile tf2 with python3 see: https://github.com/ros/geometry2/issues/259 .
-If you want your computer to store permanently your workspace you need to add the
-last listed command into your .bashrc file in "home/user/" directory.
-
-## RUN Example
-
-### With PyCharm IDE
-
-If you have PyCharm you can open the pgcd directory as project:
-* set pgcd/nodes and pgcd/nodes/interpreter files as source roots (right click on them -> mark directory as -> source root)
-* go to Settings -> Project: pgcd -> Project interpreter -> add python3 venv ([Picture](readme/set_venv.png))
-* import CableRobot project or modify the project to remove dependencies (will be done in future)
-
-Before running the example please set the "PGCD_ROS_PROGRAMS" environment variable to your location of node programs (globally!)
-(or change the path manually in start.launch file), for example:
-
-```
-PGCD_ROS_PROGRAMS="/home/$USERNAME/catkin_ws/src/pgcd/nodes/programs/"
-```
-
-make sure that the path is set and that roslaunch will find it! 
-(You can check it in the output of roslaunch)
-
-To run the example you need to:
-
-* Run main.py file
-
-
-* Run terminal command for starting roscore
-
-```
-$ roslaunch pgcd start.launch
-```
-
-* Run terminal command for visualisation
-
-```
-$ rosrun rviz rviz -d `rospack find turtle_tf2`/rviz/turtle_rviz.rviz
-```
-
+TODO:
+- program
+- motion primitives (integration of the code, specification)
+- frame dependencies and shift
+- launch file
+- choreographic specification
+- etc.
 
 ## Need to fix:
 
-* executor.py -> def visit_receive -> no interruption when the receive message arrives
-* executor.py -> def visit_motion -> a better way to simulate and execute motions?
+See [TODO.md](TODO.md)
 
 ## Verification
 
 Aditionnally for the verification, the following are required:
 * program: [dreal](https://github.com/dreal/dreal4), [spin](http://spinroot.com/spin/whatispin.html)
-* python packages: sympy, arpeggio, numpy

@@ -46,6 +46,7 @@ class Node:
     def label(self, label_to_node):
         label_to_node[self.get_label()] = self
 
+
 class Statement(Node):
 
     def __init__(self, children):
@@ -59,9 +60,6 @@ class Statement(Node):
         for c in self.children:
             string += str(c) + '\n'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def label(self, label_to_node):
         super().label(label_to_node)
@@ -80,9 +78,6 @@ class Skip(Node):
         string += 'Skip'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
 class Print(Node):
 
     def __init__(self, arg):
@@ -95,9 +90,6 @@ class Print(Node):
             string += self._label + ": "
         string += 'Print' + str(arg)
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
 class Send(Node):
 
@@ -114,14 +106,12 @@ class Send(Node):
         string += 'Send(' + str(self.comp) + ',' + str(self.msg_type) + ',' + ''.join([str(a) for a in self.args]) + ')'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
 
 class Receive(Node):
 
-    def __init__(self, motion, actions=None):
+    def __init__(self, sender, motion, actions=None):
         Node.__init__(self, Type.receive)
+        self.sender = sender
         self.motion = motion
         self.actions = actions
 
@@ -129,11 +119,8 @@ class Receive(Node):
         string = ''
         if self._label != None:
             string += self._label + ": "
-        string += 'Receive(' + str(self.motion) + ') {' + ''.join(str(e) for e in self.actions) + '}'
+        string += 'Receive(' + self.sender + ', ' + str(self.motion) + ') {' + ''.join(str(e) for e in self.actions) + '}'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def label(self, label_to_node):
         super().label(label_to_node)
@@ -159,9 +146,6 @@ class Action(Node):
         string += ') =>' + str(self.program)
         return string
 
-    def accept(self, visitor):
-        return visitor.visit(self)
-
     def label(self, label_to_node):
         super().label(label_to_node)
         self.program.label(label_to_node)
@@ -181,26 +165,21 @@ class If(Node):
         string += '\n'.join([str(a) for a in self.if_list])
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
     def label(self, label_to_node):
         super().label(label_to_node)
         for if_stmt in self.if_list:
             if_stmt.label(label_to_node)
 
     def flatten(self, condition, statement):
-        node = statement.children[0]
-        if not isinstance(node, If):
+        if not isinstance(statement, If):
             return [IfComponent(condition, statement)]
-
-        statement.children.pop(0)
-        ifs = []
-        for if_stmt in statement.if_list:
-            cond = And(condition, if_stmt.condition)
-            prog = Statement(if_stmt.program.children + statement.children)
-            ifs.append(IfComponent(cond, prog))
-        return ifs
+        else:
+            ifs = []
+            for if_stmt in statement.if_list:
+                cond = And(condition, if_stmt.condition)
+                prog = Statement(if_stmt.program.children + statement.children)
+                ifs.append(IfComponent(cond, prog))
+            return ifs
 
 
 
@@ -218,12 +197,9 @@ class IfComponent(Node):
         string += 'if ' + str(self.condition) + ' then {' + str(self.program) + '}'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
     def label(self, label_to_node):
         super().label(label_to_node)
-        program.label(label_to_node)
+        self.program.label(label_to_node)
 
 class While(Node):
 
@@ -238,9 +214,6 @@ class While(Node):
             string += self._label + ": "
         string += 'while ' + str(self.condition) + ' do {' + str(self.program) + '}'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)
 
     def label(self, label_to_node):
         super().label(label_to_node)
@@ -261,10 +234,6 @@ class Assign(Node):
         return string
 
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
-
 class Motion(Node):
 
     def __init__(self, value, exps=[]):
@@ -279,9 +248,6 @@ class Motion(Node):
         string += 'm_' + self.value + '(' + ', '.join(str(e) for e in self.exps) + ')'
         return string
 
-    def accept(self, visitor):
-        visitor.visit(self)
-
 class Exit(Node):
 
     def __init__(self, expr):
@@ -294,6 +260,3 @@ class Exit(Node):
             string += self._label + ": "
         string += 'exit(' + str(self.expr) + ')'
         return string
-
-    def accept(self, visitor):
-        visitor.visit(self)

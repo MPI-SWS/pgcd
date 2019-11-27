@@ -1,7 +1,7 @@
 from parser_chor import *
 from ast_chor import *
 from ast_proj import *
-import ast_inter
+import interpreter.ast_inter as ast_inter
 from sympy import *
 from utils.DrealInterface import DrealInterface
 from utils.vc import VC
@@ -52,14 +52,21 @@ class Refinement(CFA):
         return l1 == l2 or l1 == ('msg_' + l2)
 
     def compatible(self, statmentL, nodeL):
-        if self.debug:
-            print("compatible", statmentL, nodeL)
         statment = self.programLabels[statmentL]
         node = self.state_to_node[nodeL]
         if isinstance(statment, ast_inter.Motion):
-            #TODO check the args
-            #print("1")
-            return isinstance(node, Motion) and self.sameMpName(statment.value, node.motions[0].mp_name) and self._refines(self.nextStatement(statmentL), node.end_state[0])
+            if isinstance(node, Motion):
+                #TODO check the args
+                #print("1")
+                res = self.sameMpName(statment.value, node.motions[0].mp_name) and self._refines(self.nextStatement(statmentL), node.end_state[0])
+                if self.debug:
+                    if res:
+                        print("compatible", statmentL, nodeL, '\t', statment.value, '\t', node.motions[0].mp_name)
+                    else:
+                        print("not compatible", statmentL, nodeL, '\t', statment.value, '\t', node.motions[0].mp_name)
+                return res
+            else:
+                return False
         elif isinstance(statment, ast_inter.Assign):
             #print("2")
             #TODO keep and enviromenent ...
@@ -87,7 +94,7 @@ class Refinement(CFA):
         elif isinstance(statment, ast_inter.If):
             if isinstance(node, GuardedChoice):
                 for ifComp in statment.if_list:
-                    if any( self.implies(ifComp.condition, gs.expression) and self._refines(ifComp.program.get_label(), gs.id) for gs in mode.guarded_states):
+                    if any( self.implies(ifComp.condition, gs.expression) and self._refines(ifComp.program.get_label(), gs.id) for gs in node.guarded_states):
                         pass
                     else:
                         #print("8")
@@ -98,18 +105,25 @@ class Refinement(CFA):
                 trivial = [ case.program for case in statment.if_list if case.condition == S.true ]
                 #print("10")
                 return any(self._refines(s.get_label(), nodeL) for s in trivial)
+        elif isinstance(statment, ast_inter.IfComponent):
+            if isinstance(node, GuardedChoice):
+                return any( self.implies(statment.condition, gs.expression) and self._refines(statment.program.get_label(), gs.id) for gs in node.guarded_states)
+            else:
+                return False
         elif isinstance(statment, ast_inter.Send):
             #TODO check the args
             #print("11")
             return isinstance(node, SendMessage) and statment.comp == node.receiver and self.sameMsgName(statment.msg_type, node.msg_type) and self._refines(self.nextStatement(statmentL), node.end_state[0])
         elif isinstance(statment, ast_inter.Receive):
             if isinstance(node, ReceiveMessage):
+                #TODO check sender
                 #print("12")
                 return any(self._refines(rs.get_label(), nodeL) for rs in statment.actions)
             if isinstance(node, Motion):
                 #print("13")
                 return self._refines(statment.motion.get_label(), nodeL)
             elif isinstance(node, ExternalChoice):
+                #TODO check sender
                 #print("14")
                 def findOne(ns):
                     return self._refines(statment.motion.get_label(), ns) or any(self._refines(r.get_label(), ns) for r in statment.actions)
@@ -128,7 +142,7 @@ class Refinement(CFA):
             #print("19")
             return isinstance(node, End)
         else:
-            raise Exception("unexpected: " + statment)
+            raise Exception("unexpected " + str(type(statment)) + ": " + str(statment))
 
     def check(self):
         allLabels = set(self.programLabels.keys())
@@ -140,17 +154,17 @@ class Refinement(CFA):
             if self.debug:
                 print("= Current Refinement =")
                 for l in allLabels:
-                    print(l, "->", self.compat[l])
+                    if len(self.compat[l]) > 0:
+                        print(l, "->", self.compat[l])
             changed = False
             for l in allLabels:
                 for s in copy(self.compat[l]):
                     if not self.compatible(l, s):
-                        if self.debug:
-                            print("not compatible", l, s)
                         changed = True
                         self.compat[l].discard(s)
         if self.debug:
             print("= Final Refinement =")
             for l in allLabels:
-                print(l, "->", self.compat[l])
+                if len(self.compat[l]) > 0:
+                    print(l, "->", self.compat[l])
         return self.projection.start_state in self.compat[self.program.get_label()]

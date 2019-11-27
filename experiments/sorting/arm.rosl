@@ -1,0 +1,26 @@
+while (true) {
+    receive(producer, idle) {
+        case Ok() => {
+            receive(carrier, idle) {
+                case Ok() => {
+                    moveTo( -90, 0, 90 );
+                    moveTo( -90, 0, 150 );
+                    receive(carrier, idle) {
+                        case Ok() => {
+                             gripAndMove(10.5, -45, 210, 150, 5.5);
+                             send(carrier, Ok);
+                             retractArm( );
+                        }
+                    }
+                }
+                case Done() => {
+                    skip;
+                }
+            }
+        }
+        case Done() => {
+            stop( );
+            exit( 0 );
+        }
+    }
+}
