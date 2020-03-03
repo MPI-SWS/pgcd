@@ -1,8 +1,9 @@
 from spec import *
 from compatibility import *
 from utils.geometry import *
-from cart import *
-from arm import *
+from cart import Cart
+from cart import CartSquare
+from arm import Arm
 from refinement import *
 from vectorize import *
 from mpmath import mp
@@ -10,6 +11,7 @@ from experiments_setups import World
 from copy import deepcopy
 from choreography.projection import Projection
 import interpreter.parser as parser
+import time
 
 import unittest
 
@@ -20,12 +22,13 @@ import unittest
 #>  45    0.78539816339744828
 
 def xp1_world():
-    w = World( (0,0,0, mp.pi/4), (-1.1, 0, 0, 0) )
-    cart = Cart("Cart", w, 0)
-    arm = Arm("Arm", cart)
+    w       = World( (0,0,0, mp.pi/4), # cart
+                     (-1.1, 0, 0, 0) ) # carrier
+    cart    = Cart("Cart", w, 0)
+    arm     = Arm("Arm", cart)
     carrier = CartSquare("Carrier", w, 1)
-    pillar = Cube( -0.5, 0.5, 0, mp.pi/4, 0.1, 0.3, 0.2)
-    bridge = Cube( -0.5, 0.5, 0.2, mp.pi/4, 0.3, 0.03, 0.1)
+    pillar  = Cube( -0.5, 0.5, 0, mp.pi/4, 0.1, 0.3, 0.2)
+    bridge  = Cube( -0.5, 0.5, 0.2, mp.pi/4, 0.3, 0.03, 0.1)
     return w
 
 def xp1_choreo():
@@ -132,21 +135,40 @@ def xp1_carrier():
     '''
 
 
-def run(ch, components, progs, debug = False):
+class XpUnderpass(unittest.TestCase):
+
+    def test_underpass(self, debug = False):
+        w = xp1_world() 
+        ch = xp1_choreo()
+        progs = { "Arm": xp1_arm(),
+                  "Cart": xp1_cart(),
+                  "Carrier": xp1_carrier() }
+        start = time.time()
         visitor = Projection()
-        visitor.execute(ch)
+        visitor.execute(ch, w, debug)
         chor = visitor.choreography
-        vectorize(chor, components)
-        checker = CompatibilityCheck(chor, components)
+        vectorize(chor, w)
+        end = time.time()
+        print("Syntactic checks:", end - start)
+        start = end
+        checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        processes = components.allProcesses()
         checker.computePreds(debug)
-        checker.generateCompatibilityChecks()
-        for vc in checker.vcs:
-            if not vc.discharge(debug=False):
-                raise Exception(str(vc))
+        checker.generateCompatibilityChecks(debug)
+        end = time.time()
+        print("VC generation:", end - start)
+        start = end
         print("#VC:", len(checker.vcs))
+        for vc in checker.vcs:
+            if debug:
+                print("Checking VC", i, vc.title)
+            if not vc.discharge(debug=debug):
+                raise Exception(str(vc))
+        end = time.time()
+        print("VC solving:", end - start)
+        start = end
+        processes = w.allProcesses()
         for p in processes:
             visitor.choreography = deepcopy(chor)
             proj = visitor.project(p.name(), p, debug)
@@ -154,14 +176,10 @@ def run(ch, components, progs, debug = False):
             prog = prser.parse(progs[p.name()])
             ref = Refinement(prog, proj, debug)
             if not ref.check():
-                raise Exception("Refinement:" + p.name())
-        return True
-
-class XpUnderpass(unittest.TestCase):
-
-    def test_underpass(self):
-        xp1_progs = { "Arm": xp1_arm(), "Cart": xp1_cart(), "Carrier": xp1_carrier() }
-        self.assertTrue(run(xp1_choreo(), xp1_world(), xp1_progs, True))
+                raise Exception("Refinement: " + p.name())
+        end = time.time()
+        print("refinement:", end - start)
+        start = end
 
 if __name__ == '__main__':
     unittest.main()

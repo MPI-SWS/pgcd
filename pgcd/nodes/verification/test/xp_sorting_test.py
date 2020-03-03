@@ -319,7 +319,7 @@ class XpSortingTest(unittest.TestCase):
 # 3: ? (expensive!!)
         for i in range(4, len(checker.vcs)):
             vc = checker.vcs[i]
-            if debug or True:
+            if debug:
                 print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
                 raise Exception(str(vc))
