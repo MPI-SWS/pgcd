@@ -25,7 +25,7 @@ def xp2_world():
 
 def xp2_choreo():
     return ''' Handover =
-        def x0 = (Cart: MoveCart(0, 0, 0, 0.3), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.5) ) ; x1
+        def x0 = (Cart: MoveCart(0, 0, 0, 0.3, 5), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.5, 5) ) ; x1
             x1 = Carrier -> Cart: OK(); x2
             x2 = Cart -> Arm: OK(); x3
             x3 = (Cart: Idle(), Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953), Carrier: Idle() ) ; x4
@@ -34,7 +34,7 @@ def xp2_choreo():
             x6 = (Cart: Idle(), Arm: RetractArm(), Carrier: Idle() ) ; x7
             x7 = Arm -> Cart: OK(); x8
             x8 = Cart -> Carrier: OK(); x9
-            x9 = (Cart: MoveCart(0.3, 0, 0, -0.3), Arm: Idle(), Carrier: MoveCart(0.5, 0, 0, -0.5) ) ; x10
+            x9 = (Cart: MoveCart(0.3, 0, 0, -0.3, 5), Arm: Idle(), Carrier: MoveCart(0.5, 0, 0, -0.5, 5) ) ; x10
             x10 = end
         in [  (Cart_theta == 0) && (Cart_x == 0) && (Cart_y == 0) &&
               (Carrier_theta == 0) && (Carrier_x == 0) && (Carrier_y == 0) &&

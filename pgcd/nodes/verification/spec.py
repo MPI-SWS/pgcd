@@ -171,6 +171,9 @@ class DurationSpec():
     def valid(self):
         return self.min <= self.max
 
+    def fixed(self):
+        return self.min == self.max
+
     def concat(self, ds):
         assert not self.interruptible, "cannot add something after an non interruptible motion: " + str(self) + " then " + str(ds)
         if ds.interruptible:
@@ -182,7 +185,7 @@ class DurationSpec():
             return DurationSpec(self.min + ds.min, self.max + ds.max, ds.interruptible)
 
     def intersect(self, ds):
-        assert(self.interruptible or ds.interruptible)
+        assert(self.interruptible or ds.interruptible or (self.fixed() and ds.fixed())), "cannot intersect " + str(self) + " and " + str(ds)
         if not self.interruptible:
             assert(ds.min <= self.min and ds.max >= self.max), "(1) " + str(self) + " ∩ " + str(ds)
             return DurationSpec(self.min, self.max, False)

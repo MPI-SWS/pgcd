@@ -126,19 +126,28 @@ class RetractArm(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return []
+        return ['[opt] duration']
 
     def setParameters(self, args):
-        assert(len(args) == 0)
-        return ArmFold(self.name(), self._component)
+        assert(len(args) == 0 or len(args) == 1)
+        if (len(args) == 0):
+            return ArmFold(self.name(), self._component)
+        else:
+            return ArmFold(self.name(), self._component, args[0])
 
 class ArmFold(MotionPrimitive):
 
-    def __init__(self, name, component):
+    def __init__(self, name, component, duration = None):
         super().__init__(name, component)
+        if duration is None:
+            self._dMin = 0
+            self._dMax = 1
+        else:
+            self._dMin = duration
+            self._dMax = duration
     
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO upper as function of the angle and speed
+        return DurationSpec(self._dMin, self._dMax, False) #TODO function of angle and speed
 
     def pre(self):
         return S.true
@@ -445,11 +454,14 @@ class SetAngleTurntable(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ["source angle", "target angle"]
+        return ["source angle", "target angle", "[opt] duration"]
 
     def setParameters(self, args):
-        assert(len(args) == 2)
-        return ArmSetAngle(self.name(), self._component, self._component.c_eff(), args[0], args[1])
+        assert(len(args) == 2 or len(args) == 3)
+        if len(args) == 2:
+            return ArmSetAngle(self.name(), self._component, self._component.c_eff(), args[0], args[1])
+        else:
+            return ArmSetAngle(self.name(), self._component, self._component.c_eff(), args[0], args[1], args[2])
 
 class SetAngleCantilever(MotionPrimitiveFactory):
 
@@ -457,11 +469,14 @@ class SetAngleCantilever(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ["source angle", "target angle"]
+        return ["source angle", "target angle", "[opt] duration"]
 
     def setParameters(self, args):
-        assert(len(args) == 2)
-        return ArmSetAngle(self.name(), self._component, self._component.b_eff(), args[0], args[1])
+        assert(len(args) == 2 or len(args) == 3)
+        if len(args) == 2:
+            return ArmSetAngle(self.name(), self._component, self._component.b_eff(), args[0], args[1])
+        else:
+            return ArmSetAngle(self.name(), self._component, self._component.b_eff(), args[0], args[1], args[2])
 
 class SetAngleAnchorPoint(MotionPrimitiveFactory):
 
@@ -469,25 +484,34 @@ class SetAngleAnchorPoint(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ["source angle", "target angle"]
+        return ["source angle", "target angle", "[opt] duration"]
 
     def setParameters(self, args):
-        assert(len(args) == 2)
-        return ArmSetAngle(self.name(), self._component, self._component.a_eff(), args[0], args[1])
+        assert(len(args) == 2 or len(args) == 3)
+        if len(args) == 2:
+            return ArmSetAngle(self.name(), self._component, self._component.a_eff(), args[0], args[1])
+        else:
+            return ArmSetAngle(self.name(), self._component, self._component.a_eff(), args[0], args[1], args[2])
 
 class ArmSetAngle(MotionPrimitive):
 
-    def __init__(self, name, component, var, angle1, angle2):
+    def __init__(self, name, component, var, angle1, angle2, dt = None):
         super().__init__(name, component)
         self.var = var
         self.angle1 = angle1
         self.angle2 = angle2
+        if dt is None:
+            self._dMin = 0
+            self._dMax = 1
+        else:
+            self._dMin = dt
+            self._dMax = dt
 
     def modifies(self):
         return [self.var, Symbol(self._component.name() + '_dummy')]
 
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO function of angle and speed
+        return DurationSpec(self._dMin, self._dMax, False) #TODO function of angle and speed
 
     def pre(self):
         return And(self.var >= self.angle1 - 0.01, self.angle1 <= self.angle1 + 0.01 ) #deal with δ-sat

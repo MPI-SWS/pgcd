@@ -206,24 +206,33 @@ class SetAngleCart(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ["target angle"]
+        return ["target angle", '[opt] duration']
 
     def setParameters(self, args):
-        assert(len(args) == 1)
-        return CartSetAngle(self.name(), self._component, args[0])
+        assert(len(args) == 1 or len(args) == 2)
+        if len(args) == 1:
+            return CartSetAngle(self.name(), self._component, args[0])
+        else:
+            return CartSetAngle(self.name(), self._component, args[0], args[1])
 
 class CartSetAngle(MotionPrimitive):
 
-    def __init__(self, name, component, angle):
+    def __init__(self, name, component, angle, dt = None):
         super().__init__(name, component)
         self.var = self._component._theta
         self.angle = angle
+        if dt is None:
+            self._dMin = 0
+            self._dMax = 1
+        else:
+            self._dMin = dt
+            self._dMax = dt
 
     def modifies(self):
         return [self.var]
     
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO upper as function of the angle and angular speed
+        return DurationSpec(self._dMin, self._dMax, False) #TODO upper as function of the angle and angular speed
 
     def pre(self):
         return S.true
@@ -250,14 +259,17 @@ class MoveCart(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ['x', 'y', 't', 'delta']
+        return ['x', 'y', 't', 'delta', '[opt duration]']
 
     def setParameters(self, args):
-        assert(len(args) == 4)
+        assert(len(args) == 4 or len(args) == 5)
         direction = self._component.position().i * args[3]
         dx = cos(args[2]) * args[3]
         dy = sin(args[2]) * args[3]
-        return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy)
+        if len(args) == 4:
+            return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy)
+        else:
+            return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy, args[4])
 
 class StrafeCart(MotionPrimitiveFactory):
 
@@ -276,7 +288,7 @@ class StrafeCart(MotionPrimitiveFactory):
 
 class CartMoveDirection(CartMotionPrimitive):
     
-    def __init__(self, name, component, x, y, t, x1, y1):
+    def __init__(self, name, component, x, y, t, x1, y1, dt = None):
         super().__init__(name, component)
         self._frame = self._component.frame()
         self.x = x
@@ -284,6 +296,12 @@ class CartMoveDirection(CartMotionPrimitive):
         self.t = t
         self.x1 = x1
         self.y1 = y1
+        if dt is None:
+            self._dMin = 3
+            self._dMax = 10
+        else:
+            self._dMin = dt
+            self._dMax = dt
         self._maxErrorPre = 0.01
         self._maxErrorPost = 0.005
         self._radius = component.radius
@@ -299,7 +317,7 @@ class CartMoveDirection(CartMotionPrimitive):
         return [self._component._x, self._component._y]
     
     def duration(self):
-        return DurationSpec(3, 10, False) #TODO upper as function of the distance+angle and speed
+        return DurationSpec(self._dMin, self._dMax, False) #TODO upper as function of the distance+angle and speed
 
     def pre(self):
         onGround = self._onGround(self._component.position())
