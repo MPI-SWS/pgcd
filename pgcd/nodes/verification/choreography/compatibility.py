@@ -148,7 +148,7 @@ class CompatibilityCheck:
                     self.vcs.append( VC("precondition of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), [And(assumptions, preState, Not(mp.pre()))]) )
                     fs = [And(assumptions, preState, pointDomain, p.abstractResources(point), Not(mp.preFP(point))), And(assumptions, preState, pointDomain, p.ownResources(point), Not(mp.preFP(point)))]
                     self.vcs.append( VC("pre resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs) )
-                    for p2 in processes:
+                    for p2 in processes: #TODO do not for get obstacles !!
                         if p.name() < p2.name():
                             motion2 = motionForProcess(node.motions, p2)
                             mp2 = p2.motionPrimitive(motion2.mp_name, *motion2.mp_args)
@@ -182,7 +182,7 @@ class CompatibilityCheck:
                     f1 = mp.invFP(point)
                     assert(self.isTimeInvariant(f1))
                     f1 = deTimifyFormula(p.variables(), f1)
-                    for p2 in processes:
+                    for p2 in processes: #TODO obstacles
                         if p.name() < p2.name():
                             motion2 = motionForProcess(node.motions, p2)
                             mp2 = p2.motionPrimitive(motion2.mp_name, *motion2.mp_args)
@@ -223,7 +223,7 @@ class CompatibilityCheck:
                     motion = motionForProcess(node.motions, p)
                     mp = p.motionPrimitive(motion.mp_name, *motion.mp_args)
                     f1 = mp.postFP(point)
-                    for p2 in processes:
+                    for p2 in processes: #TODO obstacles
                         if p.name() < p2.name():
                             if debug:
                                 print("post (3) for process " + p2.name())
