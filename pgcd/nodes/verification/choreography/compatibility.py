@@ -129,6 +129,7 @@ class CompatibilityCheck:
         assert(self.predComputed)
         px, py, pz = symbols('inFpX inFpY inFpZ')
         pointDomain = And(px >= self.minX, px <= self.maxX, py >= self.minY, py <= self.maxY, pz >= self.minZ, pz <= self.maxZ)
+        obstacles = self.chor.world.obstacles()
         for p in self.processes:
             if debug:
                 print("correctness of footprint abstraction for " + p.name())
@@ -146,6 +147,9 @@ class CompatibilityCheck:
                 preState = tracker.pred()
                 # a point for the footprint
                 point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
+                # FP of the node
+                overallFpSpec = self.chor.state_to_footprints[node.start_state[0]]
+                fpFormula = overallFpSpec.fpOver(px, py, pz)
                 # make the VCs
                 # precondition
                 for p in processes:
@@ -156,11 +160,17 @@ class CompatibilityCheck:
                     fs = [And(assumptions, preState, pointDomain, p.abstractResources(point), Not(mp.preFP(point))),
                           And(assumptions, preState, pointDomain, p.ownResources(point), Not(mp.preFP(point)))]
                     self.addVC("pre resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs)
-                    for p2 in processes: #TODO do not for get obstacles !!
+                    fs = [And(assumptions, preState, pointDomain, mp.preFP(point), Not(fpFormula))]
+                    self.addVC("pre resources of " + mp.name() + " in FP  @ " + str(node.start_state[0]), fs)
+                    for p2 in processes:
                         if p.name() < p2.name():
                             mp2 = self.getMP(node, p2)
                             fs = [And(assumptions, preState, pointDomain, mp.preFP(point), mp2.preFP(point))]
                             self.addVC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
+                    for p2 in obstacles:
+                        fs = [And(assumptions, preState, pointDomain, fpFormula, p2.footprint(point)),
+                              And(assumptions, preState, pointDomain, mp.preFP(point), p2.footprint(point))]
+                        self.addVC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
                 #frame
                 tracker2 = tracker.copy()
                 for p in processes:
@@ -186,7 +196,7 @@ class CompatibilityCheck:
                     f1 = mp.invFP(point)
                     assert(self.isTimeInvariant(f1))
                     f1 = deTimifyFormula(p.variables(), f1)
-                    for p2 in processes: #TODO obstacles
+                    for p2 in processes:
                         if p.name() < p2.name():
                             mp2 = self.getMP(node, p2)
                             f2 = mp2.invFP(point)
@@ -194,22 +204,13 @@ class CompatibilityCheck:
                             f2 = deTimifyFormula(p2.variables(), f2)
                             fs = [And(assumptions, inv, pointDomain, f1, f2)]
                             self.addVC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
-                    #process resources are included in invFP
-                    fs = [And(assumptions, inv, pointDomain, p.abstractResources(point), Not(f1)),
-                          And(assumptions, inv, pointDomain, p.ownResources(point), Not(f1))]
-                    self.addVC("inv resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs)
-                # invFP are in the overall FP
-                overallFpSpec = self.chor.state_to_footprints[node.start_state[0]]
-                fpFormula = overallFpSpec.fpOver(px, py, pz)
-                for p in processes:
-                    if debug:
-                        print("invariant (3) for process " + p.name())
-                    mp = self.getMP(node, p)
-                    f1 = mp.invFP(point)
-                    assert(self.isTimeInvariant(f1))
-                    f1 = deTimifyFormula(p.variables(), f1)
+                    for p2 in obstacles:
+                        fs = [And(assumptions, inv, pointDomain, fpFormula, p2.footprint(point)),
+                              And(assumptions, inv, pointDomain, f1, p2.footprint(point))]
+                        self.addVC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
+                    # inv in FP
                     fs = [And(assumptions, inv, pointDomain, f1, Not(fpFormula))]
-                    self.addVC("inv FP in overall FP for " + p.name() + " @ " + str(node.start_state[0]), fs)
+                    self.addVC("inv resources of " + mp.name() + " in FP @ " + str(node.start_state[0]), fs)
                 #post:
                 post = frame
                 for p in processes:
@@ -224,7 +225,7 @@ class CompatibilityCheck:
                         print("post (2) for process " + p.name())
                     mp = self.getMP(node, p)
                     f1 = mp.postFP(point)
-                    for p2 in processes: #TODO obstacles
+                    for p2 in processes:
                         if p.name() < p2.name():
                             if debug:
                                 print("post (3) for process " + p2.name())
@@ -232,20 +233,13 @@ class CompatibilityCheck:
                             f2 = mp2.postFP(point)
                             fs = [And(assumptions, post, pointDomain, f1, f2)]
                             self.addVC("no collision in post for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
+                    for p2 in obstacles:
+                        fs = [And(assumptions, post, pointDomain, fpFormula, p2.footprint(point)),
+                              And(assumptions, post, pointDomain, f1, p2.footprint(point))]
+                        self.addVC("no collision in post for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
                     #process resources are included in postFP
-                    fs = [And(assumptions, post, pointDomain, p.abstractResources(point), Not(f1)),
-                          And(assumptions, post, pointDomain, p.ownResources(point), Not(f1))]
-                    self.addVC("post resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs)
-                # postFP is in the overall FP
-                for p in processes:
-                    if debug:
-                        print("post (3) for process " + p.name())
-                    mp = self.getMP(node, p)
-                    f1 = mp.postFP(point)
-                    assert(self.isTimeInvariant(f1))
-                    f1 = deTimifyFormula(p.variables(), f1)
-                    fs = [And(assumptions, inv, pointDomain, f1, Not(fpFormula))]
-                    self.addVC("post FP in overall FP for " + p.name() + " @ " + str(node.start_state[0]), fs)
+                    fs = [And(assumptions, post, pointDomain, f1, Not(fpFormula))]
+                    self.addVC("post resources of " + mp.name() + " in FP @ " + str(node.start_state[0]), fs)
             if isinstance(node, Fork):
                 if debug:
                    print("fork FP", str(node))

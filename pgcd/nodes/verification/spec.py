@@ -68,7 +68,7 @@ class Component(ABC):
         return cp
 
     def obstacles(self):
-        cp = [p for c in self._children.values() for p in c.allProcesses()]
+        cp = [p for c in self._children.values() for p in c.obstacles()]
         if self.isObstacle():
            cp.append(self) 
         return cp
@@ -293,6 +293,7 @@ class Cube(Obstacle):
     
     def __init__(self, x, y, z, theta, dx, dy, dz, parent = None, index = 0):
         super().__init__("cube_" + str(Cube.count), parent, index)
+        self.count = Cube.count
         Cube.count += 1
         self.x = x
         self.y = y
@@ -305,4 +306,4 @@ class Cube(Obstacle):
     def footprint(self, point):
         f = self.frame()
         cf = f.orient_new_axis(self.name(), self.theta, f.k, location = self.x * f.i + self.y * f.j + self.z * f.k)
-        return cube(cubeFrame, cf.origin, cf.origin.locate_new(self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point)
+        return cube(cf, cf.origin, cf.origin.locate_new(self.name() + "_top", self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point)
