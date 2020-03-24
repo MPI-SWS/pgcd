@@ -20,7 +20,7 @@ class XpLaneParametricTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.dy = 50
+        self.dy = 0.5
 
     def world(self, n, m):
         # mounting pts:   x  y  z  θ

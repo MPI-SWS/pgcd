@@ -425,18 +425,18 @@ class ArmMoveTo(MotionPrimitive):
     def pre(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.gripperReach
         #TODO min distance
-        dist = distance(self._component._upper.origin, self._target)
-        pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
-        return And(pos <= dist, dist <= maxRadius)
+        dist = distance(self._component._upper.origin, self._target) # can reach
+        return And(dist <= maxRadius)
 
     def post(self):
         effector = self._component.mountingPoint(0).origin
         return distance(effector, self._target) <= 0.01
 
     def inv(self):
-        dist = distance(self._component._upper.origin, self._target)
-        pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
-        return self.timify(pos <= dist)
+        #dist = distance(self._component._upper.origin, self._target)
+        #pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
+        #return self.timify(pos <= dist)
+        return S.true
 
     def preFP(self, point):
         return self._component.abstractResources(point, 0.05)
