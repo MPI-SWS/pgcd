@@ -1,5 +1,4 @@
 import sympy as sp
-from spec import *
 from experiments_setups import World
 from mpmath import mp
 from cart import *

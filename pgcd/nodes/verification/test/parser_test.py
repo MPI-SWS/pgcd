@@ -1,6 +1,6 @@
 import sys
 
-mport interpreter.parser as rp
+import interpreter.parser as rp
 from choreography.projection import Projection
 import unittest
 from experiments_setups import *

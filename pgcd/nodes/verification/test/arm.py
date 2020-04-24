@@ -1,7 +1,9 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
-from spec import *
+from spec.component import *
+from spec.motion import *
+from spec.time import *
 from utils.geometry import *
 
 # model for a generic arm as 3 linkage connected by revolute actuators

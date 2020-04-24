@@ -1,4 +1,4 @@
-from spec import *
+from spec.time import deTimifyFormula
 from ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic

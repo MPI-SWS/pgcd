@@ -4,24 +4,6 @@ import functools
 from abc import ABC, abstractmethod
 from utils.geometry import cube
 
-######################################################################
-# Some classes to write the spec of components and motion primitive. #
-# This will be used for the compatibility check.                     #
-######################################################################
-    
-def timeSymbol():
-    return Symbol("t")
-
-def timifyVar(var):
-    return Function(var.name)(timeSymbol())
-    
-def timifyFormula(self, var, pred):
-    time = { v: timifyVar(v) for v in var }
-    return pred.subs(time)
-    
-def deTimifyFormula(var, pred):
-    detime = { timifyVar(v): v for v in var }
-    return pred.subs(detime)
 
 class Component(ABC):
     
@@ -62,15 +44,15 @@ class Component(ABC):
         return S.false
 
     def allProcesses(self):
-        cp = [p for c in self._children.values() for p in c.allProcesses()]
+        cp = { p for c in self._children.values() for p in c.allProcesses() }
         if self.isProcess():
-           cp.append(self) 
+           cp.add(self) 
         return cp
 
     def obstacles(self):
-        cp = [p for c in self._children.values() for p in c.obstacles()]
+        cp = { p for c in self._children.values() for p in c.obstacles() }
         if self.isObstacle():
-           cp.append(self) 
+           cp.add(self) 
         return cp
 
 
@@ -154,121 +136,8 @@ class Process(Component):
             counter += 1
         return factory.setParameters(params), params
 
-# Specification for the timing aspect of a motion primitive
-class DurationSpec():
 
-    def __init__(self, _min = 0, _max = float('inf'), interruptible = True):
-        self.min = _min
-        self.max = _max
-        self.interruptible = interruptible
-
-    def __str__(self):
-        return "DurationSpec(" + str(self.min) + ", " + str(self.max) + ", " + str(self.interruptible) + ")"
-
-    def copy(self):
-        return DurationSpec(self.min, self.max, self.interruptible)
-
-    def valid(self):
-        return self.min <= self.max
-
-    def fixed(self):
-        return self.min == self.max
-
-    def concat(self, ds):
-        assert not self.interruptible, "cannot add something after an non interruptible motion: " + str(self) + " then " + str(ds)
-        if ds.interruptible:
-            new_min = self.max + ds.min
-            new_max = self.min + ds.max
-            assert(new_min <= new_max)
-            return DurationSpec(new_min, new_max, ds.interruptible)
-        else:
-            return DurationSpec(self.min + ds.min, self.max + ds.max, ds.interruptible)
-
-    def intersect(self, ds):
-        assert(self.interruptible or ds.interruptible or (self.fixed() and ds.fixed())), "cannot intersect " + str(self) + " and " + str(ds)
-        if not self.interruptible:
-            assert(ds.min <= self.min and ds.max >= self.max), "(1) " + str(self) + " ∩ " + str(ds)
-            return DurationSpec(self.min, self.max, False)
-        elif not ds.interruptible:
-            assert(self.min <= ds.min and self.max >= ds.max), "(2) " + str(self) + " ∩ " + str(ds)
-            return DurationSpec(ds.min, ds.max, False)
-        else:
-            new_min = max(self.min, ds.min)
-            new_max = min(self.max, ds.max)
-            assert(new_min <= new_max), "(3) " + str(self) + " ∩ " + str(ds)
-            return DurationSpec(new_min, new_max, True)
-
-    def implements(self, ds):
-        same = self.interruptible == ds.interruptible
-        if self.interruptible:
-            return same and self.min <= ds.min and self.max >= ds.max
-        else:
-            return same and self.min >= ds.min and self.max <= ds.max
-
-# Some motion primitives have parameters, we represent that with a factory.
-# Given some concrete value for the parameters we get a motion primitive.
-# Currently the values should be concrete, formula not yet supported
-class MotionPrimitiveFactory(ABC):
-
-    def __init__(self, component):
-        self._component = component
-        component.addMotionPrimitive(self)
-    
-    def name(self):
-        return self.__class__.__name__
-
-    def parameters(self):
-        return []
-
-    # returns a MotionPrimitive
-    @abstractmethod
-    def setParameters(self, args):
-        pass
-
-class MotionPrimitive():
-    
-    def __init__(self, name, component):
-        self._name = name
-        self._component = component
-    
-    def name(self):
-        return self._name
-
-    def timify(self, pred):
-        time = { var: timifyVar(var) for var in self._component.variables() }
-        return pred.subs(time)
-
-    def duration(self):
-        return DurationSpec(1, 1, False)
-
-    def modifies(self):
-        '''some motion primitive (like idle) does not change all the variables'''
-        return self._component.ownVariables()
-    
-    def pre(self):
-        """precondition over the component's variables"""
-        return S.false
-    
-    def post(self):
-        """postcondition over the component's variables"""
-        return S.true
-    
-    def inv(self):
-        """an invariant over the component's variables (as function of time)"""
-        return S.true
-    
-    def preFP(self, point):
-        """footprint of the precondition"""
-        return S.true
-    
-    def postFP(self, point):
-        """footprint of the postcondition"""
-        return S.true
-    
-    def invFP(self, point):
-        """footprint of the invariant"""
-        return S.true
-
+# Passive object in the environement which have a footprint (to check collision)
 class Obstacle(Component):
     
     def __init__(self, name, parent = None, index = 0):
@@ -286,6 +155,7 @@ class Obstacle(Component):
 
     def mountingPoint(self, index):
         return ValueException(self.name() + " does not have mounting moints.")
+
 
 class Cube(Obstacle):
 

@@ -1,12 +1,10 @@
 /log
 **/cnf.json
-/geometry
-/geometry2
 **/.idea
 *.pyc
 **/pycache
 **/chor_parselog.txt
 *.dot
-/tf2_geometry_msgs
 **/parsetab.py
 **/parselog.txt
+**/parser.out

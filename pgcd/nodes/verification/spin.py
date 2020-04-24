@@ -1,4 +1,4 @@
-import ast_inter
+import interpreter.ast_inter as ast_inter
 import sympy as sp
 
 import subprocess

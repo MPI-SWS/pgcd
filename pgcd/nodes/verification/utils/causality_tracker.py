@@ -1,6 +1,6 @@
 import numpy as np
 from copy import copy
-from spec import DurationSpec
+from spec.time import DurationSpec
 
 class CausalityTracker:
 

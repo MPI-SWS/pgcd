@@ -1,4 +1,4 @@
-import ast_inter
+import interpreter.ast_inter as ast_inter
 import sympy as sp
 from spin import McMessages
 from utils.vc import *
@@ -7,7 +7,7 @@ from utils.bbox import *
 from utils.predicate_tracker import *
 from utils.vectorizer import Vectorizer
 import logging
-import spec
+from spec.time import deTimifyFormula
 
 
 class GlobalModelChecking():
@@ -158,7 +158,7 @@ class GlobalModelChecking():
                 f = motion.inv()
                 assert(self.isTimeInvariant(f))
                 self.logger.debug("invariant (1) for process %s is %s", p.name(), str(f))
-                inv = sp.And(inv, spec.deTimifyFormula(p.variables(), f))
+                inv = sp.And(inv, deTimifyFormula(p.variables(), f))
             #inv is sat
             self.vcs.append( VC("inv is sat @ " + str(mp), [And(assumptions, inv)], True) )
             #inv no collision
@@ -167,13 +167,13 @@ class GlobalModelChecking():
                 motion = self.getMotion(mp, p)
                 f1 = motion.invFP(point)
                 assert(self.isTimeInvariant(f1))
-                f1 = spec.deTimifyFormula(p.variables(), f1)
+                f1 = deTimifyFormula(p.variables(), f1)
                 for p2 in self.processes:
                     if p.name() < p2.name():
                         motion2 = self.getMotion(mp, p2)
                         f2 = motion2.invFP(point)
                         assert(self.isTimeInvariant(f2))
-                        f2 = spec.deTimifyFormula(p2.variables(), f2)
+                        f2 = deTimifyFormula(p2.variables(), f2)
                         fs = [sp.And(assumptions, inv, pointDomain, f1, f2)]
                         self.vcs.append( VC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(mp), fs) )
                 #process resources are included in invFP

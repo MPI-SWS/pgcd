@@ -1,4 +1,4 @@
-from spec import *
+from spec.component import Process
 from compatibility import *
 from utils.geometry import *
 from arm import Arm

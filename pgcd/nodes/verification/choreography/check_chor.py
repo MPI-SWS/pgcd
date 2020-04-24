@@ -2,7 +2,7 @@ from ast_chor import *
 from compatibility import choiceAt
 from utils.causality_tracker import *
 from threads import *
-from spec import DurationSpec
+from spec.time import DurationSpec
 from propagate_footprints import *
 
 class ChoreographyCheck:

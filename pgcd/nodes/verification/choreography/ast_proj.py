@@ -1,6 +1,5 @@
 from ast_chor import *
 from sympy import *
-from spec import *
 from copy import *
 
 

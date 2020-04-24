@@ -1,4 +1,3 @@
-from spec import *
 from compatibility import *
 from utils.geometry import *
 from cart import Cart

@@ -1,7 +1,9 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
-from spec import *
+from spec.component import *
+from spec.motion import *
+from spec.time import *
 from utils.geometry import *
 
 #when modeled as triangle then center 2 side is about 0.16

@@ -1,4 +1,4 @@
-from spec import *
+from spec.component import Cube
 from compatibility import *
 from utils.geometry import *
 from cart import Cart
