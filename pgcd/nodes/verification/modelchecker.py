@@ -135,7 +135,7 @@ class GlobalModelChecking():
             for p in self.processes:
                 motion = self.getMotion(mp, p)
                 #pre spec implies precondition
-                self.vcs.append( VC("precondition of " + motion.name() + " for " + p.name() + " @ " + str(mp), [sp.And(assumptions, annotAtPre, sp.Not(motion.pre()))]) )
+                self.vcs.append( VC("precondition of " + motion.name() + " for " + p.name() + " @ " + str(mp), [sp.And(assumptions, annotAtPre, sp.Not(motion.preG()))]) )
                 #pre spec has resources
                 fpCoarse = sp.And(assumptions, annotAtPre, pointDomain, p.abstractResources(point), sp.Not(motion.preFP(point)))
                 fpFine = sp.And(assumptions, annotAtPre, pointDomain, p.ownResources(point), sp.Not(motion.preFP(point)))
@@ -155,7 +155,7 @@ class GlobalModelChecking():
             inv = frame
             for p in self.processes:
                 motion = self.getMotion(mp, p)
-                f = motion.inv()
+                f = motion.invG()
                 assert(self.isTimeInvariant(f))
                 self.logger.debug("invariant (1) for process %s is %s", p.name(), str(f))
                 inv = sp.And(inv, deTimifyFormula(p.variables(), f))
@@ -187,7 +187,7 @@ class GlobalModelChecking():
             for p in self.processes:
                 self.logger.debug("post (1) for process %s", p.name())
                 motion = self.getMotion(mp, p)
-                post = sp.And(post, motion.post())
+                post = sp.And(post, motion.postG())
             self.vcs.append( VC("post is sat @ " + str(mp), [sp.And(assumptions, post)], True) )
             #post postconditions implies spec
             self.vcs.append( VC("post implies annot @ " + str(mp), [sp.And(assumptions, post, sp.Not(annotAtPost))]) )

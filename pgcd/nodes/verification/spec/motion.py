@@ -1,6 +1,7 @@
 from sympy import *
 from abc import ABC, abstractmethod
 from spec.time import timifyVar
+from spec.contract import AssumeGuaranteeContract
 
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.
@@ -22,7 +23,7 @@ class MotionPrimitiveFactory(ABC):
     def setParameters(self, args):
         pass
 
-class MotionPrimitive():
+class MotionPrimitive(AssumeGuaranteeContract):
     
     def __init__(self, name, component):
         self._name = name
@@ -31,37 +32,13 @@ class MotionPrimitive():
     def name(self):
         return self._name
 
+    def components(self):
+        return [self._component]
+
     def timify(self, pred):
         time = { var: timifyVar(var) for var in self._component.variables() }
         return pred.subs(time)
 
-    def duration(self):
-        return DurationSpec(1, 1, False)
-
     def modifies(self):
         '''some motion primitive (like idle) does not change all the variables'''
         return self._component.ownVariables()
-    
-    def pre(self):
-        """precondition over the component's variables"""
-        return S.false
-    
-    def post(self):
-        """postcondition over the component's variables"""
-        return S.true
-    
-    def inv(self):
-        """an invariant over the component's variables (as function of time)"""
-        return S.true
-    
-    def preFP(self, point):
-        """footprint of the precondition"""
-        return S.true
-    
-    def postFP(self, point):
-        """footprint of the postcondition"""
-        return S.true
-    
-    def invFP(self, point):
-        """footprint of the invariant"""
-        return S.true

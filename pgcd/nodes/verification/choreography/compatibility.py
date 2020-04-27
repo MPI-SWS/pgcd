@@ -61,7 +61,7 @@ class ComputePreds(FixedPointDataflowAnalysis):
             tracker.relaxVariables(mp.modifies())
         #add the postconditions
         for mp in mps:
-            tracker.addFormula(mp.post())
+            tracker.addFormula(mp.postG())
         return tracker
 
     def guard(self, tracker, guard):
@@ -156,7 +156,7 @@ class CompatibilityCheck:
                     if debug:
                         print("precondition for process " + str(p))
                     mp = self.getMP(node, p)
-                    self.addVC("precondition of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), [And(assumptions, preState, Not(mp.pre()))])
+                    self.addVC("precondition of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), [And(assumptions, preState, Not(mp.preG()))])
                     fs = [And(assumptions, preState, pointDomain, p.abstractResources(point), Not(mp.preFP(point))),
                           And(assumptions, preState, pointDomain, p.ownResources(point), Not(mp.preFP(point)))]
                     self.addVC("pre resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs)
@@ -183,7 +183,7 @@ class CompatibilityCheck:
                     if debug:
                         print("invariant (1) for process " + p.name())
                     mp = self.getMP(node, p)
-                    f = mp.inv()
+                    f = mp.invG()
                     assert(self.isTimeInvariant(f))
                     inv = And(inv, deTimifyFormula(p.variables(), f))
                 #mp.inv is sat
@@ -217,7 +217,7 @@ class CompatibilityCheck:
                     if debug:
                         print("post (1) for process " + p.name())
                     mp = self.getMP(node, p)
-                    post = And(post, mp.post())
+                    post = And(post, mp.postG())
                 self.addVC("post is sat @ " + str(node.start_state[0]), [And(assumptions, post)], True)
                 #- mp.postFP are disjoint
                 for p in processes:

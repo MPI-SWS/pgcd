@@ -151,16 +151,16 @@ class ArmFold(MotionPrimitive):
     def duration(self):
         return DurationSpec(self._dMin, self._dMax, False) #TODO function of angle and speed
 
-    def pre(self):
+    def preG(self):
         return S.true
 
-    def post(self):
+    def postG(self):
         a = Eq(self._component.a_eff(), self._component.maxAngleAB)
         b = Eq(self._component.b_eff(), self._component.minAngleAB)
         c = Eq(self._component.c_eff(), 0)
         return And(a, b, c)
 
-    def inv(self):
+    def invG(self):
         return S.true
 
     def preFP(self, point):
@@ -196,13 +196,13 @@ class ArmIdle(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, float('inf'), True) 
 
-    def pre(self):
+    def preG(self):
         return S.true
 
-    def post(self):
+    def postG(self):
         return S.true
 
-    def inv(self):
+    def invG(self):
         return S.true
 
     def preFP(self, point):
@@ -231,13 +231,13 @@ class ArmWait(MotionPrimitive):
     def duration(self):
         return DurationSpec(self.t_min, self.t_max, False)
 
-    def pre(self):
+    def preG(self):
         return S.true
 
-    def post(self):
+    def postG(self):
         return S.true
 
-    def inv(self):
+    def invG(self):
         return S.true
 
     def preFP(self, point):
@@ -271,15 +271,15 @@ class ArmGrab(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, 1, False) #TODO 
 
-    def pre(self):
+    def preG(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.upperArmRadius + self._component.gripperReach
         #TODO min distance
         return distance(self._component._upper.origin, self._target) <= maxRadius
 
-    def post(self):
+    def postG(self):
         return S.true
 
-    def inv(self):
+    def invG(self):
         return S.true
 
     def preFP(self, point):
@@ -330,16 +330,16 @@ class ArmPutInBin(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, 1, False) #TODO 
 
-    def pre(self):
+    def preG(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.gripperReach
         maxDist = distance(self._component._upper.origin, self._target) <= maxRadius
         #TODO min distance
         return And(self.neutral(0.1), maxDist)
 
-    def post(self):
+    def postG(self):
         return self.neutral()
 
-    def inv(self):
+    def invG(self):
         f = And(self._component.gamma() >= self._minGamma, self._component.gamma() <= self._maxGamma)
         return self.timify(f)
 
@@ -424,17 +424,17 @@ class ArmMoveTo(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, 1, False) #TODO function of angle and speed
 
-    def pre(self):
+    def preG(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.gripperReach
         #TODO min distance
         dist = distance(self._component._upper.origin, self._target) # can reach
         return And(dist <= maxRadius)
 
-    def post(self):
+    def postG(self):
         effector = self._component.mountingPoint(0).origin
         return distance(effector, self._target) <= 0.01
 
-    def inv(self):
+    def invG(self):
         #dist = distance(self._component._upper.origin, self._target)
         #pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
         #return self.timify(pos <= dist)
@@ -515,13 +515,13 @@ class ArmSetAngle(MotionPrimitive):
     def duration(self):
         return DurationSpec(self._dMin, self._dMax, False) #TODO function of angle and speed
 
-    def pre(self):
+    def preG(self):
         return And(self.var >= self.angle1 - 0.01, self.angle1 <= self.angle1 + 0.01 ) #deal with δ-sat
 
-    def post(self):
+    def postG(self):
         return Eq(self.var, self.angle2 )
 
-    def inv(self):
+    def invG(self):
         f = true
         if self.angle1 < self.angle2:
             f = And( self.var >= self.angle1, self.var <= self.angle2)
@@ -587,12 +587,12 @@ class ArmSetAllAngles(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, 1, False) #TODO function of angle and speed
 
-    def pre(self):
+    def preG(self):
         return And( self._component._a >= self.angle3a - 0.01, self._component._a <= self.angle3a + 0.01,
                     self._component._b >= self.angle2a - 0.01, self._component._b <= self.angle2a + 0.01,
                     self._component._c >= self.angle1a - 0.01, self._component._c <= self.angle1a + 0.01)
 
-    def post(self):
+    def postG(self):
         targetCanti = self.angle2b
         if targetCanti <= 0.0:
             targetCanti = targetCanti + self.delta
@@ -603,7 +603,7 @@ class ArmSetAllAngles(MotionPrimitive):
         c = Eq( self._component._c, self.angle1b )
         return And(a, b, c)
 
-    def inv(self):
+    def invG(self):
         f = true
         if self.angle1a < self.angle1b:
             f = And(f, self._component._c >= self.angle1a, self._component._c <= self.angle1b)

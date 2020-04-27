@@ -66,13 +66,7 @@ class StaticIdle(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, float('inf'), True) 
 
-    def pre(self):
-        return S.true
-
-    def post(self):
-        return S.true
-
-    def inv(self):
+    def preG(self):
         return S.true
 
     def preFP(self, point):
@@ -117,13 +111,7 @@ class StaticWait(MotionPrimitive):
     def duration(self):
         return DurationSpec(self.t_min, self.t_max, False)
 
-    def pre(self):
-        return S.true
-
-    def post(self):
-        return S.true
-
-    def inv(self):
+    def preG(self):
         return S.true
 
     def preFP(self, point):

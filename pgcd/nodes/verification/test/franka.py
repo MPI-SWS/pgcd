@@ -161,10 +161,10 @@ class FrankaHomePos(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, 2, False) #TODO upper as function of the angle and speed
 
-    def pre(self):
+    def preG(self):
         return S.true
 
-    def post(self):
+    def postG(self):
         return And(Eq(self._component._a, 0), Eq(self._component._b, 0), Eq(self._component._c, 0), Eq(self._component._d, 0), Eq(self._component._e, 0), Eq(self._component._f, 0), Eq(self._component._g, 0))
 
     def preFP(self, point):
@@ -199,13 +199,13 @@ class FrankaIdle(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, float('inf'), True) 
 
-    def pre(self):
+    def preG(self):
         return S.true
 
-    def post(self):
+    def postG(self):
         return S.true
 
-    def inv(self):
+    def invG(self):
         return S.true
 
     def preFP(self, point):
@@ -256,13 +256,13 @@ class FrankaWait(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, 1, False) #TODO
 
-    def pre(self):
+    def preG(self):
         return S.true
 
-    def post(self):
+    def postG(self):
         return S.true
 
-    def inv(self):
+    def invG(self):
         return S.true
 
     def preFP(self, point):
@@ -314,7 +314,7 @@ class FrankaMoveTo(MotionPrimitive):
     def duration(self):
         return DurationSpec(0, 2, False) #TODO upper as function of the angle and speed
 
-    def pre(self, err = 0.1):
+    def preG(self, err = 0.1):
         return And(self.a0 - err <= self._component._a, self._component._a <= self.a0 + err,
                    self.b0 - err <= self._component._b, self._component._b <= self.b0 + err,
                    self.c0 - err <= self._component._c, self._component._c <= self.c0 + err,
@@ -323,7 +323,7 @@ class FrankaMoveTo(MotionPrimitive):
                    self.f0 - err <= self._component._f, self._component._f <= self.f0 + err,
                    self.g0 - err <= self._component._g, self._component._g <= self.g0 + err)
 
-    def inv(self, err = 0.1):
+    def invG(self, err = 0.1):
         cstr = S.true
         cstr = And(cstr, Min(self.a0, self.a1) - err <= self._component._a )
         cstr = And(cstr, self._component._a <= Max(self.a0, self.a1) + err )
@@ -360,7 +360,7 @@ class FrankaMoveTo(MotionPrimitive):
             cstr = And(cstr, Eq( (a - a0) / (a1 - a0), (b - b0) / (b1 - b0) ) )
         return cstr
 
-    def post(self, err = 0.0):
+    def postG(self, err = 0.0):
         return And(self.a1 - err <= self._component._a, self._component._a <= self.a1 + err,
                    self.b1 - err <= self._component._b, self._component._b <= self.b1 + err,
                    self.c1 - err <= self._component._c, self._component._c <= self.c1 + err,
