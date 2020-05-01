@@ -87,7 +87,7 @@ class ComputePreds(FixedPointDataflowAnalysis):
 
 class CompatibilityCheck:
 
-    def __init__(self, chor, world, minX = -10, maxX = 10, minY = 10, maxY = 10, minZ = 0, maxZ = 2):
+    def __init__(self, chor, world, minX = -10, maxX = 10, minY = -10, maxY = 10, minZ = 0, maxZ = 2):
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
         self.minX = minX
@@ -112,10 +112,6 @@ class CompatibilityCheck:
                 print(k, v)
         self.predComputed = True
 
-    def isTimeInvariant(self, formula):
-        #TODO for the moment, what we have is ok but it needs to be checked
-        return True
-
     def addVC(self, title, formulae, sat = False):
         vc = VC(title, formulae, sat)
         self.vcs.append( vc )
@@ -134,7 +130,7 @@ class CompatibilityCheck:
             if debug:
                 print("correctness of footprint abstraction for " + p.name())
             point = p.frame().origin.locate_new("inFp", px * p.frame().i + py * p.frame().j + pz * p.frame().k )
-            hypotheses = And(p.invariant(), pointDomain, p.ownResources(point))
+            hypotheses = And(p.invariantG(), pointDomain, p.ownResources(point))
             concl = p.abstractResources(point)
             self.addVC("correctness of footprint abstraction for " + p.name(), [And(hypotheses, Not(concl))])
         for node in self.state_to_node.values():
@@ -143,7 +139,7 @@ class CompatibilityCheck:
             processes = self.chor.getProcessesAt(node)
             if isinstance(node, Motion):
                 tracker = self.state_to_pred[node.start_state[0]]
-                assumptions = And(*[ p.invariant() for p in processes ]) #TODO add the connection as ==
+                assumptions = And(*[ p.invariantG() for p in processes ]) #TODO add the connection as ==
                 preState = tracker.pred()
                 # a point for the footprint
                 point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
@@ -184,7 +180,7 @@ class CompatibilityCheck:
                         print("invariant (1) for process " + p.name())
                     mp = self.getMP(node, p)
                     f = mp.invG()
-                    assert(self.isTimeInvariant(f))
+                    assert(mp.isInvTimeInvariant())
                     inv = And(inv, deTimifyFormula(p.variables(), f))
                 #mp.inv is sat
                 self.addVC("inv is sat @ " + str(node.start_state[0]), [And(assumptions, inv)], True)
@@ -194,13 +190,13 @@ class CompatibilityCheck:
                         print("invariant (2) for process " + p.name())
                     mp = self.getMP(node, p)
                     f1 = mp.invFP(point)
-                    assert(self.isTimeInvariant(f1))
+                    assert(mp.isInvTimeInvariant())
                     f1 = deTimifyFormula(p.variables(), f1)
                     for p2 in processes:
                         if p.name() < p2.name():
                             mp2 = self.getMP(node, p2)
                             f2 = mp2.invFP(point)
-                            assert(self.isTimeInvariant(f2))
+                            assert(mp2.isInvTimeInvariant())
                             f2 = deTimifyFormula(p2.variables(), f2)
                             fs = [And(assumptions, inv, pointDomain, f1, f2)]
                             self.addVC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)

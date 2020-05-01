@@ -75,10 +75,12 @@ class Process(Component):
     
     def inputVariables(self):
         """returns a list input variables as sympy symbols"""
+        # TODO the frame
         return []
     
     def outputVariables(self):
         """returns a list output variables as sympy symbols"""
+        # TODO the mounting points
         return []
 
     def ownVariables(self):
@@ -89,11 +91,14 @@ class Process(Component):
         """returns all the variables as sympy symbols"""
         return self.internalVariables() + self.inputVariables() + self.outputVariables()
 
-    def invariant(self):
-        """returns some constraints over the variables"""
-        #TODO in the future we'll need to split this in assumption and guarantees depending on the variables
+    def invariantA(self):
+        """returns some constraints over the input variables"""
         return S.true
     
+    def invariantG(self):
+        """returns some constraints over the output variables"""
+        return S.true
+
     def ownResources(self, point):
         """returns constraints that are true if point is in the resources of this process"""
         return S.true

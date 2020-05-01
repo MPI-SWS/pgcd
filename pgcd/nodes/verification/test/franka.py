@@ -108,7 +108,7 @@ class FrankaEmikaPanda(Process):
         return [self._a, self._b, self._c, self._d, self._e, self._f, self._g]
 
     # min and max for all the angles
-    def invariant(self):
+    def invariantG(self):
         domain_a = And(self._a >= self.minAngleA, self._a <= self.maxAngleA)
         domain_b = And(self._b >= self.minAngleB, self._b <= self.maxAngleB)
         domain_c = And(self._c >= self.minAngleC, self._c <= self.maxAngleC)

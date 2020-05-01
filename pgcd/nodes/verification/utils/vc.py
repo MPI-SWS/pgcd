@@ -47,6 +47,8 @@ class VC:
             if debug:
                 for f in f3:
                     print(f)
+            #TODO catch trivial
+            #TODO take out variables which are not important: the ones only appearing in bound cstrs (careful may be unsat)
             dr = DrealInterface(timeout = timeout, debug = debug)
             res, model = dr.run(f3)
             if res == None:

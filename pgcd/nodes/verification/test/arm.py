@@ -102,7 +102,7 @@ class Arm(Process):
         assert(index == 0)
         return self._effector
 
-    def invariant(self):
+    def invariantG(self):
         pi = mp.pi
         domain_a = And(self.a_eff() >= self.minAngleAB, self.a_eff() <= self.maxAngleAB)
         domain_b = And(self.b_eff() >= self.minAngleAB, self.b_eff() <= self.maxAngleAB)

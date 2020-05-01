@@ -120,13 +120,13 @@ class GlobalModelChecking():
         for p in self.processes:
             self.logger.debug("correctness of footprint abstraction for %s", p.name())
             point = p.frame().origin.locate_new("inFp", px * p.frame().i + py * p.frame().j + pz * p.frame().k )
-            hypotheses = sp.And(p.invariant(), pointDomain, p.ownResources(point))
+            hypotheses = sp.And(p.invariantG(), pointDomain, p.ownResources(point))
             concl = p.abstractResources(point)
             self.vcs.append( VC("correctness of footprint abstraction for " + p.name(), [sp.And(hypotheses, sp.Not(concl))]) )
         # a point for the footprint
         point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
         # now to the mp
-        assumptions = sp.And(*[ p.invariant() for p in self.processes ]) #TODO add the connection as ==
+        assumptions = sp.And(*[ p.invariantG() for p in self.processes ]) #TODO add the connection as ==
         for mp in mps:
             self.logger.info("mp: %s", mp) # mp is map from name to loc, mp, time
             # pre

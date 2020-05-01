@@ -42,7 +42,7 @@ class Cart(Process):
         # reuse the parent's position
         return self._parent.frame()
 
-    def invariant(self):
+    def invariantG(self):
         rng = 10 #bound on the space in which the cart travel around the origin, FIXME dreal does not like unbounded variables
         return And(self._theta >= -mp.pi, self._theta <= mp.pi, self._x <= rng, self._x >= -rng, self._y <= rng, self._y >= -rng)
 
