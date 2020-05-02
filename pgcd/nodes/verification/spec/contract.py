@@ -26,7 +26,7 @@ class AssumeGuaranteeContract(ABC):
 
     def frame(self):
         """The frame in which this contract is expressed. By default take the frame from one of the components."""
-        return next(iter(self.component())).frame()
+        return next(iter(self.components())).frame()
 # TODO impact of the frame ?
 
     def inputs(self):
@@ -38,7 +38,7 @@ class AssumeGuaranteeContract(ABC):
         return { v for c in self.components() for v in c.outputVariables() }
 
     def allVariables(self):
-        return self.inputs() + self.outputs()
+        return self.inputs() | self.outputs()
 
     # Part about the pre/post/inv
 
@@ -51,7 +51,7 @@ class AssumeGuaranteeContract(ABC):
 
     def preG(self):
         """guarantees over the contract outputs at the beginning"""
-        return S.false
+        return S.false # without overriding preG, the contract is empty!
 
     def preFP(self, point):
         """footprint at the start"""
@@ -89,10 +89,10 @@ class AssumeGuaranteeContract(ABC):
         """footprint of the postcondition"""
         return S.true
 
-    def notVacuous(self):
+    def wellFormed(self):
         """check that the contract is not empty, returns VCs """
         # title
-        prefix = self.name + " refines " + contract.name + ": "
+        prefix = self.name + " well-formed: "
         # no quantification over time or quantifier alternation for the moment
         assert(self.isInvTimeInvariant())
         assert(self.preA().free_symbols.isdisjoint(self.preG().free_symbols))
@@ -119,14 +119,15 @@ class AssumeGuaranteeContract(ABC):
         prefix = self.name + " refines " + contract.name + ": "
         # for the footprint
         px, py, pz = symbols('inFpX inFpY inFpZ')
-        frame = self.frame()
+        frame = self.frame() #TODO equality of the two frames ?
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= self.minX, px <= self.maxX, 
-                          py >= self.minY, py <= self.maxY,
-                          pz >= self.minZ, pz <= self.maxZ)
+        pointDomain = And(px >= minX, px <= maxX, 
+                          py >= minY, py <= maxY,
+                          pz >= minZ, pz <= maxZ)
         # no quantification over time for the moment
         assert(self.isInvTimeInvariant())
         assert(contract.isInvTimeInvariant())
+        # TODO something feels wrong here: ...
         vcs = [
             VC(prefix + "components", [sympify(self.components() == contract.components())], True),
             VC(prefix + "duration", [sympify(self.duration().implements(contract.duration()))], True),
@@ -137,10 +138,10 @@ class AssumeGuaranteeContract(ABC):
             # inv
             VC(prefix + "invA",   [And(contract.deTimifyFormula(contract.invA()), Not(self.deTimifyFormula(self.invA())))]),
             VC(prefix + "invG",   [And(self.deTimifyFormula(self.invG()), Not(contract.deTimifyFormula(contract.invG())))]),
-            VC(prefix + "invFP",  [And(pointDomain, self.deTimifyFormula(self.preFP(point)), Not(contract.deTimifyFormula(contract.preFP(point))))]), #TODO strengthen by invG
+            VC(prefix + "invFP",  [And(pointDomain, self.deTimifyFormula(self.invFP(point)), Not(contract.deTimifyFormula(contract.invFP(point))))]), #TODO strengthen by invG
             # post
             VC(prefix + "postA",  [And(contract.postA(), Not(self.postA()))]),
-            VC(prefix + "postG",  [And(self.post(), Not(contract.postG()))]),
+            VC(prefix + "postG",  [And(self.postG(), Not(contract.postG()))]),
             VC(prefix + "postFP", [And(pointDomain, self.postFP(point), Not(contract.postFP(point)))]) # TODO strengthen by postG
         ]
         return vcs
@@ -152,7 +153,7 @@ class ComposedContract(AssumeGuaranteeContract):
     """returns a new contract which is the composition of two contracts"""
 
     def __init__(self, contract1, contract2, connection):
-        super.__init__("composition of " + contract1.name + " and " + contract2.name)
+        super().__init__("composition of " + contract1.name + " and " + contract2.name)
         self._contract1 = contract1
         self._contract2 = contract2
         self._connection = connection
@@ -162,21 +163,22 @@ class ComposedContract(AssumeGuaranteeContract):
         # TODO connection is valid
         # TODO compatible G ⇒ A
         # TODO not vacuous
+        # TODO the frames are related ?
     
     def components(self):
         c1 = self._contract1.components()
         c2 = self._contract2.components()
-        return c1 + c2
+        return c1 | c2
 
     def inputs(self):
         i1 = self._contract1.inputs() - self._contract2.outputs()
         i2 = self._contract2.inputs() - self._contract1.outputs()
-        return i1 + i2
+        return i1 | i2
     
     def outputs(self):
         o1 = self._contract1.outputs()
         o2 = self._contract2.outputs()
-        return o1 + o2
+        return o1 | o2
 
     def duration(self):
         d1 = self._contract1.duration()

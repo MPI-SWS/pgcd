@@ -33,6 +33,31 @@ class VC:
             sat = "unsat"
         return "VC(" + self.title + ", " + str(self.formulas) + "," + sat + ")"
 
+    def _trivialOrSovler(self, formula, timeout, debug):
+        trivialSat = True
+        trivialUnsat = False
+        for f in formula:
+            if f == S.true:
+                pass
+            elif f == S.false:
+                trivialUnsat = True
+                trivialSat = False
+            else:
+                trivialSat = False
+        if trivialUnsat:
+            return False
+        elif trivialSat:
+            return True
+        else:
+            #TODO take out variables which are not important: the ones only appearing in bound cstrs (careful may be unsat)
+            # split the formula into bound cstr and other cstr
+            # look at the free symbols in other cstr
+            # look in the bound cstr for var not needed var are sat
+            # send the other cstr to the solver
+            dr = DrealInterface(timeout = timeout, debug = debug)
+            res, model = dr.run(f3)
+            return res
+
     def discharge(self, timeout = 240, debug = False):
         if debug:
             sat = ""
@@ -47,10 +72,7 @@ class VC:
             if debug:
                 for f in f3:
                     print(f)
-            #TODO catch trivial
-            #TODO take out variables which are not important: the ones only appearing in bound cstrs (careful may be unsat)
-            dr = DrealInterface(timeout = timeout, debug = debug)
-            res, model = dr.run(f3)
+            res = self._trivialOrSovler(f3, timeout, debug)
             if res == None:
                 return False
             elif res == self.sat:

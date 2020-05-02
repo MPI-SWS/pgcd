@@ -34,7 +34,7 @@ class DummyProcess(Process):
         Idle(self)
 
     def frame(self):
-        return parent.frame()
+        return self._parent.frame()
 
     def outputVariables(self):
         return [Symbol(self.name() + "_x"), Symbol(self.name() + "_y"), Symbol(self.name() + "_z")]
@@ -42,6 +42,8 @@ class DummyProcess(Process):
     def abstractResources(self, *arg):
         return S.false
 
+    def mountingPoint(self, index):
+        return self.frame()
 
 
 def cartAndArmWorld():
