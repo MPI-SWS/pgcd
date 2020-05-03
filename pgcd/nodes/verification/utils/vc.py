@@ -55,7 +55,7 @@ class VC:
             # look in the bound cstr for var not needed var are sat
             # send the other cstr to the solver
             dr = DrealInterface(timeout = timeout, debug = debug)
-            res, model = dr.run(f3)
+            res, model = dr.run(formula)
             return res
 
     def discharge(self, timeout = 240, debug = False):

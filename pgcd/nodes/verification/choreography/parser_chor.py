@@ -135,6 +135,7 @@ class ChoreographyParser:
         else:
             p[0] = [p[1]]
 
+    # TODO contract
     def p_fork(self, p):
         ''' fork : ID EQUALS fp ID OR fargs
                  | ID EQUALS ID OR fargs '''

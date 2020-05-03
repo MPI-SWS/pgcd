@@ -127,7 +127,6 @@ class AssumeGuaranteeContract(ABC):
         # no quantification over time for the moment
         assert(self.isInvTimeInvariant())
         assert(contract.isInvTimeInvariant())
-        # TODO something feels wrong here: ...
         vcs = [
             VC(prefix + "components", [sympify(self.components() == contract.components())], True),
             VC(prefix + "duration", [sympify(self.duration().implements(contract.duration()))], True),
@@ -146,6 +145,38 @@ class AssumeGuaranteeContract(ABC):
         ]
         return vcs
 
+    def checkCollision(self, contract, connection, worldFrame):
+        """check if two contracts are collision free, return VCs"""
+        prefix = self.name + " and " + contract.name + " collision-freedom: "
+        px, py, pz = symbols('inFpX inFpY inFpZ')
+        #TODO take the least ancestor frame, not necessarily the worldFrame
+        frame = worldFrame
+        point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
+        pointDomain = And(px >= minX, px <= maxX, 
+                          py >= minY, py <= maxY,
+                          pz >= minZ, pz <= maxZ)
+        connectionCstrs = S.true
+        for k,v in connection.items():
+            connectionCstrs = And(connectionCstrs ,Eq(k,v))
+        vcs = []
+        #pre
+        pre = And(pointDomain, self.preG(), self.preFP(point), contract.preG(), contract.preFP(point), connectionCstrs)
+        vcs.append( VC(prefix + "pre", [pre]) )
+        #inv
+        # no quantification over time for the moment
+        assert(self.isInvTimeInvariant())
+        assert(contract.isInvTimeInvariant())
+        inv = And(pointDomain,
+                  self.deTimifyFormula(self.invG()),
+                  self.deTimifyFormula(self.invFP(point)),
+                  contract.deTimifyFormula(contract.invG()),
+                  contract.deTimifyFormula(contract.invFP(point)),
+                  connectionCstrs)
+        vcs.append( VC(prefix + "inv",  [inv]) )
+        # post
+        post = And(pointDomain, self.postG(), self.postFP(point), contract.postG(), contract.postFP(point), connectionCstrs)
+        vcs.append( VC(prefix + "post", [post]) )
+        return vcs
 
 
 

@@ -1,6 +1,8 @@
 import unittest
 from spec.contract import *
+from spec.time import timifyFormula
 from experiments_setups import World, DummyProcess
+from utils.geometry import cube
 
 #TODO contract, vaccuous, refinement, composition, etc.
 
@@ -30,6 +32,35 @@ class TestContract02(AssumeGuaranteeContract):
     def preG(self):
         return S.true
 
+class TestContract03(AssumeGuaranteeContract):
+
+    def __init__(self, proc, x, y, z):
+        super().__init__("TestContract03")
+        self._p = proc
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def components(self):
+        return {self._p};
+
+    def preG(self):
+        return S.true
+
+    def fp(self, point):
+        f = self.frame();
+        lbl = f.origin.locate_new(self.name + "_lbl", self.x * f.i + self.y * f.j + self.z * f.k);
+        ufr = f.origin.locate_new(self.name + "_lbl", (self.x + 1) * f.i + (self.y + 1) * f.j + (self.z + 1) * f.k);
+        return cube(f, lbl, ufr, point);
+
+    def preFP(self, point):
+        return self.fp(point);
+
+    def invFP(self, point):
+        return timifyFormula(self.allVariables(), self.fp(point));
+
+    def postFP(self, point):
+        return self.fp(point);
 
 class ContractTests(unittest.TestCase):
     
@@ -69,6 +100,27 @@ class ContractTests(unittest.TestCase):
         contract2 = TestContract02(dp2)
         contract3 = ComposedContract(contract1, contract2, dict())
         vcs = contract3.wellFormed()
+        wrong = [ vc for vc in vcs if not(vc.discharge())]
+        self.assertTrue(len(wrong) == 0)
+
+    def test_07(self):
+        contract = TestContract03(dp1, 0, 0, 0)
+        vcs = contract.wellFormed()
+        wrong = [ vc for vc in vcs if not(vc.discharge())]
+        self.assertTrue(len(wrong) == 0)
+
+    def test_08(self):
+        contract1 = TestContract03(dp1, 0, 0, 0)
+        contract2 = TestContract03(dp2, 0, 0, 0)
+        vcs = contract1.checkCollision(contract2, dict(), w.frame())
+        wrong = [ vc for vc in vcs if not(vc.discharge())]
+        self.assertTrue(len(wrong) == 3)
+
+
+    def test_09(self):
+        contract1 = TestContract03(dp1, -1, 0, 0)
+        contract2 = TestContract03(dp2, 1, 0, 0)
+        vcs = contract1.checkCollision(contract2, dict(), w.frame())
         wrong = [ vc for vc in vcs if not(vc.discharge())]
         self.assertTrue(len(wrong) == 0)
 

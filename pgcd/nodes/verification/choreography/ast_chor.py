@@ -229,7 +229,7 @@ class Merge(DistributedStateNode):
     def shift_delay_check(self, node):
         return  self == node
 
-
+# TODO contract rather than just footprints
 class Fork(DistributedStateNode):
 
     def __init__(self, start_state, footprints, continue_state):

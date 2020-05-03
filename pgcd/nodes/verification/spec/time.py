@@ -6,7 +6,7 @@ def timeSymbol():
 def timifyVar(var):
     return Function(var.name)(timeSymbol())
     
-def timifyFormula(self, var, pred):
+def timifyFormula(var, pred):
     time = { v: timifyVar(v) for v in var }
     return pred.subs(time)
     
