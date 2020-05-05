@@ -314,9 +314,7 @@ class XpSortingTest(unittest.TestCase):
         print("VC generation:", end - start)
         start = end
         print("#VC:", len(checker.vcs))
-# VC status
-# 3: ? (expensive!!)
-        for i in range(4, len(checker.vcs)):
+        for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):

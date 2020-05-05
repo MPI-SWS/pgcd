@@ -3,6 +3,7 @@ from sympy.vector import CoordSys3D
 from spec.component import *
 from spec.motion import *
 from spec.time import *
+from spec.conf import *
 from utils.geometry import *
 from cart import *
 from arm import *
@@ -13,7 +14,7 @@ class World(Component):
 
     def __init__(self, *mnts):
         super().__init__('World', None)
-        f = CoordSys3D('World')
+        f = worldFrame 
         self._frame = f
         self._mountingPoints = [f.orient_new_axis('world_mount_' + str(i), t, f.k, location= x * f.i + y * f.j + z * f.k) for i, (x,y,z,t) in enumerate(mnts)]
         self._mount = f

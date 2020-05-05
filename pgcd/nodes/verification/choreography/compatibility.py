@@ -1,4 +1,5 @@
 from spec.time import deTimifyFormula
+from spec.conf import *
 from ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
@@ -87,15 +88,9 @@ class ComputePreds(FixedPointDataflowAnalysis):
 
 class CompatibilityCheck:
 
-    def __init__(self, chor, world, minX = -10, maxX = 10, minY = -10, maxY = 10, minZ = 0, maxZ = 2):
+    def __init__(self, chor, world):
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
-        self.minX = minX
-        self.maxX = maxX
-        self.minY = minY
-        self.maxY = maxY
-        self.minZ = minZ
-        self.maxZ = maxZ
         self.world = world
         self.processes = world.allProcesses()
         self.state_to_pred = {}
@@ -120,12 +115,10 @@ class CompatibilityCheck:
         motion = motionForProcess(node.motions, p)
         return p.motionPrimitive(motion.mp_name, *motion.mp_args)
 
-    # compatibility of motion primitives
-    def generateCompatibilityChecks(self, debug = False):
-        assert(self.predComputed)
+
+    def checkProcessAbstraction(self, debug = False):
         px, py, pz = symbols('inFpX inFpY inFpZ')
-        pointDomain = And(px >= self.minX, px <= self.maxX, py >= self.minY, py <= self.maxY, pz >= self.minZ, pz <= self.maxZ)
-        obstacles = self.chor.world.obstacles()
+        pointDomain = And(px >= minX, px <= maxX, py >= minY, py <= maxY, pz >= minZ, pz <= maxZ)
         for p in self.processes:
             if debug:
                 print("correctness of footprint abstraction for " + p.name())
@@ -133,125 +126,67 @@ class CompatibilityCheck:
             hypotheses = And(p.invariantG(), pointDomain, p.ownResources(point))
             concl = p.abstractResources(point)
             self.addVC("correctness of footprint abstraction for " + p.name(), [And(hypotheses, Not(concl))])
+
+    # compatibility of motion primitives
+    def generateCompatibilityChecks(self, debug = False):
+        assert(self.predComputed)
+        obstacles = self.chor.world.obstacles()
+        if (enableProcessAbstractionCheck):
+            self.checkProcessAbstraction(debug)
         for node in self.state_to_node.values():
             if debug:
                 print("generateCompatibilityChecks for node " + str(node))
             processes = self.chor.getProcessesAt(node)
             if isinstance(node, Motion):
+                # state before
                 tracker = self.state_to_pred[node.start_state[0]]
-                assumptions = And(*[ p.invariantG() for p in processes ]) #TODO add the connection as ==
-                preState = tracker.pred()
-                # a point for the footprint
-                point = self.world.frame().origin.locate_new("inFp", px * self.world.frame().i + py * self.world.frame().j + pz * self.world.frame().k )
-                # FP of the node
-                overallFpSpec = self.chor.state_to_footprints[node.start_state[0]]
-                fpFormula = overallFpSpec.fpOver(px, py, pz)
-                # make the VCs
-                # precondition
-                for p in processes:
-                    if debug:
-                        print("precondition for process " + str(p))
-                    mp = self.getMP(node, p)
-                    self.addVC("precondition of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), [And(assumptions, preState, Not(mp.preG()))])
-                    fs = [And(assumptions, preState, pointDomain, p.abstractResources(point), Not(mp.preFP(point))),
-                          And(assumptions, preState, pointDomain, p.ownResources(point), Not(mp.preFP(point)))]
-                    self.addVC("pre resources of " + mp.name() + " for " + p.name() + " @ " + str(node.start_state[0]), fs)
-                    fs = [And(assumptions, preState, pointDomain, mp.preFP(point), Not(fpFormula))]
-                    self.addVC("pre resources of " + mp.name() + " in FP  @ " + str(node.start_state[0]), fs)
-                    for p2 in processes:
-                        if p.name() < p2.name():
-                            mp2 = self.getMP(node, p2)
-                            fs = [And(assumptions, preState, pointDomain, mp.preFP(point), mp2.preFP(point))]
-                            self.addVC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
-                    for p2 in obstacles:
-                        fs = [And(assumptions, preState, pointDomain, fpFormula, p2.footprint(point)),
-                              And(assumptions, preState, pointDomain, mp.preFP(point), p2.footprint(point))]
-                        self.addVC("no collision in precondition for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
-                #frame
+                # inv and post extra pred
                 tracker2 = tracker.copy()
                 for p in processes:
                     mp = self.getMP(node, p)
                     tracker2.relaxVariables(mp.modifies())
-                frame = tracker2.pred()
-                #invariant
-                inv = frame
+                # make the VCs
+                overallSpec = self.chor.state_to_contracts[node.start_state[0]] # is FpContract
+                composedContracts = None
                 for p in processes:
-                    if debug:
-                        print("invariant (1) for process " + p.name())
+                    otherProcesses = [ p2 for p2 in processes if p2 != p ]
                     mp = self.getMP(node, p)
-                    f = mp.invG()
-                    assert(mp.isInvTimeInvariant())
-                    inv = And(inv, deTimifyFormula(p.variables(), f))
-                #mp.inv is sat
-                self.addVC("inv is sat @ " + str(node.start_state[0]), [And(assumptions, inv)], True)
-                #mp.invFP are disjoint
-                for p in processes:
+                    extra = ExtraInfo(pre = And(p.invariantG(), tracker.pred(p)),
+                                      always = And(p.invariantG(), tracker2.pred(p)))
                     if debug:
-                        print("invariant (2) for process " + p.name())
-                    mp = self.getMP(node, p)
-                    f1 = mp.invFP(point)
-                    assert(mp.isInvTimeInvariant())
-                    f1 = deTimifyFormula(p.variables(), f1)
-                    for p2 in processes:
-                        if p.name() < p2.name():
-                            mp2 = self.getMP(node, p2)
-                            f2 = mp2.invFP(point)
-                            assert(mp2.isInvTimeInvariant())
-                            f2 = deTimifyFormula(p2.variables(), f2)
-                            fs = [And(assumptions, inv, pointDomain, f1, f2)]
-                            self.addVC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
+                        print("precondition for process " + str(p))
+                    self.addVC("precondition of " + mp.name + " for " + p.name() + " @ " + str(node.start_state[0]), [And(extra.pre, extra.always, Not(mp.preG()))])
+                    self.vcs.extend(mp.wellFormed(extra))
+                    if composedContracts == None:
+                        composedContracts = mp
+                    else:
+                        composedContracts = ComposedContract(composedContracts, mp, dict()) #TODO connection
                     for p2 in obstacles:
-                        fs = [And(assumptions, inv, pointDomain, fpFormula, p2.footprint(point)),
-                              And(assumptions, inv, pointDomain, f1, p2.footprint(point))]
-                        self.addVC("no collision in inv for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
-                    # inv in FP
-                    fs = [And(assumptions, inv, pointDomain, f1, Not(fpFormula))]
-                    self.addVC("inv resources of " + mp.name() + " in FP @ " + str(node.start_state[0]), fs)
-                #post:
-                post = frame
-                for p in processes:
-                    if debug:
-                        print("post (1) for process " + p.name())
-                    mp = self.getMP(node, p)
-                    post = And(post, mp.postG())
-                self.addVC("post is sat @ " + str(node.start_state[0]), [And(assumptions, post)], True)
-                #- mp.postFP are disjoint
-                for p in processes:
-                    if debug:
-                        print("post (2) for process " + p.name())
-                    mp = self.getMP(node, p)
-                    f1 = mp.postFP(point)
-                    for p2 in processes:
-                        if p.name() < p2.name():
-                            if debug:
-                                print("post (3) for process " + p2.name())
-                            mp2 = self.getMP(node, p2)
-                            f2 = mp2.postFP(point)
-                            fs = [And(assumptions, post, pointDomain, f1, f2)]
-                            self.addVC("no collision in post for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
-                    for p2 in obstacles:
-                        fs = [And(assumptions, post, pointDomain, fpFormula, p2.footprint(point)),
-                              And(assumptions, post, pointDomain, f1, p2.footprint(point))]
-                        self.addVC("no collision in post for " + p.name() + " and " + p2.name() + " @ " + str(node.start_state[0]), fs)
-                    #process resources are included in postFP
-                    fs = [And(assumptions, post, pointDomain, f1, Not(fpFormula))]
-                    self.addVC("post resources of " + mp.name() + " in FP @ " + str(node.start_state[0]), fs)
+                        self.vcs.extend(mp.checkCollisionAgainstObstacle(p2, self.chor.world.frame(), extra = extra))
+                pInv = And(*[p.invariantG() for p in processes])
+                extra = ExtraInfo(pre = And(tracker.pred()),
+                                  always = And(pInv, tracker2.pred()))
+                #print("motion: ", str(node))
+                #print(extra)
+                self.vcs.extend(composedContracts.refines(overallSpec, extra = extra))
             if isinstance(node, Fork):
                 if debug:
-                   print("fork FP", str(node))
-                overallFpSpec = self.chor.state_to_footprints[node.start_state[0]]
-                fpFormula = overallFpSpec.fpOver(px, py, pz)
+                   print("fork: ", str(node))
+                overallSpec = self.chor.state_to_contracts[node.start_state[0]] # is FpContract
+                composedContracts = None
+                extra = ExtraInfo()
+                tracker = self.state_to_pred[node.start_state[0]]
                 for e1 in node.end_state:
-                    e1FpSpec = self.chor.state_to_footprints[e1]
-                    e1Fp = e1FpSpec.fpOver(px, py, pz)
-                    fs = [And(pointDomain, e1Fp, Not(fpFormula))]
-                    self.addVC("fork to " + e1 + " @ " + str(node.start_state[0]), fs)
-                    for e2 in node.end_state:
-                        if e1 > e2:
-                            e2FpSpec = self.chor.state_to_footprints[e2]
-                            e2Fp = e2FpSpec.fpOver(px, py, pz)
-                            fs = [And(pointDomain, e1Fp, e2Fp)] 
-                            self.addVC("fork split " + e1 + " and " + e2 + " @ " + str(node.start_state[0]), fs)
+                    e1Spec = self.chor.state_to_contracts[e1] # is FpContract
+                    processes = self.chor.getProcessesAt(e1)
+                    pInv = And(*[And(p.invariantG(), tracker.pred(p)) for p in processes])
+                    extra = ExtraInfo(always = And(extra.always, pInv))
+                    if composedContracts == None:
+                        composedContracts = e1Spec
+                    else:
+                        composedContracts = ComposedContract(composedContracts, e1Spec, dict()) #TODO connection
+                    self.vcs.extend(composedContracts.wellFormed(extra))
+                self.vcs.extend(composedContracts.refines(overallSpec, extra))
 
     def localChoiceChecks(self):
         for node in self.state_to_node.values():

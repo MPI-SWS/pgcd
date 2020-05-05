@@ -1,5 +1,6 @@
 from enum import Enum
 import sympy as sp 
+from spec.contract import *
 
 
 class Type(Enum):
@@ -27,8 +28,8 @@ class Choreography():
         self.predicate = predicate
         self.start_state = start_state
         self.world = None # world is a spec.Component
-        self.state_to_processes = None # filled later by the analysis
-        self.state_to_footprints = None # filled later by the analysis
+        self.state_to_processes  = None # filled later by the analysis
+        self.state_to_contracts  = None # filled later by the analysis, for the moment only FpContract!
 
     def __str__(self):
         string = "def " + self.id + " \n"
@@ -261,11 +262,8 @@ class Footprint():
         self.z = z
         self.expr = expr
 
-    def point(self, frame):
-        return frame.locate_new("fp", frame.i * self.x + frame.j * self.y + frame.k * self.z)
-
-    def fpOver(self, x, y, z):
-        return self.expr.subs([(self.x, x), (self.y, y), (self.z, z)])
+    def toFpContract(self, start_state, processes, frame):
+        return FpContract(start_state + " fp contract", processes, frame, self.x, self.y, self.z, self.expr) 
 
     def __str__(self):
         return "{ (" + str(self.x) + ", " +  str(self.y) + ", " + str(self.z) + ") : " + str(self.expr) + " }"

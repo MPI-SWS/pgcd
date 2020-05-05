@@ -1,5 +1,7 @@
 from utils.DrealInterface import DrealInterface
 from sympy import *
+from sympy.logic.boolalg import to_nnf
+from spec.conf import dRealJobs, dRealTimeout
 
 
 def getConjuncts(expr):
@@ -22,8 +24,11 @@ class VC:
     def __init__(self, title, formulas, shouldBeSat = False):
         self.title = title
         #self.formulas = [ simplify_logic(f) for f in formulas ] # a list of formula from imprecise (easy to solve) to precise (hard to solve)
-        self.formulas = formulas
+        #self.formulas = [ simplify(f) for f in formulas ]
+        #self.formulas = [ to_nnf(f, simplify=False) for f in formulas ]
+        self.formulas = [ to_nnf(f) for f in formulas ]
         self.sat = shouldBeSat
+        self.model = None
 
     def __str__(self):
         sat = ""
@@ -54,11 +59,18 @@ class VC:
             # look at the free symbols in other cstr
             # look in the bound cstr for var not needed var are sat
             # send the other cstr to the solver
-            dr = DrealInterface(timeout = timeout, debug = debug)
+            dr = DrealInterface(timeout = timeout, jobs = dRealJobs, debug = debug)
             res, model = dr.run(formula)
+            self.model = model
             return res
 
-    def discharge(self, timeout = 240, debug = False):
+    def hasModel(self):
+        return self.model != None
+
+    def modelStr(self):
+        return "\n".join( str(k) + " = " + str (v) for k,v in self.model.items() )
+
+    def discharge(self, timeout = dRealTimeout, debug = False):
         if debug:
             sat = ""
             if self.sat:

@@ -142,7 +142,7 @@ class XpHandoverChainParametricTest(unittest.TestCase):
         print("VC generation:", end - start)
         start = end
         print("#VC:", len(checker.vcs))
-        for i in range(n, len(checker.vcs)): # XXX skip the one about the processes abstract FP
+        for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             #print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):

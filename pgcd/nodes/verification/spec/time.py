@@ -12,7 +12,11 @@ def timifyFormula(var, pred):
     
 def deTimifyFormula(var, pred):
     detime = { timifyVar(v): v for v in var }
-    return pred.subs(detime)
+    res = pred.subs(detime)
+    # print("deTimifyFormula")
+    # print("detime", detime)
+    # print("res", res)
+    return res
 
 # Specification for the timing aspect of a motion primitive
 class DurationSpec():
@@ -43,6 +47,14 @@ class DurationSpec():
             return DurationSpec(new_min, new_max, ds.interruptible)
         else:
             return DurationSpec(self.min + ds.min, self.max + ds.max, ds.interruptible)
+
+    def consume(self, ds):
+        """inverse from concat, remove a duration from this one"""
+        assert not ds.interruptible, "cannot consume from an interruptible motion: " + str(self) + " - " + str(ds)
+        assert(ds.max <= self.min)
+        new_min = self.min - ds.max
+        new_max = self.max - ds.min
+        return DurationSpec(new_min, new_max, self.interruptible)
 
     def intersect(self, ds):
         assert(self.interruptible or ds.interruptible or (self.fixed() and ds.fixed())), "cannot intersect " + str(self) + " and " + str(ds)

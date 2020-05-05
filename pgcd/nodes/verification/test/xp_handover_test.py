@@ -44,15 +44,15 @@ def xp2_choreo_1():
 # TODO need a way of (1) specifying frame for the FP spec in the annotations and (2) for the VC flatten to least common ancestor rather than world
 def xp2_choreo_2():
     return ''' Handover =
-        def x0 = { fpx < 0.4 } ca0 ||
-                 { fpx > 0.4 } c0
+        def x0 = { fpx < 0.38 } ca0 ||
+                 { fpx > 0.42 } c0
             ca0 = (Cart: MoveCart(0, 0, 0, 0.3, 5), Arm: Idle()) ; ca1
             c0 = (Carrier: MoveCart(0, 0, 0, 0.5, 5) ) ; c1
             ca1 || c1 = x1
             x1 = Carrier -> Cart: OK(); x2
             x2 = Cart -> Arm: OK(); x3
-            x3 = { (fpx > 0.4) && (fpz < 0.17) } cr3 ||
-                 { (fpx < 0.4) || (fpz > 0.17) } ct3
+            x3 = { (fpx > 0.42) && (fpz < 0.16) } cr3 ||
+                 { (fpx < 0.38) || (fpz > 0.18) } ct3
             ct3 = (Cart: Idle(), Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953)) ; ct4
             ct4 = (Cart: Idle(), Arm: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659)) ; ct5
             ct5 = (Cart: Idle(), Arm: Grip(9.5) ) ; ct6
@@ -61,8 +61,8 @@ def xp2_choreo_2():
             ct7 || cr7 = x7
             x7 = Arm -> Cart: OK(); x8
             x8 = Cart -> Carrier: OK(); x9
-            x9 = { fpx < 0.4 } ca9 ||
-                 { fpx > 0.4 } c9
+            x9 = { fpx < 0.38 } ca9 ||
+                 { fpx > 0.42 } c9
             ca9 = (Cart: MoveCart(0.3, 0, 0, -0.3, 5), Arm: Idle()) ; ca10
             c9 = (Carrier: MoveCart(0.5, 0, 0, -0.5, 5) ) ; c10
             ca10 || c10 = x10
@@ -74,27 +74,27 @@ def xp2_choreo_2():
 
 def xp2_choreo_3():
     return ''' Handover =
-        def x0 = { fpx < 0.4 } ca0 ||
-                 { fpx > 0.4 } c0
+        def x0 = { fpx < 0.38 } ca0 ||
+                 { fpx > 0.42 } c0
             ca0 = (Cart: MoveCart(0, 0, 0, 0.3, 5), Arm: Idle()) ; ca1
             c0 = (Carrier: MoveCart(0, 0, 0, 0.5, 5) ) ; c1
             ca1 || c1 = x1
             x1 = Carrier -> Cart: OK(); x2
             x2 = Cart -> Arm: OK(); x3
-            x3 = { (fpx > 0.4) && (fpz < 0.17) } cr3 ||
-                 { (fpx < 0.4) && (fpz < 0.09) } ct3 ||
-                 { (((fpx < 0.4) && (fpz > 0.09)) || (fpz > 0.17)) && (Cart_theta == 0) && (Cart_x == 0.3) && (Cart_y == 0) } ar3
+            x3 = { (fpx > 0.42) && (fpz < 0.17) } cr3 ||
+                 { (fpx < 0.38) && (fpz < 0.09) } ct3 ||
+                 { (((fpx < 0.38) && (fpz > 0.09)) || (fpz > 0.17)) && (Cart_theta == 0) && (Cart_x == 0.3) && (Cart_y == 0) } ar3
             ar3 = (Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953)) ; ar4
             ar4 = (Arm: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659)) ; ar5
             ar5 = (Arm: Grip(9.5) ) ; ar6
             ar6 = (Arm: RetractArm()) ; ar7
-            ct3 = (Carrier: Idle()) ; ct7
+            ct3 = (Cart: Idle()) ; ct7
             cr3 = (Carrier: Idle()) ; cr7
             ar7 || ct7 || cr7 = x7
             x7 = Arm -> Cart: OK(); x8
             x8 = Cart -> Carrier: OK(); x9
-            x9 = { fpx < 0.4 } ca9 ||
-                 { fpx > 0.4 } c9
+            x9 = { fpx < 0.38 } ca9 ||
+                 { fpx > 0.42 } c9
             ca9 = (Cart: MoveCart(0.3, 0, 0, -0.3, 5), Arm: Idle()) ; ca10
             c9 = (Carrier: MoveCart(0.5, 0, 0, -0.5, 5) ) ; c10
             ca10 || c10 = x10
@@ -172,11 +172,14 @@ class XpHandoverTest(unittest.TestCase):
         print("VC generation:", end - start)
         start = end
         print("#VC:", len(checker.vcs))
-        for i in range(3, len(checker.vcs)): # XXX skip the one about the processes abstract FP
+        for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
-                raise Exception(str(vc))
+                if vc.hasModel():
+                    raise Exception(str(vc) + "\n" + vc.modelStr())
+                else: 
+                    raise Exception(str(vc))
         end = time.time()
         print("VC solving:", end - start)
         start = end

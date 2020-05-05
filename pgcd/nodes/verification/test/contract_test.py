@@ -101,7 +101,7 @@ class ContractTests(unittest.TestCase):
         contract3 = ComposedContract(contract1, contract2, dict())
         vcs = contract3.wellFormed()
         wrong = [ vc for vc in vcs if not(vc.discharge())]
-        self.assertTrue(len(wrong) == 0)
+        self.assertTrue(len(wrong) == 3) # FP are not disjoint
 
     def test_07(self):
         contract = TestContract03(dp1, 0, 0, 0)
@@ -121,6 +121,14 @@ class ContractTests(unittest.TestCase):
         contract1 = TestContract03(dp1, -1, 0, 0)
         contract2 = TestContract03(dp2, 1, 0, 0)
         vcs = contract1.checkCollision(contract2, dict(), w.frame())
+        wrong = [ vc for vc in vcs if not(vc.discharge())]
+        self.assertTrue(len(wrong) == 0)
+
+    def test_10(self):
+        contract1 = TestContract03(dp1, -1, 0, 0)
+        contract2 = TestContract03(dp2, 1, 0, 0)
+        contract3 = ComposedContract(contract1, contract2, dict())
+        vcs = contract3.wellFormed()
         wrong = [ vc for vc in vcs if not(vc.discharge())]
         self.assertTrue(len(wrong) == 0)
 

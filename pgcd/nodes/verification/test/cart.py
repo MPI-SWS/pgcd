@@ -22,7 +22,7 @@ class Cart(Process):
         self._x = symbols(name + '_x')
         self._y = symbols(name + '_y')
         self._theta = symbols(name + '_theta')
-        f = world.frame()
+        f = world.mountingPoint(index)
         self._position = self._x * f.i + self._y * f.j
         # mount is 11cm above the ground
         self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + 0.09 * f.k)
@@ -37,10 +37,6 @@ class Cart(Process):
     def position(self):
         f = self.frame()
         return f.orient_new_axis(self._name + '_position', self._theta, f.k, location = self._position)
-
-    def frame(self):
-        # reuse the parent's position
-        return self._parent.frame()
 
     def invariantG(self):
         rng = 10 #bound on the space in which the cart travel around the origin, FIXME dreal does not like unbounded variables
