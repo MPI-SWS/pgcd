@@ -167,7 +167,10 @@ class XpUnderpass(unittest.TestCase):
             vc = checker.vcs[i]
             print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
-                raise Exception(str(vc))
+                if vc.hasModel():
+                    raise Exception(str(vc) + "\n" + vc.modelStr())
+                else: 
+                    raise Exception(str(vc))
         end = time.time()
         print("VC solving:", end - start)
         start = end

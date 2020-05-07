@@ -24,7 +24,7 @@ class ChoreographyLexer:
         'ARROW', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MOD', 'POW', 'OR', 'AND', 'NOT', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
         # OTHER
-        'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON'
+        'EQUALS', 'LPAREN', 'RPAREN', 'LSQUARE', 'RSQUARE', 'LBRACE', 'RBRACE', 'COMMA', 'SEMI', 'COLON', 'AT'
     )
 
     # Operators
@@ -54,6 +54,7 @@ class ChoreographyLexer:
     t_COMMA = r','
     t_SEMI = r';'
     t_COLON = r':'
+    t_AT = r'@'
 
     # Completely ignored characters
     t_ignore = ' \t'

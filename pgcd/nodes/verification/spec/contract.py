@@ -19,8 +19,16 @@ class ExtraInfo():
         self.post = post
         self.always = always
 
+    def strengthen(self, extra):
+        return ExtraInfo(And(self.pre, extra.pre),
+                         And(self.inv, extra.inv),
+                         And(self.post, extra.post),
+                         And(self.always, extra.always))
+
     def __str__(self):
         return "ExtraInfo\n\tpre : " + str(self.pre) + "\n\tinv : " + str(self.inv) + "\n\tpost: " +  str(self.post) + "\n\tall : " + str(self.always)
+
+#TODO the footprints could be more or less detailed!
 
 class AssumeGuaranteeContract(ABC):
 
@@ -154,20 +162,20 @@ class AssumeGuaranteeContract(ABC):
         preExtra = And(extra.pre, extra.always)
         vcs.append( VC(prefix + "preA",   [And(preExtra, contract.preA(), Not(self.preA()))]) ) # contract.A ⇒ self.A
         vcs.append( VC(prefix + "preG",   [And(preExtra, self.preG(), Not(contract.preG()))]) ) # self.G ⇒ contract.G
-        vcs.append( VC(prefix + "preFP",  [And(preExtra, self.preG(), contract.preG(), pointDomain, # strengthened by preG
-                                               self.preFP(point), Not(contract.preFP(point)))]) ) # self.FP ⊆ contract.FP
+        vcs.append( VC(prefix + "preFP " + str(frame),  [And(preExtra, self.preG(), contract.preG(), pointDomain, # strengthened by preG
+                                                             self.preFP(point), Not(contract.preFP(point)))]) ) # self.FP ⊆ contract.FP
         # inv
         invExtra = And(extra.always, contract.deTimifyFormula(self.deTimifyFormula(extra.inv)))
         vcs.append( VC(prefix + "invA",   [And(invExtra, contract.deTimifyFormula(contract.invA()), Not(self.deTimifyFormula(self.invA())))]) )
         vcs.append( VC(prefix + "invG",   [And(invExtra, self.deTimifyFormula(self.invG()), Not(contract.deTimifyFormula(contract.invG())))]) )
-        vcs.append( VC(prefix + "invFP",  [And(invExtra, self.deTimifyFormula(self.invG()), contract.deTimifyFormula(contract.invG()), # strengthened by invG
-                                               pointDomain, self.deTimifyFormula(self.invFP(point)), Not(contract.deTimifyFormula(contract.invFP(point))))]) )
+        vcs.append( VC(prefix + "invFP " + str(frame),  [And(invExtra, self.deTimifyFormula(self.invG()), contract.deTimifyFormula(contract.invG()), # strengthened by invG
+                                                             pointDomain, self.deTimifyFormula(self.invFP(point)), Not(contract.deTimifyFormula(contract.invFP(point))))]) )
         # post
         postExtra = And(extra.post, extra.always)
         vcs.append( VC(prefix + "postA",  [And(postExtra, contract.postA(), Not(self.postA()))]) )
         vcs.append( VC(prefix + "postG",  [And(postExtra, self.postG(), Not(contract.postG()))]) )
-        vcs.append( VC(prefix + "postFP", [And(postExtra, self.postG(), contract.postG(), pointDomain, # strengthened by postG
-                                               self.postFP(point), Not(contract.postFP(point)))]) )
+        vcs.append( VC(prefix + "postFP " + str(frame), [And(postExtra, self.postG(), contract.postG(), pointDomain, # strengthened by postG
+                                                             self.postFP(point), Not(contract.postFP(point)))]) )
         return vcs
 
     def checkCollision(self, contract, connection, frame, extra = ExtraInfo()):
@@ -219,7 +227,7 @@ class AssumeGuaranteeContract(ABC):
 
     # obstacles do not have contracts so we have a separate method to check the collision
     def checkCollisionAgainstObstacle(self, obstacle, frame, extra = ExtraInfo):
-        prefix = self.name + " and " + obstacle.name + " collision-freedom: "
+        prefix = self.name + " and " + obstacle.name() + " collision-freedom: "
         px, py, pz = symbols('inFpX inFpY inFpZ')
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
         pointDomain = And(px >= minX, px <= maxX, 
@@ -266,7 +274,8 @@ class ComposedContract(AssumeGuaranteeContract):
         self._connection = connection
         # sanity checks
         assert contract1.components().isdisjoint(contract2.components()), "disjoint " + contract1.name + " "  + str(contract1.components()) + " and " + contract2.name + " " + str(contract2.components())
-        self._contract1.duration().intersect(self._contract2.duration()) # duration intersect
+        # duration intersect, FIXME put back after the thread analysis fills to duration
+        # self._contract1.duration().intersect(self._contract2.duration())
         # connection is valid
         for v1, v2 in connection.items():
             assert( (v1 in contract1.outputVariables() and v2 in contract2.inputVariables()) or
@@ -360,7 +369,7 @@ class FpContract(AssumeGuaranteeContract):
         self._frame = frame
         self._x = x
         self._y = y
-        self._z = x
+        self._z = z
         self._fp = fp
         self._duration = duration
 

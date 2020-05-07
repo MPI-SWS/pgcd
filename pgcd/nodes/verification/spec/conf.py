@@ -17,7 +17,8 @@ maxZ = 2
 # FIXME disable duration check while the thing is not fully done
 enableDurationCheck = False
 
+# Quite expensive, so do only when introducing new components
 enableProcessAbstractionCheck = False
 
-dRealJobs = 1 #TODO not more than 1 when using docker!
-dRealTimeout = 60
+dRealJobs = 4 #TODO not more than 1 when using docker!
+dRealTimeout = 120

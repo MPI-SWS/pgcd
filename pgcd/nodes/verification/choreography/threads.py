@@ -100,6 +100,8 @@ class ThreadChecks():
         self.processes = processes
 
     def fillBackward(self, node_to_trackers, state_to_node, debug):
+        if debug:
+            print("fillBackward")
         again = True
         while again:
             again = False

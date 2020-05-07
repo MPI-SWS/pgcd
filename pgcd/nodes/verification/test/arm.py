@@ -164,13 +164,16 @@ class ArmFold(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
+        #i = self._component.abstractResources(point, 0.05)
+        i = self._component.ownResources(point, 0.05)
         return self.timify(i)
 
 class Idle(MotionPrimitiveFactory):
@@ -206,13 +209,16 @@ class ArmIdle(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
+        #i = self._component.abstractResources(point, 0.05)
+        i = self._component.ownResources(point, 0.05)
         return self.timify(i)
 
 class ArmWait(MotionPrimitive):
@@ -241,13 +247,16 @@ class ArmWait(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
+        #i = self._component.abstractResources(point, 0.05)
+        i = self._component.ownResources(point, 0.05)
         return self.timify(i)
 
 class Grab(MotionPrimitiveFactory):
@@ -283,13 +292,16 @@ class ArmGrab(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
+        #i = self._component.abstractResources(point, 0.05)
+        i = self._component.ownResources(point, 0.05)
         return self.timify(i)
 
 class PutInBin(MotionPrimitiveFactory):
@@ -441,13 +453,16 @@ class ArmMoveTo(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        #return self._component.abstractResources(point, 0.05)
+        return self._component.ownResources(point, 0.05)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
+        #i = self._component.abstractResources(point, 0.05)
+        i = self._component.ownResources(point, 0.05)
         return self.timify(i)
 
 class SetAngleTurntable(MotionPrimitiveFactory):

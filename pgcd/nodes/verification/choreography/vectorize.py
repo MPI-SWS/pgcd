@@ -1,6 +1,5 @@
 # replace the variables with vectors in the spec
 from ast_chor import *
-from sympy import *
 from utils.vectorizer import *
 
 def vectorize(choreography, world):

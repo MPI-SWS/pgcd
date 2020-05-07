@@ -10,12 +10,13 @@ from ast_chor import *
 from ast_proj import *
 from minimize import *
 from normalization import *
+from spec.component import Component
+from spec.env import Env
 
 
 class Projection:
 
     def __init__(self):
-        self.parser = ChoreographyParser()
         self.choreography = None
         self.artificial_nodes_counter = -1
         self.depth = 0
@@ -24,8 +25,11 @@ class Projection:
         self.artificial_nodes_counter += 1
         return '__x__' + str(self.artificial_nodes_counter)
 
-    def execute(self, code, world = None, debug = False):
-        self.choreography = self.parser.parse(code, world, debug)
+    def execute(self, code, env = None, debug = False):
+        if isinstance(env, Component):
+            env = Env(env)
+        parser = ChoreographyParser(env)
+        self.choreography = parser.parse(code, debug)
         return self.choreography
 
     def project(self, proj_name, process, debug = False):

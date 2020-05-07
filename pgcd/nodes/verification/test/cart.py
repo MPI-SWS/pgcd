@@ -18,14 +18,15 @@ class Cart(Process):
         self.radius = 0.30
         self.minRadius = 0.15
         self.maxRadius = 0.25
+        self.bedHeight= 0.09
         # variables
         self._x = symbols(name + '_x')
         self._y = symbols(name + '_y')
         self._theta = symbols(name + '_theta')
         f = world.mountingPoint(index)
         self._position = self._x * f.i + self._y * f.j
-        # mount is 11cm above the ground
-        self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + 0.09 * f.k)
+        # mount is 11cm above the ground 
+        self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + self.bedHeight * f.k)
         # motion primitives
         MoveFromTo(self)
         Idle(self)

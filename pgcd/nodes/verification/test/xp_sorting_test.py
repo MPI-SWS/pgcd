@@ -42,11 +42,11 @@ def choreo():
             x2 = producer -> arm: Ok(); x3
             x3 = producer -> franka: Ok(); x4
             x4 = producer -> sensor: Ok(); fork_producer
-            fork_producer = { fpx > -0.71 } x5 ||   # all - producer
-                            { fpx < -0.72 } x10a    # producer
-            x5 = { (fpx > -0.7) && (fpx < 0.1) && (fpy > -0.2) && (fpy < 0.2) } x6a ||  # carrier
+            fork_producer = { fpx > -0.81 } x5 ||   # all - producer
+                            { fpx < -0.82 } x10a    # producer
+            x5 = { (fpx > -0.8) && (fpx < 0.1) && (fpy > -0.2) && (fpy < 0.2) } x6a ||  # carrier
                  { (fpx > -0.4) && (fpy < -0.3) } x7a ||                                # arm
-                 { (fpx > -0.7) && (fpy > 0.3) } x8a ||                                 # franka
+                 { (fpx > -0.8) && (fpy > 0.3) } x8a ||                                 # franka
                  { (fpx >  0.1) && (fpy > -0.15) && (fpy < 0.15) } x9a                  # sensor
             #  carrier move, the other stay
             x6a = (carrier: MoveCart(0, 0, 0, 0.5)) ; x6b
@@ -65,8 +65,8 @@ def choreo():
             x13a = sensor -> carrier: Green() ; x13b
             x13b = carrier -> franka: Ok() ; x13c
             x13c = carrier -> arm: Done() ; x13d
-            x13d = { (fpx > -0.7) && (fpy > -0.2) && ( (fpy > 0.2) || (fpx < 0.1) ) } x13d1a || # franka + carrier
-                   { (fpx > -0.7) && (fpy < -0.3)  } x13d2a ||                                  # arm
+            x13d = { (fpx > -0.8) && (fpy > -0.2) && ( (fpy > 0.2) || (fpx < 0.1) ) } x13d1a || # franka + carrier
+                   { (fpx > -0.8) && (fpy < -0.3)  } x13d2a ||                                  # arm
                    { (fpx >  0.1) && (fpy > -0.15) && (fpy < 0.15) } x13d3a                     # sensor
             x13d1a = { (fpx > -0.6) && (fpy > 0.3) && ( (fpy > 0.6) || (fpz > 0.25) ) } frank_fast1 ||
                      { (fpx > -0.6) && (fpx < 0.1) && (fpy > -0.2) && (fpy < 0.5) && (fpz < 0.2) } carrier_slow_green1
@@ -314,13 +314,19 @@ class XpSortingTest(unittest.TestCase):
         print("VC generation:", end - start)
         start = end
         print("#VC:", len(checker.vcs))
+        failed = []
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
-                raise Exception(str(vc))
+                failed.append(vc)
+                print("Failed")
+                print(vc)
+                if vc.hasModel():
+                    print(vc.modelStr())
         end = time.time()
         print("VC solving:", end - start)
+        self.assertTrue(failed == [])
         start = end
         processes = w.allProcesses()
         for p in processes:

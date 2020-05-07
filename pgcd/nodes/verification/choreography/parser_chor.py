@@ -22,24 +22,25 @@ class ChoreographyParser:
         ('right', 'UMINUS', 'SIN', 'TAN', 'COS', 'ABS', 'SQRT')
     )
 
-    def __init__(self):
+    def __init__(self, env):
         self.lexer = clexer.ChoreographyLexer()
         self.tokens = self.lexer.tokens
         self.parser = yacc.yacc(module=self)
+        self.env = env
 
-    def parse(self, text, world = None, debug = False):
+    def parse(self, text, debug = False):
         if debug:
             logging.basicConfig(level = logging.INFO)
             log = logging.getLogger()
             choreography = self.parser.parse(text, self.lexer.lexer, debug=log)
         else:
             choreography = self.parser.parse(text, self.lexer.lexer)
-        choreography.world = world
-        self.check_well_formedness(choreography, world, debug)
+        choreography.world = self.env.world
+        self.check_well_formedness(choreography, debug)
         return choreography
 
-    def check_well_formedness(self, chor, world, debug = False):
-        check = ChoreographyCheck(chor, world, debug)
+    def check_well_formedness(self, chor, debug = False):
+        check = ChoreographyCheck(chor, debug)
         check.check_well_formedness()
 
 
@@ -81,10 +82,10 @@ class ChoreographyParser:
             p[0] = []
 
     def p_exp(self, p):
-        ''' exp : exp COMMA exp
+        ''' exp : expression COMMA exp
                 | expression'''
         if len(p) > 2:
-            p[0] = p[1] + p[3]
+            p[0] = [p[1]] + p[3]
         else:
             p[0] = [sympify(p[1])]
 
@@ -135,26 +136,37 @@ class ChoreographyParser:
         else:
             p[0] = [p[1]]
 
-    # TODO contract
     def p_fork(self, p):
-        ''' fork : ID EQUALS fp ID OR fargs
-                 | ID EQUALS ID OR fargs '''
-        if len(p) > 6:
-            fps = [a for a,b in p[6]]
-            ids = [b for a,b in p[6]]
-            p[0] = Fork([p[1]], [p[3]] + fps, [p[4]] + ids)
-        else:
-            fps = [a for a,b in p[5]]
-            ids = [b for a,b in p[5]]
-            p[0] = Fork([p[1]], [None] + fps, [p[3]] + ids)
+        ''' fork : ID EQUALS fthread OR fargs '''
+        fps = [a for a,b in [p[3]] + p[5]]
+        ids = [b for a,b in [p[3]] + p[5]]
+        assert(fps != [])
+        p[0] = Fork([p[1]], fps, ids)
+
+    def p_fthread(self, p):
+        ''' fthread : fpOrContract ID
+                    | fp ID
+                    | ID '''
+        if len(p) > 2:
+            p[0] = (p[1], p[2])
+        elif len(p) > 2:
+            p[0] = (None, p[1])
 
     def p_fargs(self, p):
-        ''' fargs : fp ID OR fargs
-                  | fp ID '''
+        ''' fargs : fthread OR fargs
+                  | fthread '''
         if len(p) > 3:
-            p[0] = [(p[1], p[2])] + p[4]
+            p[0] = [p[1]] + p[3]
         else:
-            p[0] = [(p[1], p[2])]
+            p[0] = [p[1]]
+
+    def p_fpOrContract(self, p):
+        '''fpOrContract : fp
+                        | AT ID LPAREN exp RPAREN '''
+        if len(p) > 2:
+            p[0] = self.env.getContract(p[2], p[4])
+        else:
+            p[0] = p[1]
 
     def p_fp(self, p):
         ''' fp : LBRACE ID ID ID COLON expression RBRACE

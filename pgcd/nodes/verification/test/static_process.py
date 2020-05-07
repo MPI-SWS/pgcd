@@ -26,9 +26,6 @@ class StaticProcess(Process):
         Idle(self)
         Wait(self)
     
-    def frame(self):
-        return self._parent.frame() #by default use the parent's frame
-
     def internalVariables(self):
         return [self.dummyVar]
     

@@ -7,7 +7,7 @@ from propagate_footprints import *
 
 class ChoreographyCheck:
 
-    def __init__(self, chor, world, debug = False):
+    def __init__(self, chor, debug = False):
         self.debug = debug
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
@@ -20,9 +20,8 @@ class ChoreographyCheck:
         self.looped_states = set()
         self.loop_has_motion = False
         self.comps = set()
-        self.world = world
-        if world != None:
-            self.comps = { p.name() for p in world.allProcesses() }
+        if chor.world != None:
+            self.comps = { p.name() for p in chor.world.allProcesses() }
         else:
             self.comps = chor.getProcessNames()
         self.threadTrackers = None
@@ -42,8 +41,8 @@ class ChoreographyCheck:
     def thread_checks(self):
         if self.debug:
             print("thread checks")
-        if self.world != None:
-            tc = ThreadChecks(self.chor, self.world.allProcesses())
+        if self.chor.world != None:
+            tc = ThreadChecks(self.chor, self.chor.world.allProcesses())
         else:
             tc = ThreadChecks(self.chor, self.chor.getProcessNames())
         self.threadTrackers = tc.perform(self.debug)
@@ -86,9 +85,9 @@ class ChoreographyCheck:
         assert not len(left_states ^ right_states) != 1, 'States ' + str((left_states ^ right_states) - {self.chor.start_state}) + ' are not on LHS or RHS!'
 
     def choice_at(self, node):
-        if self.world != None:
+        if self.chor.world != None:
             # the proper way
-            p = choiceAt(node, self.world.allProcesses())
+            p = choiceAt(node, self.chor.world.allProcesses())
             return p.name()
         else:
             # poor man's version

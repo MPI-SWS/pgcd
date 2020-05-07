@@ -36,7 +36,11 @@ class PropagateFootprint():
                 for e, fp in zip(node.end_state, node.footprints):
                     frame = self.chor.world.frame()
                     processes = self.chor.getProcessesAt(e)
-                    contract = fp.toFpContract(e, processes, frame)
+                    if isinstance(fp, Footprint):
+                        contract = fp.toFpContract(e, processes, frame)
+                    else: #already a contract
+                        assert(fp.components() == processes)
+                        contract = fp
                     self._do(e, [contract] + stack)
             elif isinstance(node, Join):
                 new_stack = stack[1:]

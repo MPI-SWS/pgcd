@@ -15,14 +15,14 @@ import time
 import unittest
 
 def xp2_world():
-    w = World(  (0,0,0,0),
+    w = World(  (0, 0, 0, 0),
                 (1, 0, 0, mp.pi) )
     cart = Cart("Cart", w, 0)
     arm = Arm("Arm", cart)
     carrier = CartSquare("Carrier", w, 1)
     return w
 
-def xp2_choreo_1():
+def xp2_choreo_0():
     return ''' Handover =
         def x0 = (Cart: MoveCart(0, 0, 0, 0.3, 5), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.5, 5) ) ; x1
             x1 = Carrier -> Cart: OK(); x2
@@ -40,14 +40,32 @@ def xp2_choreo_1():
               (Arm_a == 2.2689280275926285) && (Arm_b == -2.2689280275926285) && (Arm_c == 0) ] x0
     '''
 
+def xp2_choreo_1():
+    return ''' Handover =
+        def x0 = (Cart: MoveCart(0, 0, 0, 0.01, 5), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.4, 5) ) ; x1
+            x1 = Carrier -> Cart: OK(); x2
+            x2 = Cart -> Arm: OK(); x3
+            x3 = (Cart: Idle(), Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953), Carrier: Idle() ) ; x4
+            x4 = (Cart: Idle(), Arm: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659), Carrier: Idle() ) ; x5
+            x5 = (Cart: Idle(), Arm: Grip(9.5), Carrier: Idle() ) ; x6
+            x6 = (Cart: Idle(), Arm: RetractArm(), Carrier: Idle() ) ; x7
+            x7 = Arm -> Cart: OK(); x8
+            x8 = Cart -> Carrier: OK(); x9
+            x9 = (Cart: MoveCart(0.01, 0, 0, -0.01, 5), Arm: Idle(), Carrier: MoveCart(0.4, 0, 0, -0.4, 5) ) ; x10
+            x10 = end
+        in [  (Cart_theta == 0) && (Cart_x == 0) && (Cart_y == 0) &&
+              (Carrier_theta == 0) && (Carrier_x == 0) && (Carrier_y == 0) &&
+              (Arm_a == 2.2689280275926285) && (Arm_b == -2.2689280275926285) && (Arm_c == 0) ] x0
+    '''
+
 # TODO when we split the cart+arm and check the arm's FP it is underconstrained as we loose the contraints on the cart's mounting point!
 # TODO need a way of (1) specifying frame for the FP spec in the annotations and (2) for the VC flatten to least common ancestor rather than world
 def xp2_choreo_2():
     return ''' Handover =
         def x0 = { fpx < 0.38 } ca0 ||
                  { fpx > 0.42 } c0
-            ca0 = (Cart: MoveCart(0, 0, 0, 0.3, 5), Arm: Idle()) ; ca1
-            c0 = (Carrier: MoveCart(0, 0, 0, 0.5, 5) ) ; c1
+            ca0 = (Cart: MoveCart(0, 0, 0,0.01, 5), Arm: Idle()) ; ca1
+            c0 = (Carrier: MoveCart(0, 0, 0, 0.4, 5) ) ; c1
             ca1 || c1 = x1
             x1 = Carrier -> Cart: OK(); x2
             x2 = Cart -> Arm: OK(); x3
@@ -172,14 +190,19 @@ class XpHandoverTest(unittest.TestCase):
         print("VC generation:", end - start)
         start = end
         print("#VC:", len(checker.vcs))
+        failed = []
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
+                print("Failed")
+                failed.append(vc)
+                print(vc)
                 if vc.hasModel():
-                    raise Exception(str(vc) + "\n" + vc.modelStr())
+                    print(vc.modelStr())
                 else: 
-                    raise Exception(str(vc))
+                    print("Timeout")
+        self.assertTrue(failed = [])
         end = time.time()
         print("VC solving:", end - start)
         start = end
@@ -199,11 +222,12 @@ class XpHandoverTest(unittest.TestCase):
     def test_handover_1(self, debug = False):
         self.handover(xp2_choreo_1(), debug)
 
-    def test_handover_2(self, debug = False):
-        self.handover(xp2_choreo_2(), debug)
+#   def test_handover_2(self, debug = False):
+#       self.handover(xp2_choreo_2(), debug)
 
-    def test_handover_3(self, debug = False):
-        self.handover(xp2_choreo_3(), debug)
+#TODO need proper AG contracts
+#   def test_handover_3(self, debug = False):
+#       self.handover(xp2_choreo_3(), debug)
 
 if __name__ == '__main__':
     unittest.main()

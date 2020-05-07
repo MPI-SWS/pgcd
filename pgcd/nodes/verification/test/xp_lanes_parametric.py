@@ -9,17 +9,19 @@ from copy import deepcopy
 from choreography.projection import Projection
 import interpreter.parser as parser
 import time
+from spec.conf import *
 
 import unittest
 
 # A "microbenchmark" to emphasize the benefit of having the parallel composition as part of the spec.
 # This example has n robots. Each robot is moving in its own lane. All the lanes are parallel to each other.
+# TODO find the right dy so that the contraints used the precise FP rather than the abstract one.
 
 class XpLaneParametricTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.dy = 0.5
+        self.dy = 0.65
 
     def world(self, n, m):
         # mounting pts:   x  y  z  θ
@@ -47,7 +49,7 @@ class XpLaneParametricTest(unittest.TestCase):
         assert m > 0 and n > 0
         dy = self.dy
         s = "Lane =\ndef x0 = "
-        s += " || ".join("{ (fpy > "+str(i*dy - dy/2+1)+") && (fpy < "+str(i*dy + dy/2-1)+") } x_"+str(i)+"_0" for i in range(0, n))
+        s += " || ".join("{ (fpy > "+str(i*dy - dy/2)+") && (fpy < "+str(i*dy + dy/2)+") } x_"+str(i)+"_0" for i in range(0, n))
         s += "\n"
         for i in range(0, n):
             for j in range(0, m):
@@ -63,21 +65,27 @@ class XpLaneParametricTest(unittest.TestCase):
     def code(self, n, m):
         return ''.join('moveCart( 500); moveCart(-500);' for i in range(0, m))
 
-    def scenario(self, n, m, par, debug = False):
-        print("## n =", n, ", m =", m, ", par =", par)
+    def scenario(self, n, m, par, debug = False, printCSV = False):
+        if not printCSV:
+            print("## n =", n, ", m =", m, ", par =", par)
         w = self.world(n, m)
         if par:
             ch = self.choreo_par(n, m)
         else:
             ch = self.choreo_no_par(n, m)
+        if debug:
+            print(ch)
         progs = { "Cart"+str(i): self.code(n,m) for i in range(0, n) }
         start = time.time()
+        start0 = start
         visitor = Projection()
         visitor.execute(ch, w, debug)
         chor = visitor.choreography
         vectorize(chor, w)
         end = time.time()
-        print("Syntactic checks:", end - start)
+        time_syntax = end - start
+        if not printCSV:
+            print("  Syntactic checks:", time_syntax)
         start = end
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
@@ -85,16 +93,26 @@ class XpLaneParametricTest(unittest.TestCase):
         checker.computePreds(debug)
         checker.generateCompatibilityChecks(debug)
         end = time.time()
-        print("VC generation:", end - start)
+        time_vc_gen = end - start
+        if not printCSV:
+            print("  VC generation:", time_vc_gen)
         start = end
-        print("#VC:", len(checker.vcs))
+        if not printCSV:
+            print("  #VC:", len(checker.vcs))
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             #print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
-                raise Exception(str(vc))
+                print(n, ",", m, ",", par, ",", time_syntax, ",", len(checker.vcs), ",", time_vc_gen, ", TO, NA, TO")
+                return
+#               if vc.hasModel():
+#                   raise Exception(str(vc) + "\n" + vc.modelStr())
+#               else: 
+#                   raise Exception(str(vc))
         end = time.time()
-        print("VC solving:", end - start)
+        time_vc_solve = end - start
+        if not printCSV:
+            print("  VC solving:", time_vc_solve)
         start = end
         processes = w.allProcesses()
         for p in processes:
@@ -106,53 +124,66 @@ class XpLaneParametricTest(unittest.TestCase):
             if not ref.check():
                 raise Exception("Refinement: " + p.name())
         end = time.time()
-        print("refinement:", end - start)
-        start = end
+        time_refine = end - start
+        if not printCSV:
+            print("  refinement:", time_refine)
+        time_total = end - start0
+        if not printCSV:
+            print("totat time:", time_total)
+        else:
+            print(n, ",", m, ",", par, ",", time_syntax, ",", len(checker.vcs), ",", time_vc_gen, ",", time_vc_solve, ",", time_refine, ",", time_total)
+
+    def test_range(self):
+        print("n, m, par, time_syntax, nbr_vc, time_vc_gen, time_vc_solve, time_refine, time_total")
+        for n in range(2, 10):
+            for m in range(1, 5):
+                self.scenario(n, m, False, printCSV = True)
+                self.scenario(n, m, True, printCSV = True)
     
-    def test_2_1(self, debug = False):
-        self.scenario(2, 1, False, debug)
-    
-    def test_2_1_p(self, debug = False):
-        self.scenario(2, 1, True, debug)
-    
-    def test_2_2(self, debug = False):
-        self.scenario(2, 2, False, debug)
-    
-    def test_3_2_p(self, debug = False):
-        self.scenario(2, 2, True, debug)
-    
-    def test_3_1(self, debug = False):
-        self.scenario(3, 1, False, debug)
-    
-    def test_3_1_p(self, debug = False):
-        self.scenario(3, 1, True, debug)
-    
-    def test_3_2(self, debug = False):
-        self.scenario(3, 2, False, debug)
-    
-    def test_3_2_p(self, debug = False):
-        self.scenario(3, 2, True, debug)
-    
-    def test_4_1(self, debug = False):
-        self.scenario(4, 1, False, debug)
-    
-    def test_4_1_p(self, debug = False):
-        self.scenario(4, 1, True, debug)
-    
-    def test_4_2(self, debug = False):
-        self.scenario(4, 2, False, debug)
-    
-    def test_4_2_p(self, debug = False):
-        self.scenario(4, 2, True, debug)
-    
-    def test_5_1(self, debug = False):
-        self.scenario(5, 1, False, debug)
-    
-    def test_5_1_p(self, debug = False):
-        self.scenario(5, 1, True, debug)
-    
-    def test_6_1(self, debug = False):
-        self.scenario(6, 1, False, debug)
-    
-    def test_6_1_p(self, debug = False):
-        self.scenario(6, 1, True, debug)
+#   def test_2_1(self, debug = False):
+#       self.scenario(2, 1, False, debug)
+#   
+#   def test_2_1_p(self, debug = False):
+#       self.scenario(2, 1, True, debug)
+#   
+#   def test_2_2(self, debug = False):
+#       self.scenario(2, 2, False, debug)
+#   
+#   def test_3_2_p(self, debug = False):
+#       self.scenario(2, 2, True, debug)
+#   
+#   def test_3_1(self, debug = False):
+#       self.scenario(3, 1, False, debug)
+#   
+#   def test_3_1_p(self, debug = False):
+#       self.scenario(3, 1, True, debug)
+#   
+#   def test_3_2(self, debug = False):
+#       self.scenario(3, 2, False, debug)
+#   
+#   def test_3_2_p(self, debug = False):
+#       self.scenario(3, 2, True, debug)
+#   
+#   def test_4_1(self, debug = False):
+#       self.scenario(4, 1, False, debug)
+#   
+#   def test_4_1_p(self, debug = False):
+#       self.scenario(4, 1, True, debug)
+#   
+#   def test_4_2(self, debug = False):
+#       self.scenario(4, 2, False, debug)
+#   
+#   def test_4_2_p(self, debug = False):
+#       self.scenario(4, 2, True, debug)
+#   
+#   def test_5_1(self, debug = False):
+#       self.scenario(5, 1, False, debug)
+#   
+#   def test_5_1_p(self, debug = False):
+#       self.scenario(5, 1, True, debug)
+#   
+#   def test_6_1(self, debug = False):
+#       self.scenario(6, 1, False, debug)
+#   
+#   def test_6_1_p(self, debug = False):
+#       self.scenario(6, 1, True, debug)

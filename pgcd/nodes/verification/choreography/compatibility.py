@@ -127,6 +127,20 @@ class CompatibilityCheck:
             concl = p.abstractResources(point)
             self.addVC("correctness of footprint abstraction for " + p.name(), [And(hypotheses, Not(concl))])
 
+    def processTopSort(self, processes):
+        visited = set()
+        stack = []
+        def topSort(p):
+            visited.add(p)
+            for p2 in p.allProcesses():
+                if p2 != p and not p2 in visited:
+                    topSort(p2)
+            stack.insert(0, p)
+        for p in processes:
+            if not p in visited:
+                topSort(p)
+        return stack
+
     # compatibility of motion primitives
     def generateCompatibilityChecks(self, debug = False):
         assert(self.predComputed)
@@ -136,7 +150,9 @@ class CompatibilityCheck:
         for node in self.state_to_node.values():
             if debug:
                 print("generateCompatibilityChecks for node " + str(node))
-            processes = self.chor.getProcessesAt(node)
+            # for the collision check to work, we need to follow the process structure!!
+            # otherwise, there are gaps: carrier against arm without knowing where the cart is
+            processes = self.processTopSort(self.chor.getProcessesAt(node))
             if isinstance(node, Motion):
                 # state before
                 tracker = self.state_to_pred[node.start_state[0]]
@@ -147,12 +163,14 @@ class CompatibilityCheck:
                     tracker2.relaxVariables(mp.modifies())
                 # make the VCs
                 overallSpec = self.chor.state_to_contracts[node.start_state[0]] # is FpContract
+                accumulatedExtra = ExtraInfo()
                 composedContracts = None
                 for p in processes:
                     otherProcesses = [ p2 for p2 in processes if p2 != p ]
                     mp = self.getMP(node, p)
                     extra = ExtraInfo(pre = And(p.invariantG(), tracker.pred(p)),
                                       always = And(p.invariantG(), tracker2.pred(p)))
+                    accumulatedExtra = accumulatedExtra.strengthen(extra)
                     if debug:
                         print("precondition for process " + str(p))
                     self.addVC("precondition of " + mp.name + " for " + p.name() + " @ " + str(node.start_state[0]), [And(extra.pre, extra.always, Not(mp.preG()))])
@@ -161,6 +179,7 @@ class CompatibilityCheck:
                         composedContracts = mp
                     else:
                         composedContracts = ComposedContract(composedContracts, mp, dict()) #TODO connection
+                    self.vcs.extend(composedContracts.wellFormed(accumulatedExtra))
                     for p2 in obstacles:
                         self.vcs.extend(mp.checkCollisionAgainstObstacle(p2, self.chor.world.frame(), extra = extra))
                 pInv = And(*[p.invariantG() for p in processes])
