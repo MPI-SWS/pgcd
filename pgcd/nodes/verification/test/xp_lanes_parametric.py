@@ -9,7 +9,6 @@ from copy import deepcopy
 from choreography.projection import Projection
 import interpreter.parser as parser
 import time
-from spec.conf import *
 
 import unittest
 

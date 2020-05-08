@@ -2,7 +2,7 @@ from sympy import *
 from abc import ABC, abstractmethod
 from spec.time import *
 from utils.vc import *
-from spec.conf import *
+import spec.conf
 
 
 #TODO in the long term we should get rid of this, and instead, update the contract with the extra info
@@ -49,7 +49,7 @@ class AssumeGuaranteeContract(ABC):
             children = p.allProcesses() #aslo contains p
             if self.components().issubset(children):
                 return p.frame()
-        return worldFrame
+        return spec.conf.worldFrame
 
     def inputs(self):
         """external inputs"""
@@ -127,7 +127,7 @@ class AssumeGuaranteeContract(ABC):
         # has at least one component
         vcs.append( VC(prefix + "components", [sympify(len(self.components()) > 0)], True) )
         # valid duration
-        if (enableDurationCheck):
+        if spec.conf.enableDurationCheck:
             vcs.append(VC(prefix + "duration", [sympify(self.duration().valid())], True))
         # pre
         vcs.append( VC(prefix + "preA",   [And(self.preA(), extra.pre, extra.always)], True) )
@@ -148,15 +148,15 @@ class AssumeGuaranteeContract(ABC):
         px, py, pz = symbols('inFpX inFpY inFpZ')
         frame = self.frame()
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= minX, px <= maxX, 
-                          py >= minY, py <= maxY,
-                          pz >= minZ, pz <= maxZ)
+        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+                          py >= spec.conf.minY, py <= spec.conf.maxY,
+                          pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
         # no quantification over time for the moment
         assert(self.isInvTimeInvariant())
         assert(contract.isInvTimeInvariant())
         vcs = []
         vcs.append(     VC(prefix + "components", [sympify(self.components() == contract.components())], True) )
-        if (enableDurationCheck):
+        if spec.conf.enableDurationCheck:
             vcs.append( VC(prefix + "duration", [sympify(self.duration().implements(contract.duration()))], True) )
         #pre
         preExtra = And(extra.pre, extra.always)
@@ -183,9 +183,9 @@ class AssumeGuaranteeContract(ABC):
         prefix = self.name + " and " + contract.name + " collision-freedom: "
         px, py, pz = symbols('inFpX inFpY inFpZ')
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= minX, px <= maxX, 
-                          py >= minY, py <= maxY,
-                          pz >= minZ, pz <= maxZ)
+        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+                          py >= spec.conf.minY, py <= spec.conf.maxY,
+                          pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
         connectionCstrs = S.true
         for k,v in connection.items():
             connectionCstrs = And(connectionCstrs ,Eq(k,v))
@@ -230,9 +230,9 @@ class AssumeGuaranteeContract(ABC):
         prefix = self.name + " and " + obstacle.name() + " collision-freedom: "
         px, py, pz = symbols('inFpX inFpY inFpZ')
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= minX, px <= maxX, 
-                          py >= minY, py <= maxY,
-                          pz >= minZ, pz <= maxZ)
+        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+                          py >= spec.conf.minY, py <= spec.conf.maxY,
+                          pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
         vcs = []
         #pre
         pre = And(pointDomain,

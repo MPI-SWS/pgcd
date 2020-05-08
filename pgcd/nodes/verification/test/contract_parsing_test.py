@@ -1,6 +1,6 @@
 from spec.contract import FpContract
 from spec.env import *
-from spec.conf import worldFrame
+import spec.conf
 from compatibility import *
 from utils.geometry import *
 from static_process import StaticProcess
@@ -29,7 +29,7 @@ def world():
 class Xless(FpContract):
     
     def __init__(self, component, expr):
-        super().__init__("Xless", {component}, worldFrame,
+        super().__init__("Xless", {component}, spec.conf.worldFrame,
                           Symbol('x'), Symbol('y'), Symbol('z'),
                           Symbol('x') < expr)
 
@@ -37,12 +37,12 @@ class Xless(FpContract):
 class Xmore(FpContract):
     
     def __init__(self, component, expr):
-        super().__init__("Xmore", {component}, worldFrame,
+        super().__init__("Xmore", {component}, spec.conf.worldFrame,
                           Symbol('x'), Symbol('y'), Symbol('z'),
                           Symbol('x') > expr)
 
 def choreo1():
-    return ''' Sorting =
+    return ''' test =
         def start = (producer: Wait(1), sensor: Wait(1)); x0
             x0 = @Xmore(sensor, -0.4) x1 || # sensor
                  @Xless(producer, -0.6) x2  # producer

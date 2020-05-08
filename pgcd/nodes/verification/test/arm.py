@@ -40,6 +40,7 @@ class Arm(Process):
         # motion primitives
         Fold(self)
         Idle(self)
+        Wait(self)
         Grab(self)
         PutInBin(self)
         MoveTo(self)
@@ -220,6 +221,19 @@ class ArmIdle(MotionPrimitive):
         #i = self._component.abstractResources(point, 0.05)
         i = self._component.ownResources(point, 0.05)
         return self.timify(i)
+
+
+class Wait(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+
+    def setParameters(self, args):
+        assert(len(args) == 1)
+        return ArmWait(self.name(), self._component, args[0])
 
 class ArmWait(MotionPrimitive):
 

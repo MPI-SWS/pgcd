@@ -3,7 +3,7 @@ from sympy.vector import CoordSys3D
 import functools
 from abc import ABC, abstractmethod
 from utils.geometry import cube
-from spec.conf import *
+import spec.conf
 
 
 class Component(ABC):
@@ -30,7 +30,7 @@ class Component(ABC):
         if self._parent != None:
             return self._parent.mountingPoint(self._index)
         else:
-            return worldFrame
+            return spec.conf.worldFrame
 
     @abstractmethod
     def mountingPoint(self, index):

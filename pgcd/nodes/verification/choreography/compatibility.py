@@ -1,5 +1,5 @@
 from spec.time import deTimifyFormula
-from spec.conf import *
+import spec.conf
 from ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
@@ -145,7 +145,7 @@ class CompatibilityCheck:
     def generateCompatibilityChecks(self, debug = False):
         assert(self.predComputed)
         obstacles = self.chor.world.obstacles()
-        if (enableProcessAbstractionCheck):
+        if spec.conf.enableProcessAbstractionCheck:
             self.checkProcessAbstraction(debug)
         for node in self.state_to_node.values():
             if debug:

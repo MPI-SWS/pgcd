@@ -20,5 +20,8 @@ enableDurationCheck = False
 # Quite expensive, so do only when introducing new components
 enableProcessAbstractionCheck = False
 
+# Quite expensive, so disable for testing
+enableMPincludeFPCheck = True
+
 dRealJobs = 4 #TODO not more than 1 when using docker!
-dRealTimeout = 120
+dRealTimeout = 240

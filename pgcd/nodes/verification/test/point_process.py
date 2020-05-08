@@ -6,22 +6,18 @@ from spec.motion import *
 from spec.time import *
 from utils.geometry import *
 
-# a model static things that executes code like sensors.
-# they have a footprint (a cube), execute code, but cannot move.
+# for testing, a process with a point footprint
 
+#TODO moving in straight line (FP is cylinder)
+delta = 0.01
 
-# cube
-class StaticProcess(Process):
+class PointProcess(Process):
 
-    def __init__(self, name, x, y, z, theta, dx, dy, dz, parent = None, index = 0):
+    def __init__(self, name, x, y, z, parent = None, index = 0):
         super().__init__(name, parent, index)
         self.x = x
         self.y = y
         self.z = z
-        self.dx = dx
-        self.dy = dy
-        self.dz = dz
-        self.theta = theta
         self.dummyVar = Symbol(name + '_dummy')
         Idle(self)
         Wait(self)
@@ -31,14 +27,19 @@ class StaticProcess(Process):
     
     def ownResources(self, point, maxError = 0.0):
         f = self.frame()
-        cf = f.orient_new_axis(self.name(), self.theta, f.k, location = self.x * f.i + self.y * f.j + self.z * f.k)
-        return cube(cf, cf.origin, cf.origin.locate_new(self.name() + "_ufr", self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point, maxError, maxError, maxError)
+        if maxError > 0.0:
+            pos = f.locate_new(self.name() + '_pos', self.x * f.i + self.y * f.j + self.z * f.k)
+            return sphere(pos, maxError, point)
+        else:
+            (px,py,pz) = point.express_coordinates(f)
+            return And(Eq(px, self.x), Eq(py, self.y), Eq(pz, self.z))
     
     def abstractResources(self, point, maxError = 0.0):
         return self.ownResources(point, maxError)
 
     def mountingPoint(self, index):
         return ValueException(self.name() + " does not have mounting moints.")
+
 
 class Idle(MotionPrimitiveFactory):
 
@@ -50,9 +51,9 @@ class Idle(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         assert(len(args) == 0)
-        return StaticIdle(self.name(), self._component)
+        return PointIdle(self.name(), self._component)
 
-class StaticIdle(MotionPrimitive):
+class PointIdle(MotionPrimitive):
 
     def __init__(self, name, component):
         super().__init__(name, component)
@@ -67,13 +68,13 @@ class StaticIdle(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.001) #FIXME deal with δ-sat
+        return self._component.abstractResources(point, delta) #FIXME deal with δ-sat
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.0)
+        return self._component.abstractResources(point, delta)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.0)
+        i = self._component.abstractResources(point, delta)
         return self.timify(i)
 
 class Wait(MotionPrimitiveFactory):
@@ -86,13 +87,13 @@ class Wait(MotionPrimitiveFactory):
 
     def setParameters(self, args):
         if len(args) == 1:
-            return StaticWait(self.name(), self._component, args[0])
+            return PointWait(self.name(), self._component, args[0])
         elif len(args) == 2:
-            return StaticWait(self.name(), self._component, args[0], args[1])
+            return PointWait(self.name(), self._component, args[0], args[1])
         else:
             assert Fasle, "wrong args " + str(args)
 
-class StaticWait(MotionPrimitive):
+class PointWait(MotionPrimitive):
 
     def __init__(self, name, component, t_min, t_max = -1):
         super().__init__(name, component)
@@ -112,11 +113,11 @@ class StaticWait(MotionPrimitive):
         return S.true
 
     def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        return self._component.abstractResources(point, delta)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
+        return self._component.abstractResources(point, delta)
 
     def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
+        i = self._component.abstractResources(point, delta)
         return self.timify(i)

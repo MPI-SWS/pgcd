@@ -1,7 +1,7 @@
 from utils.DrealInterface import DrealInterface
 from sympy import *
 from sympy.logic.boolalg import to_nnf
-from spec.conf import dRealJobs, dRealTimeout
+import spec.conf
 
 
 def getConjuncts(expr):
@@ -59,7 +59,7 @@ class VC:
             # look at the free symbols in other cstr
             # look in the bound cstr for var not needed var are sat
             # send the other cstr to the solver
-            dr = DrealInterface(timeout = timeout, jobs = dRealJobs, debug = debug)
+            dr = DrealInterface(timeout = timeout, jobs = spec.conf.dRealJobs, debug = debug)
             res, model = dr.run(formula)
             self.model = model
             return res
@@ -70,7 +70,7 @@ class VC:
     def modelStr(self):
         return "\n".join( str(k) + " = " + str (v) for k,v in self.model.items() )
 
-    def discharge(self, timeout = dRealTimeout, debug = False):
+    def discharge(self, timeout = spec.conf.dRealTimeout, debug = False):
         if debug:
             sat = ""
             if self.sat:
