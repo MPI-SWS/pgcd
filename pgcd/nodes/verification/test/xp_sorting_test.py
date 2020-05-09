@@ -3,7 +3,7 @@ from utils.geometry import *
 from cart import CartSquare
 from arm import Arm
 from franka import FrankaEmikaPanda
-from static_process import StaticProcess
+from static_process import CubeProcess
 from refinement import *
 from vectorize import *
 from mpmath import mp
@@ -27,8 +27,8 @@ def world():
     arm       = Arm("arm", w, 0, -2.2689280275926285, -2.2689280275926285, 0)
     carrier   = CartSquare("carrier", w, 1)
     franka    = FrankaEmikaPanda("franka", w, 2)
-    producer  = StaticProcess("producer", 0, 0, 0, 0, 0.2, 0.2, 0.05, w, 3)
-    sensor    = StaticProcess("sensor", 0, 0, 0, 0, 0.1, 0.1, 0.2, w, 4)
+    producer  = CubeProcess("producer", 0, 0, 0, 0, 0.2, 0.2, 0.05, w, 3)
+    sensor    = CubeProcess("sensor", 0, 0, 0, 0, 0.1, 0.1, 0.2, w, 4)
     return w
 
 # largest choreography ever ?

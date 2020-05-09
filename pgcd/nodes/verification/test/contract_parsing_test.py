@@ -3,7 +3,7 @@ from spec.env import *
 import spec.conf
 from compatibility import *
 from utils.geometry import *
-from static_process import StaticProcess
+from static_process import CubeProcess
 from refinement import *
 from vectorize import *
 from mpmath import mp
@@ -21,8 +21,8 @@ def world():
     w = World(  (   -1,     0,    0,       0), # producer
                 (    0,     0,    0,       0)) # sensor
     # specs
-    producer  = StaticProcess("producer", 0, 0, 0, 0, 0.2, 0.2, 0.05, w, 0)
-    sensor    = StaticProcess("sensor", 0, 0, 0, 0, 0.2, 0.2, 0.2, w, 1)
+    producer  = CubeProcess("producer", 0, 0, 0, 0, 0.2, 0.2, 0.05, w, 0)
+    sensor    = CubeProcess("sensor", 0, 0, 0, 0, 0.2, 0.2, 0.2, w, 1)
     return w
 
 

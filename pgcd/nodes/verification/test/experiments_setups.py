@@ -23,7 +23,7 @@ class World(Component):
         return self._frame
 
     def mountingPoint(self, index):
-        if index <= len(self._mountingPoints) :
+        if index < len(self._mountingPoints) :
             return self._mountingPoints[index]
         else:
             return self._frame

@@ -1,18 +1,12 @@
-from spec.contract import FpContract
 from spec.env import *
 import spec.conf 
 from compatibility import *
-from utils.geometry import *
+from projection import Projection
 from arm import Arm
-from point_process import PointProcess
-from refinement import *
+from static_process import PointProcess
 from vectorize import *
 from mpmath import mp
 from experiments_setups import World
-from copy import deepcopy
-from choreography.projection import Projection
-import interpreter.parser as parser
-import time
 
 import unittest
 
@@ -50,7 +44,7 @@ def code():
 Wait(1);
     '''
 
-class ContractParsingTest(unittest.TestCase):
+class ArmTest(unittest.TestCase):
 
     def setUp(self):
         self.defaultConf = spec.conf.enableMPincludeFPCheck
@@ -79,57 +73,56 @@ class ContractParsingTest(unittest.TestCase):
                 if vc.hasModel():
                     print(vc.modelStr())
                 return False
-        processes = w.allProcesses()
         return True
 
 
-#   def test_fixed_positions(self, debug = False):
-#       pi = mp.pi
-#       tests = [
-#           #ch             x       y       z       a       b       c       result (False == in FP)
-#           (choreo1(),     0,      0,      0,      0,      0,      0,      False),
-#           (choreo1(),     0,      0,      0.1,    0,      0,      0,      False),
-#           (choreo1(),     0,      0,      0.5,    0,      0,      0,      False),
-#           (choreo1(),     0,      0,      -1,     0,      0,      0,      True),
-#           (choreo1(),     0,      0,      -0.1,   0,      0,      0,      True),
-#           (choreo1(),     0,      0,      -0.01,  0,      0,      0,      True),
-#           (choreo1(),     0,      0,      0.62,   0,      0,      0,      True), #FIXME I would expect the reach to be FP 0.55 but it gets to 0.61 !?!
-#           (choreo1(),     0,      0,      0.60,   pi/2,   0,      0,      True),
-#           (choreo1(),     0,      0,      0.50,   pi/2,   0,      0,      False),
-#           (choreo1(),     0,      -0.2,   0.45,   pi/2,   0,      0,      True),
-#           (choreo1(),     0,      0.2,    0.45,   pi/2,   0,      0,      True),
-#           (choreo1(),     -0.2,   0,      0.45,   pi/2,   0,      0,      True),
-#           (choreo1(),     0.2,    0,      0.45,   pi/2,   0,      0,      True),
-#           (choreo1(),     0,      -0.12,  0.52,   0,      0,      0,      True), #FIXME again, should be lower !?
-#           (choreo1(),     0,      -0.12,  0.52,   pi/2,   0,      0,      True),
-#           (choreo1(),     0,      0.12,   0.52,   pi/2,   0,      0,      True),
-#           (choreo1(),     -0.12,  0,      0.52,   pi/2,   0,      0,      True),
-#           (choreo1(),     0.12,   0,      0.52,   pi/2,   0,      0,      False),
-#           (choreo1(),     0,      -0.12,  0.52,   -pi/2,  0,      0,      True),
-#           (choreo1(),     0,      0.12,   0.52,   -pi/2,  0,      0,      True),
-#           (choreo1(),     -0.12,  0,      0.52,   -pi/2,  0,      0,      False),
-#           (choreo1(),     0.12,   0,      0.52,   -pi/2,  0,      0,      True),
-#           (choreo1(),     0,      -0.12,  0.52,   0,      pi/2,   0,      True),
-#           (choreo1(),     0,      0.12,   0.52,   0,      pi/2,   0,      True),
-#           (choreo1(),     -0.12,  0,      0.52,   0,      pi/2,   0,      True),
-#           (choreo1(),     0.12,   0,      0.52,   0,      pi/2,   0,      True),
-#           (choreo1(),     0,      -0.12,  0.52,   0,      -pi/2,  0,      True),
-#           (choreo1(),     0,      0.12,   0.52,   0,      -pi/2,  0,      True),
-#           (choreo1(),     -0.12,  0,      0.52,   0,      -pi/2,  0,      True),
-#           (choreo1(),     0.12,   0,      0.52,   0,      -pi/2,  0,      True),
-#           (choreo1(),     0,      -0.32,  0.32,   0,      pi/2,   0,      True),
-#           (choreo1(),     0,      0.32,   0.32,   0,      pi/2,   0,      True),
-#           (choreo1(),     -0.32,  0,      0.32,   0,      pi/2,   0,      True),
-#           (choreo1(),     0.32,   0,      0.32,   0,      pi/2,   0,      False),
-#           (choreo1(),     0,      -0.32,  0.32,   0,      -pi/2,  0,      True),
-#           (choreo1(),     0,      0.32,   0.32,   0,      -pi/2,  0,      True),
-#           (choreo1(),     -0.32,  0,      0.32,   0,      -pi/2,  0,      False),
-#           (choreo1(),     0.32,   0,      0.32,   0,      -pi/2,  0,      True),
-#           (choreo1(),     0.39,   0,      0.32,   0,      pi/2,   0,      True), #FIXME again, londer than expected
-#           (choreo1(),     -0.39,  0,      0.32,   0,      -pi/2,  0,      True),
-#       ]
-#       for (ch, x, y, z, a, b, c, res) in tests:
-#           self.assertTrue(self.check(ch, x, y, z, a, b, c) == res)
+    def test_fixed_positions(self, debug = False):
+        pi = mp.pi
+        tests = [
+            #ch             x       y       z       a       b       c       result (False == in FP)
+            (choreo1(),     0,      0,      0,      0,      0,      0,      False),
+            (choreo1(),     0,      0,      0.1,    0,      0,      0,      False),
+            (choreo1(),     0,      0,      0.5,    0,      0,      0,      False),
+            (choreo1(),     0,      0,      -1,     0,      0,      0,      True),
+            (choreo1(),     0,      0,      -0.1,   0,      0,      0,      True),
+            (choreo1(),     0,      0,      -0.02,  0,      0,      0,      True),
+            (choreo1(),     0,      0,      0.62,   0,      0,      0,      True), #FIXME I would expect the reach to be FP 0.55 but it gets to 0.61 !?!
+            (choreo1(),     0,      0,      0.60,   pi/2,   0,      0,      True),
+            (choreo1(),     0,      0,      0.50,   pi/2,   0,      0,      False),
+            (choreo1(),     0,      -0.2,   0.45,   pi/2,   0,      0,      True),
+            (choreo1(),     0,      0.2,    0.45,   pi/2,   0,      0,      True),
+            (choreo1(),     -0.2,   0,      0.45,   pi/2,   0,      0,      True),
+            (choreo1(),     0.2,    0,      0.45,   pi/2,   0,      0,      True),
+            (choreo1(),     0,      -0.12,  0.52,   0,      0,      0,      True), #FIXME again, should be lower !?
+            (choreo1(),     0,      -0.12,  0.52,   pi/2,   0,      0,      True),
+            (choreo1(),     0,      0.12,   0.52,   pi/2,   0,      0,      True),
+            (choreo1(),     -0.12,  0,      0.52,   pi/2,   0,      0,      True),
+            (choreo1(),     0.12,   0,      0.52,   pi/2,   0,      0,      False),
+            (choreo1(),     0,      -0.12,  0.52,   -pi/2,  0,      0,      True),
+            (choreo1(),     0,      0.12,   0.52,   -pi/2,  0,      0,      True),
+            (choreo1(),     -0.12,  0,      0.52,   -pi/2,  0,      0,      False),
+            (choreo1(),     0.12,   0,      0.52,   -pi/2,  0,      0,      True),
+            (choreo1(),     0,      -0.12,  0.52,   0,      pi/2,   0,      True),
+            (choreo1(),     0,      0.12,   0.52,   0,      pi/2,   0,      True),
+            (choreo1(),     -0.12,  0,      0.52,   0,      pi/2,   0,      True),
+            (choreo1(),     0.12,   0,      0.52,   0,      pi/2,   0,      True),
+            (choreo1(),     0,      -0.12,  0.52,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      0.12,   0.52,   0,      -pi/2,  0,      True),
+            (choreo1(),     -0.12,  0,      0.52,   0,      -pi/2,  0,      True),
+            (choreo1(),     0.12,   0,      0.52,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      -0.32,  0.32,   0,      pi/2,   0,      True),
+            (choreo1(),     0,      0.32,   0.32,   0,      pi/2,   0,      True),
+            (choreo1(),     -0.32,  0,      0.32,   0,      pi/2,   0,      True),
+            (choreo1(),     0.32,   0,      0.32,   0,      pi/2,   0,      False),
+            (choreo1(),     0,      -0.32,  0.32,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      0.32,   0.32,   0,      -pi/2,  0,      True),
+            (choreo1(),     -0.32,  0,      0.32,   0,      -pi/2,  0,      False),
+            (choreo1(),     0.32,   0,      0.32,   0,      -pi/2,  0,      True),
+            (choreo1(),     0.39,   0,      0.32,   0,      pi/2,   0,      True), #FIXME again, londer than expected
+            (choreo1(),     -0.39,  0,      0.32,   0,      -pi/2,  0,      True),
+        ]
+        for (ch, x, y, z, a, b, c, res) in tests:
+            self.assertTrue(self.check(ch, x, y, z, a, b, c, debug) == res)
 
 
     def test_a_free(self, debug = False):
@@ -149,7 +142,7 @@ class ContractParsingTest(unittest.TestCase):
 #           (ch,     -0.12,  0,      0.52,   0,      0,      0,      False), #FIXME Timeout
         ]
         for (ch, x, y, z, a, b, c, res) in tests:
-            self.assertTrue(self.check(ch, x, y, z, a, b, c) == res)
+            self.assertTrue(self.check(ch, x, y, z, a, b, c, debug) == res)
 
 
 if __name__ == '__main__':

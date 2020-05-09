@@ -52,9 +52,9 @@ class MotionPrimitive(AssumeGuaranteeContract):
             px, py, pz = symbols('inFpX inFpY inFpZ')
             frame = self.frame()
             point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-            pointDomain = And(px >= minX, px <= maxX, 
-                              py >= minY, py <= maxY,
-                              pz >= minZ, pz <= maxZ)
+            pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+                              py >= spec.conf.minY, py <= spec.conf.maxY,
+                              pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
             #pre
             pre = And(pointDomain,
                       self._component.invariantG(),
