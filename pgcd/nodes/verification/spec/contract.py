@@ -162,20 +162,23 @@ class AssumeGuaranteeContract(ABC):
         preExtra = And(extra.pre, extra.always)
         vcs.append( VC(prefix + "preA",   [And(preExtra, contract.preA(), Not(self.preA()))]) ) # contract.A ⇒ self.A
         vcs.append( VC(prefix + "preG",   [And(preExtra, self.preG(), Not(contract.preG()))]) ) # self.G ⇒ contract.G
-        vcs.append( VC(prefix + "preFP " + str(frame),  [And(preExtra, self.preG(), contract.preG(), pointDomain, # strengthened by preG
-                                                             self.preFP(point), Not(contract.preFP(point)))]) ) # self.FP ⊆ contract.FP
+        if spec.conf.enableFPCheck:
+            vcs.append( VC(prefix + "preFP " + str(frame),  [And(preExtra, self.preG(), contract.preG(), pointDomain, # strengthened by preG
+                                                                 self.preFP(point), Not(contract.preFP(point)))]) ) # self.FP ⊆ contract.FP
         # inv
         invExtra = And(extra.always, contract.deTimifyFormula(self.deTimifyFormula(extra.inv)))
         vcs.append( VC(prefix + "invA",   [And(invExtra, contract.deTimifyFormula(contract.invA()), Not(self.deTimifyFormula(self.invA())))]) )
         vcs.append( VC(prefix + "invG",   [And(invExtra, self.deTimifyFormula(self.invG()), Not(contract.deTimifyFormula(contract.invG())))]) )
-        vcs.append( VC(prefix + "invFP " + str(frame),  [And(invExtra, self.deTimifyFormula(self.invG()), contract.deTimifyFormula(contract.invG()), # strengthened by invG
-                                                             pointDomain, self.deTimifyFormula(self.invFP(point)), Not(contract.deTimifyFormula(contract.invFP(point))))]) )
+        if spec.conf.enableFPCheck:
+            vcs.append( VC(prefix + "invFP " + str(frame),  [And(invExtra, self.deTimifyFormula(self.invG()), contract.deTimifyFormula(contract.invG()), # strengthened by invG
+                                                                 pointDomain, self.deTimifyFormula(self.invFP(point)), Not(contract.deTimifyFormula(contract.invFP(point))))]) )
         # post
         postExtra = And(extra.post, extra.always)
         vcs.append( VC(prefix + "postA",  [And(postExtra, contract.postA(), Not(self.postA()))]) )
         vcs.append( VC(prefix + "postG",  [And(postExtra, self.postG(), Not(contract.postG()))]) )
-        vcs.append( VC(prefix + "postFP " + str(frame), [And(postExtra, self.postG(), contract.postG(), pointDomain, # strengthened by postG
-                                                             self.postFP(point), Not(contract.postFP(point)))]) )
+        if spec.conf.enableFPCheck:
+            vcs.append( VC(prefix + "postFP " + str(frame), [And(postExtra, self.postG(), contract.postG(), pointDomain, # strengthened by postG
+                                                                 self.postFP(point), Not(contract.postFP(point)))]) )
         return vcs
 
     def checkCollision(self, contract, connection, frame, extra = ExtraInfo()):
@@ -354,7 +357,8 @@ class ComposedContract(AssumeGuaranteeContract):
     def wellFormed(self, extra = ExtraInfo()):
         # this assumes that the children are well formed!
         vcs = super().wellFormed(extra)
-        vcs.extend(self._contract1.checkCollision(self._contract2, self._connection, self.frame(), extra))
+        if spec.conf.enableFPCheck:
+            vcs.extend(self._contract1.checkCollision(self._contract2, self._connection, self.frame(), extra))
         return vcs
 
 

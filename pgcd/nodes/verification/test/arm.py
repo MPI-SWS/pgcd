@@ -5,6 +5,7 @@ from spec.component import *
 from spec.motion import *
 from spec.time import *
 from utils.geometry import *
+import utils.transition
 
 # model for a generic arm as 3 linkage connected by revolute actuators
 class Arm(Process):
@@ -110,6 +111,25 @@ class Arm(Process):
         domain_c = And(self.c_eff() >= -pi, self.c_eff() <= pi)
         return And(domain_a, domain_b, domain_c)
 
+class ArmMP(MotionPrimitive):
+
+    def __init__(self, name, component):
+        super().__init__(name, component)
+        self.err = 0.01
+
+    def preFP(self, point):
+        #return self._component.abstractResources(point, self.err)
+        return self._component.ownResources(point, self.err)
+
+    def postFP(self, point):
+        #return self._component.abstractResources(point, self.err)
+        return self._component.ownResources(point, self.err)
+
+    def invFP(self, point):
+        #i = self._component.abstractResources(point, self.err)
+        i = self._component.ownResources(point, self.err)
+        return self.timify(i)
+
 class Fold(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -122,7 +142,6 @@ class Fold(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return ArmFold(self.name(), self._component)
 
-
 class RetractArm(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -132,13 +151,22 @@ class RetractArm(MotionPrimitiveFactory):
         return ['[opt] duration']
 
     def setParameters(self, args):
-        assert(len(args) == 0 or len(args) == 1)
-        if (len(args) == 0):
+        assert(len(args) == 0 or len(args) == 1 or len(args) == 3 or len(args) == 4)
+        if len(args) == 0:
             return ArmFold(self.name(), self._component)
-        else:
+        elif len(args) == 1:
             return ArmFold(self.name(), self._component, args[0])
+        elif len(args) == 3:
+            return ArmSetAllAngles(self.name(), self._component, 
+                                   args[0], args[1], args[2], # c, b, a
+                                   0, self._component.minAngleAB, self._component.maxAngleAB)
+        else:
+            return ArmSetAllAngles(self.name(), self._component,
+                                   args[0], args[1], args[2],
+                                   0, self._component.minAngleAB, self._component.maxAngleAB,
+                                   dt = args[3])
 
-class ArmFold(MotionPrimitive):
+class ArmFold(ArmMP):
 
     def __init__(self, name, component, duration = None):
         super().__init__(name, component)
@@ -164,19 +192,6 @@ class ArmFold(MotionPrimitive):
     def invG(self):
         return S.true
 
-    def preFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def postFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def invFP(self, point):
-        #i = self._component.abstractResources(point, 0.05)
-        i = self._component.ownResources(point, 0.05)
-        return self.timify(i)
-
 class Idle(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -189,7 +204,7 @@ class Idle(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return ArmIdle(self.name(), self._component)
 
-class ArmIdle(MotionPrimitive):
+class ArmIdle(ArmMP):
 
     def __init__(self, name, component):
         super().__init__(name, component)
@@ -209,20 +224,6 @@ class ArmIdle(MotionPrimitive):
     def invG(self):
         return S.true
 
-    def preFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def postFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def invFP(self, point):
-        #i = self._component.abstractResources(point, 0.05)
-        i = self._component.ownResources(point, 0.05)
-        return self.timify(i)
-
-
 class Wait(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -235,7 +236,7 @@ class Wait(MotionPrimitiveFactory):
         assert(len(args) == 1)
         return ArmWait(self.name(), self._component, args[0])
 
-class ArmWait(MotionPrimitive):
+class ArmWait(ArmMP):
 
     def __init__(self, name, component, t_min, t_max = -1):
         super().__init__(name, component)
@@ -260,19 +261,6 @@ class ArmWait(MotionPrimitive):
     def invG(self):
         return S.true
 
-    def preFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def postFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def invFP(self, point):
-        #i = self._component.abstractResources(point, 0.05)
-        i = self._component.ownResources(point, 0.05)
-        return self.timify(i)
-
 class Grab(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -285,7 +273,7 @@ class Grab(MotionPrimitiveFactory):
         assert(len(args) == 1)
         return ArmGrab(self.name(), self._component, args[0])
 
-class ArmGrab(MotionPrimitive):
+class ArmGrab(ArmMP):
 
     def __init__(self, name, component, target):
         super().__init__(name, component)
@@ -305,19 +293,6 @@ class ArmGrab(MotionPrimitive):
     def invG(self):
         return S.true
 
-    def preFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def postFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def invFP(self, point):
-        #i = self._component.abstractResources(point, 0.05)
-        i = self._component.ownResources(point, 0.05)
-        return self.timify(i)
-
 class PutInBin(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -331,7 +306,7 @@ class PutInBin(MotionPrimitiveFactory):
         return ArmPutInBin(self.name(), self._component, args[0])
 
 # assume one bin in front then move to the loc and then move back
-class ArmPutInBin(MotionPrimitive):
+class ArmPutInBin(ArmMP):
 
     def __init__(self, name, component, target):
         super().__init__(name, component)
@@ -370,24 +345,24 @@ class ArmPutInBin(MotionPrimitive):
         return self.timify(f)
 
     def preFP(self, point):
-        withoutGamma = self._component.abstractResources(point, 0.05)
+        withoutGamma = self._component.abstractResources(point, self.err)
         f = self._component.frame()
-        gMin = halfSpace(f,  f.j, point, self._component.baseRadius + 0.05)
-        gMax = halfSpace(f, -f.j, point, self._component.baseRadius + 0.05)
+        gMin = halfSpace(f,  f.j, point, self._component.baseRadius + self.err)
+        gMax = halfSpace(f, -f.j, point, self._component.baseRadius + self.err)
         return And(withoutGamma, gMin, gMax)
 
     def postFP(self, point):
-        withoutGamma = self._component.abstractResources(point, 0.05)
+        withoutGamma = self._component.abstractResources(point, self.err)
         f = self._component.frame()
-        gMin = halfSpace(f,  f.j, point, self._component.baseRadius + 0.05)
-        gMax = halfSpace(f, -f.j, point, self._component.baseRadius + 0.05)
+        gMin = halfSpace(f,  f.j, point, self._component.baseRadius + self.err)
+        gMax = halfSpace(f, -f.j, point, self._component.baseRadius + self.err)
         return And(withoutGamma, gMin, gMax)
 
     def invFP(self, point):
-        withoutGamma = self._component.abstractResources(point, 0.05)
+        withoutGamma = self._component.abstractResources(point, self.err)
         f = self._component.frame()
-        gMin = halfSpace(f,  f.orient_new_axis("minGammaBound", self._minGamma, f.k).j, point, self._component.baseRadius + 0.05)
-        gMax = halfSpace(f, -f.orient_new_axis("maxGammaBound", self._maxGamma, f.k).j, point, self._component.baseRadius + 0.05)
+        gMin = halfSpace(f,  f.orient_new_axis("minGammaBound", self._minGamma, f.k).j, point, self._component.baseRadius + self.err)
+        gMax = halfSpace(f, -f.orient_new_axis("maxGammaBound", self._maxGamma, f.k).j, point, self._component.baseRadius + self.err)
         return self.timify(And(withoutGamma, gMin, gMax))
 
 # since we don't precisely model the gripper, it is like idle
@@ -441,7 +416,7 @@ class MoveTo(MotionPrimitiveFactory):
         assert(len(args) == 1)
         return ArmMoveTo(self.name(), self._component, args[0])
 
-class ArmMoveTo(MotionPrimitive):
+class ArmMoveTo(ArmMP):
 
     def __init__(self, name, component, target):
         super().__init__(name, component)
@@ -465,19 +440,6 @@ class ArmMoveTo(MotionPrimitive):
         #pos = distance(self._component._upper.origin, self._component.mountingPoint(0).origin)
         #return self.timify(pos <= dist)
         return S.true
-
-    def preFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def postFP(self, point):
-        #return self._component.abstractResources(point, 0.05)
-        return self._component.ownResources(point, 0.05)
-
-    def invFP(self, point):
-        #i = self._component.abstractResources(point, 0.05)
-        i = self._component.ownResources(point, 0.05)
-        return self.timify(i)
 
 class SetAngleTurntable(MotionPrimitiveFactory):
 
@@ -524,7 +486,7 @@ class SetAngleAnchorPoint(MotionPrimitiveFactory):
         else:
             return ArmSetAngle(self.name(), self._component, self._component.a_eff(), args[0], args[1], args[2])
 
-class ArmSetAngle(MotionPrimitive):
+class ArmSetAngle(ArmMP):
 
     def __init__(self, name, component, var, angle1, angle2, dt = None):
         super().__init__(name, component)
@@ -558,16 +520,6 @@ class ArmSetAngle(MotionPrimitive):
             f = And( self.var >= self.angle2, self.var <= self.angle1)
         return self.timify(f)
 
-    def preFP(self, point):
-        return self._component.ownResources(point, 0.05)
-
-    def postFP(self, point):
-        return self._component.ownResources(point, 0.05)
-
-    def invFP(self, point):
-        i = self._component.ownResources(point, 0.05)
-        return self.timify(i)
-
 class RotateAndGrab(MotionPrimitiveFactory):
 
     def parameters(self):
@@ -598,9 +550,10 @@ class Rotate(MotionPrimitiveFactory):
         assert(len(args) == 6)
         return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.0)
 
-class ArmSetAllAngles(MotionPrimitive):
+class ArmSetAllAngles(ArmMP):
 
-    def __init__(self, name, component, angle1a, angle2a, angle3a, angle1b, angle2b, angle3b, delta):
+    def __init__(self, name, component, angle1a, angle2a, angle3a, angle1b, angle2b, angle3b,
+                 delta = 0.0, dt = DurationSpec(0, 1, False), smooth = True):
         super().__init__(name, component)
         self.angle1a = angle1a
         self.angle2a = angle2a
@@ -609,17 +562,19 @@ class ArmSetAllAngles(MotionPrimitive):
         self.angle2b = angle2b
         self.angle3b = angle3b
         self.delta   = delta
+        self.dt = dt
+        self.smooth = smooth
 
     def modifies(self):
         return self._component.internalVariables()
 
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO function of angle and speed
+        return self.dt
 
     def preG(self):
-        return And( self._component._a >= self.angle3a - 0.01, self._component._a <= self.angle3a + 0.01,
-                    self._component._b >= self.angle2a - 0.01, self._component._b <= self.angle2a + 0.01,
-                    self._component._c >= self.angle1a - 0.01, self._component._c <= self.angle1a + 0.01)
+        return And( self._component.a_eff() >= self.angle3a - self.err, self._component.a_eff() <= self.angle3a + self.err,
+                    self._component.b_eff() >= self.angle2a - self.err, self._component.b_eff() <= self.angle2a + self.err,
+                    self._component.c_eff() >= self.angle1a - self.err, self._component.c_eff() <= self.angle1a + self.err)
 
     def postG(self):
         targetCanti = self.angle2b
@@ -627,36 +582,34 @@ class ArmSetAllAngles(MotionPrimitive):
             targetCanti = targetCanti + self.delta
         else:
             targetCanti = targetCanti - self.delta
-        a = Eq( self._component._a, self.angle3b )
-        b = Eq( self._component._b, targetCanti )
-        c = Eq( self._component._c, self.angle1b )
+        a = Eq( self._component.a_eff(), self.angle3b )
+        b = Eq( self._component.b_eff(), targetCanti )
+        c = Eq( self._component.c_eff(), self.angle1b )
         return And(a, b, c)
 
     def invG(self):
         f = true
-        if self.angle1a < self.angle1b:
-            f = And(f, self._component._c >= self.angle1a, self._component._c <= self.angle1b)
-        else:                           
-            f = And(f, self._component._c >= self.angle1b, self._component._c <= self.angle1a)
-        if self.angle2a < self.angle2b: 
-            f = And(f, self._component._b >= self.angle2a, self._component._b <= self.angle2b)
-        else:                           
-            f = And(f, self._component._b >= self.angle2b, self._component._b <= self.angle2a)
-        if self.angle3a < self.angle3b: 
-            f = And(f, self._component._a >= self.angle3a, self._component._a <= self.angle3b)
-        else:                           
-            f = And(f, self._component._a >= self.angle3b, self._component._a <= self.angle3a)
+        if self.smooth:
+            t = timeSymbol()
+            dt = self.dt.max
+            ta = Eq(self._component.a_eff(), utils.transition.linear(t, self.angle3a, self.angle3b, dt))
+            tb = Eq(self._component.b_eff(), utils.transition.linear(t, self.angle2a, self.angle2b, dt))
+            tc = Eq(self._component.c_eff(), utils.transition.linear(t, self.angle1a, self.angle1b, dt))
+            f = And(t >= 0, t <= dt, ta, tb, tc)
+        else:
+            if self.angle1a < self.angle1b:
+                f = And(f, self._component.c_eff() >= self.angle1a, self._component.c_eff() <= self.angle1b)
+            else:                          
+                f = And(f, self._component.c_eff() >= self.angle1b, self._component.c_eff() <= self.angle1a)
+            if self.angle2a < self.angle2b:
+                f = And(f, self._component.b_eff() >= self.angle2a, self._component.b_eff() <= self.angle2b)
+            else:                          
+                f = And(f, self._component.b_eff() >= self.angle2b, self._component.b_eff() <= self.angle2a)
+            if self.angle3a < self.angle3b:
+                f = And(f, self._component.a_eff() >= self.angle3a, self._component.a_eff() <= self.angle3b)
+            else:                          
+                f = And(f, self._component.a_eff() >= self.angle3b, self._component.a_eff() <= self.angle3a)
         return self.timify(f)
-
-    def preFP(self, point):
-        return self._component.ownResources(point, 0.05)
-
-    def postFP(self, point):
-        return self._component.ownResources(point, 0.05)
-
-    def invFP(self, point):
-        i = self._component.ownResources(point, 0.05)
-        return self.timify(i)
 
 #TODO
 class PutOnCart(MotionPrimitiveFactory):

@@ -46,7 +46,7 @@ class MotionPrimitive(AssumeGuaranteeContract):
     
     def wellFormed(self, extra = ExtraInfo()):
         vcs = super().wellFormed(extra)
-        if spec.conf.enableMPincludeFPCheck:
+        if spec.conf.enableFPCheck and spec.conf.enableMPincludeFPCheck:
             # checks that the components FP is in the motion primitive MP
             prefix = self.name + " well-formed: contains component FP "
             px, py, pz = symbols('inFpX inFpY inFpZ')

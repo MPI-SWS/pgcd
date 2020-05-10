@@ -3,7 +3,7 @@ import spec.conf
 from compatibility import *
 from projection import Projection
 from arm import Arm
-from static_process import PointProcess
+from static_process import PointProcess, FpProcess
 from vectorize import *
 from mpmath import mp
 from experiments_setups import World
@@ -48,18 +48,19 @@ class ArmTest(unittest.TestCase):
 
     def setUp(self):
         self.defaultConf = spec.conf.enableMPincludeFPCheck
+        self.defaultPrecision = spec.conf.dRealPrecision
         spec.conf.enableMPincludeFPCheck = False
+        spec.conf.dRealPrecision = 0.01
 
     def tearDown(self):
         spec.conf.enableMPincludeFPCheck = self.defaultConf
-
-    def check(self, ch, x, y, z, a, b, c, debug = False):
-        w = world(x, y, z, a, b, c)
+        spec.conf.dRealPrecision = self.defaultPrecision
+    
+    def check0(self, ch, w, debug = False):
         env = Env(w, [])
         visitor = Projection()
         visitor.execute(ch, env, debug)
         chor = visitor.choreography
-        print(chor.id, x, y, z, a, b, c)
         vectorize(chor, w)
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
@@ -75,6 +76,10 @@ class ArmTest(unittest.TestCase):
                 return False
         return True
 
+    def check(self, ch, x, y, z, a, b, c, debug = False):
+        w = world(x, y, z, a, b, c)
+        return self.check0(ch, w)
+
 
     def test_fixed_positions(self, debug = False):
         pi = mp.pi
@@ -86,42 +91,43 @@ class ArmTest(unittest.TestCase):
             (choreo1(),     0,      0,      -1,     0,      0,      0,      True),
             (choreo1(),     0,      0,      -0.1,   0,      0,      0,      True),
             (choreo1(),     0,      0,      -0.02,  0,      0,      0,      True),
-            (choreo1(),     0,      0,      0.62,   0,      0,      0,      True), #FIXME I would expect the reach to be FP 0.55 but it gets to 0.61 !?!
+            (choreo1(),     0,      0,      0.58,   0,      0,      0,      True),
             (choreo1(),     0,      0,      0.60,   pi/2,   0,      0,      True),
             (choreo1(),     0,      0,      0.50,   pi/2,   0,      0,      False),
             (choreo1(),     0,      -0.2,   0.45,   pi/2,   0,      0,      True),
             (choreo1(),     0,      0.2,    0.45,   pi/2,   0,      0,      True),
             (choreo1(),     -0.2,   0,      0.45,   pi/2,   0,      0,      True),
             (choreo1(),     0.2,    0,      0.45,   pi/2,   0,      0,      True),
-            (choreo1(),     0,      -0.12,  0.52,   0,      0,      0,      True), #FIXME again, should be lower !?
-            (choreo1(),     0,      -0.12,  0.52,   pi/2,   0,      0,      True),
-            (choreo1(),     0,      0.12,   0.52,   pi/2,   0,      0,      True),
-            (choreo1(),     -0.12,  0,      0.52,   pi/2,   0,      0,      True),
-            (choreo1(),     0.12,   0,      0.52,   pi/2,   0,      0,      False),
-            (choreo1(),     0,      -0.12,  0.52,   -pi/2,  0,      0,      True),
-            (choreo1(),     0,      0.12,   0.52,   -pi/2,  0,      0,      True),
-            (choreo1(),     -0.12,  0,      0.52,   -pi/2,  0,      0,      False),
-            (choreo1(),     0.12,   0,      0.52,   -pi/2,  0,      0,      True),
-            (choreo1(),     0,      -0.12,  0.52,   0,      pi/2,   0,      True),
-            (choreo1(),     0,      0.12,   0.52,   0,      pi/2,   0,      True),
-            (choreo1(),     -0.12,  0,      0.52,   0,      pi/2,   0,      True),
-            (choreo1(),     0.12,   0,      0.52,   0,      pi/2,   0,      True),
-            (choreo1(),     0,      -0.12,  0.52,   0,      -pi/2,  0,      True),
-            (choreo1(),     0,      0.12,   0.52,   0,      -pi/2,  0,      True),
-            (choreo1(),     -0.12,  0,      0.52,   0,      -pi/2,  0,      True),
-            (choreo1(),     0.12,   0,      0.52,   0,      -pi/2,  0,      True),
-            (choreo1(),     0,      -0.32,  0.32,   0,      pi/2,   0,      True),
-            (choreo1(),     0,      0.32,   0.32,   0,      pi/2,   0,      True),
-            (choreo1(),     -0.32,  0,      0.32,   0,      pi/2,   0,      True),
-            (choreo1(),     0.32,   0,      0.32,   0,      pi/2,   0,      False),
-            (choreo1(),     0,      -0.32,  0.32,   0,      -pi/2,  0,      True),
-            (choreo1(),     0,      0.32,   0.32,   0,      -pi/2,  0,      True),
-            (choreo1(),     -0.32,  0,      0.32,   0,      -pi/2,  0,      False),
-            (choreo1(),     0.32,   0,      0.32,   0,      -pi/2,  0,      True),
-            (choreo1(),     0.39,   0,      0.32,   0,      pi/2,   0,      True), #FIXME again, londer than expected
-            (choreo1(),     -0.39,  0,      0.32,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      -0.1,   0.48,   0,      0,      0,      True),
+            (choreo1(),     0,      -0.12,  0.45,   pi/2,   0,      0,      True),
+            (choreo1(),     0,      0.12,   0.45,   pi/2,   0,      0,      True),
+            (choreo1(),     -0.12,  0,      0.45,   pi/2,   0,      0,      True),
+            (choreo1(),     0.12,   0,      0.45,   pi/2,   0,      0,      False),
+            (choreo1(),     0,      -0.12,  0.45,   -pi/2,  0,      0,      True),
+            (choreo1(),     0,      0.12,   0.45,   -pi/2,  0,      0,      True),
+            (choreo1(),     -0.12,   0,     0.45,   -pi/2,  0,      0,      False),
+            (choreo1(),     0.12,    0,     0.45,   -pi/2,  0,      0,      True),
+            (choreo1(),     0,      -0.12,  0.45,   0,      pi/2,   0,      True),
+            (choreo1(),     0,      0.12,   0.45,   0,      pi/2,   0,      True),
+            (choreo1(),     -0.12,   0,     0.45,   0,      pi/2,   0,      True),
+            (choreo1(),     0.12,    0,     0.45,   0,      pi/2,   0,      True),
+            (choreo1(),     0,      -0.12,  0.45,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      0.12,   0.45,   0,      -pi/2,  0,      True),
+            (choreo1(),     -0.12,   0,     0.45,   0,      -pi/2,  0,      True),
+            (choreo1(),     0.12,    0,     0.45,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      -0.28,  0.29,   0,      pi/2,   0,      True),
+            (choreo1(),     0,      0.28,   0.29,   0,      pi/2,   0,      True),
+            (choreo1(),     -0.28,   0,     0.29,   0,      pi/2,   0,      True),
+            (choreo1(),     0.28,    0,     0.29,   0,      pi/2,   0,      False),
+            (choreo1(),     0,      -0.28,  0.29,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      0.28,   0.29,   0,      -pi/2,  0,      True),
+            (choreo1(),     -0.28,  0,      0.29,   0,      -pi/2,  0,      False),
+            (choreo1(),     0.28,   0,      0.29,   0,      -pi/2,  0,      True),
+            (choreo1(),     0.35,   0,      0.29,   0,      pi/2,   0,      True),
+            (choreo1(),     -0.35,  0,      0.29,   0,      -pi/2,  0,      True),
         ]
         for (ch, x, y, z, a, b, c, res) in tests:
+            print("fixed", x, y, z, a, b, c)
             self.assertTrue(self.check(ch, x, y, z, a, b, c, debug) == res)
 
 
@@ -135,15 +141,31 @@ class ArmTest(unittest.TestCase):
             (ch,     0,      0,      0.5,    0,      0,      0,      False),
             (ch,     0,      0,      -1,     0,      0,      0,      True),
             (ch,     0,      0,      -0.1,   0,      0,      0,      True),
-            (ch,     0,      0,      0.65,   0,      0,      0,      True), # TODO check the length
-#           (ch,     0,      -0.12,  0.52,   0,      0,      0,      True), #FIXME Timeout
-#           (ch,     0,      0.12,   0.52,   0,      0,      0,      True), #FIXME Timeout
-            (ch,     0.12,   0,      0.52,   0,      0,      0,      False),
-#           (ch,     -0.12,  0,      0.52,   0,      0,      0,      False), #FIXME Timeout
+            (ch,     0,      0,      0.62,   0,      0,      0,      True), # TODO check the length
+#           (ch,     0,      -0.12,  0.45,   0,      0,      0,      True), #FIXME Timeout
+#           (ch,     0,      0.12,   0.45,   0,      0,      0,      True), #FIXME Timeout
+            (ch,     0.12,   0,      0.45,   0,      0,      0,      False),
+            (ch,     -0.12,  0,      0.45,   0,      0,      0,      False),
         ]
         for (ch, x, y, z, a, b, c, res) in tests:
+            print("a_free", x, y, z, a, b, c)
             self.assertTrue(self.check(ch, x, y, z, a, b, c, debug) == res)
 
+    def below0(self, z, frame, p):
+        (px,py,pz) = p.express_coordinates(frame)
+        return pz <= z
+
+    def below(self, z):
+        return lambda f, p, maxErr: self.below0(z+maxErr, f, p)
+
+    def test_folded_above_0(self, debug = False):
+        # mounting pts:  x      y     z        θ     comp
+        w = World(  (    0,     0,    1,       0), # arm
+                    (    0,     0,    0,       0)) # point
+        arm = Arm("arm", w, 0, -2.2689280275926285, -2.2689280275926285, 0) #folded toward the back
+        below = FpProcess("point", self.below(0.97), w, 1) #The folded arm FP extends 2-3cm below 0 due to maxFP
+        ch = choreo1()
+        self.assertTrue(self.check0(ch, w, debug))
 
 if __name__ == '__main__':
     unittest.main()

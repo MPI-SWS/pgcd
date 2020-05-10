@@ -19,7 +19,9 @@ def halfSphere(frame, radius, direction, p):
 def cylinder(frame, radius, height, p, maxError = 0.0):
     v = p.position_wrt(frame.origin)
     proj = frame.k.projection(v, scalar=True)
-    return And(proj >= -maxError, proj <= height + maxError, (v - frame.k.projection(v)).magnitude() <= radius + maxError)
+    return And( proj >= -maxError,
+                proj <= height + maxError,
+                (v - frame.k.projection(v)).magnitude() <= radius + maxError )
 
 def cube(frame, lowerBackLeft, upperFrontRight, p, maxErrorX = 0.0, maxErrorY = 0.0, maxErrorZ = 0.0):
     (px,py,pz) = p.express_coordinates(frame)

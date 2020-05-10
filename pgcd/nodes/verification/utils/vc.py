@@ -59,7 +59,10 @@ class VC:
             # look at the free symbols in other cstr
             # look in the bound cstr for var not needed var are sat
             # send the other cstr to the solver
-            dr = DrealInterface(timeout = timeout, jobs = spec.conf.dRealJobs, debug = debug)
+            dr = DrealInterface(precision = spec.conf.dRealPrecision,
+                                timeout = timeout,
+                                jobs = spec.conf.dRealJobs,
+                                debug = debug)
             res, model = dr.run(formula)
             self.model = model
             return res

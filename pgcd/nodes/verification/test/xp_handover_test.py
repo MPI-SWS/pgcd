@@ -42,16 +42,16 @@ def xp2_choreo_0():
 
 def xp2_choreo_1():
     return ''' Handover =
-        def x0 = (Cart: MoveCart(0, 0, 0, 0.01, 5), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.4, 5) ) ; x1
+        def x0 = (Cart: MoveCart(0, 0, 0, 0.25, 5), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.4, 5) ) ; x1
             x1 = Carrier -> Cart: OK(); x2
             x2 = Cart -> Arm: OK(); x3
             x3 = (Cart: Idle(), Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953), Carrier: Idle() ) ; x4
             x4 = (Cart: Idle(), Arm: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659), Carrier: Idle() ) ; x5
             x5 = (Cart: Idle(), Arm: Grip(9.5), Carrier: Idle() ) ; x6
-            x6 = (Cart: Idle(), Arm: RetractArm(), Carrier: Idle() ) ; x7
+            x6 = (Cart: Idle(), Arm: RetractArm(0,2.0943951023931953,-0.3490658503988659), Carrier: Idle() ) ; x7
             x7 = Arm -> Cart: OK(); x8
             x8 = Cart -> Carrier: OK(); x9
-            x9 = (Cart: MoveCart(0.01, 0, 0, -0.01, 5), Arm: Idle(), Carrier: MoveCart(0.4, 0, 0, -0.4, 5) ) ; x10
+            x9 = (Cart: MoveCart(0.25, 0, 0, -0.25, 5), Arm: Idle(), Carrier: MoveCart(0.4, 0, 0, -0.4, 5) ) ; x10
             x10 = end
         in [  (Cart_theta == 0) && (Cart_x == 0) && (Cart_y == 0) &&
               (Carrier_theta == 0) && (Carrier_x == 0) && (Carrier_y == 0) &&
@@ -62,27 +62,27 @@ def xp2_choreo_1():
 # TODO need a way of (1) specifying frame for the FP spec in the annotations and (2) for the VC flatten to least common ancestor rather than world
 def xp2_choreo_2():
     return ''' Handover =
-        def x0 = { fpx < 0.38 } ca0 ||
-                 { fpx > 0.42 } c0
-            ca0 = (Cart: MoveCart(0, 0, 0,0.01, 5), Arm: Idle()) ; ca1
+        def x0 = { fpx < 0.508  } ca0 ||
+                 { fpx > 0.508  } c0
+            ca0 = (Cart: MoveCart(0, 0, 0,0.25, 5), Arm: Idle()) ; ca1
             c0 = (Carrier: MoveCart(0, 0, 0, 0.4, 5) ) ; c1
             ca1 || c1 = x1
             x1 = Carrier -> Cart: OK(); x2
             x2 = Cart -> Arm: OK(); x3
-            x3 = { (fpx > 0.42) && (fpz < 0.16) } cr3 ||
-                 { (fpx < 0.38) || (fpz > 0.18) } ct3
+            x3 = { (fpx > 0.508) && (fpz < 0.167) } cr3 ||
+                 { (fpx < 0.508) || (fpz > 0.167) } ct3
             ct3 = (Cart: Idle(), Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953)) ; ct4
             ct4 = (Cart: Idle(), Arm: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659)) ; ct5
             ct5 = (Cart: Idle(), Arm: Grip(9.5) ) ; ct6
-            ct6 = (Cart: Idle(), Arm: RetractArm()) ; ct7
+            ct6 = (Cart: Idle(), Arm: RetractArm(0,2.0943951023931953,-0.3490658503988659)) ; ct7
             cr3 = (Carrier: Idle()) ; cr7
             ct7 || cr7 = x7
             x7 = Arm -> Cart: OK(); x8
             x8 = Cart -> Carrier: OK(); x9
-            x9 = { fpx < 0.38 } ca9 ||
-                 { fpx > 0.42 } c9
-            ca9 = (Cart: MoveCart(0.3, 0, 0, -0.3, 5), Arm: Idle()) ; ca10
-            c9 = (Carrier: MoveCart(0.5, 0, 0, -0.5, 5) ) ; c10
+            x9 = { fpx < 0.508 } ca9 ||
+                 { fpx > 0.508 } c9
+            ca9 = (Cart: MoveCart(0.25, 0, 0, -0.25, 5), Arm: Idle()) ; ca10
+            c9 = (Carrier: MoveCart(0.4, 0, 0, -0.4, 5) ) ; c10
             ca10 || c10 = x10
             x10 = end
         in [  (Cart_theta == 0) && (Cart_x == 0) && (Cart_y == 0) &&
@@ -168,6 +168,21 @@ def xp2_carrier():
 
 class XpHandoverTest(unittest.TestCase):
 
+    def setUp(self):
+        # self.defaultConf = spec.conf.enableFPCheck # trivial with that
+        self.defaultConf = spec.conf.enableMPincludeFPCheck
+        # spec.conf.enableFPCheck = False
+        spec.conf.enableMPincludeFPCheck = False
+        #
+        self.defaultPrecision = spec.conf.dRealPrecision
+        spec.conf.dRealPrecision = 0.01
+
+    def tearDown(self):
+        spec.conf.enableFPCheck = self.defaultConf
+        # spec.conf.enableMPincludeFPCheck = self.defaultConf
+        #
+        spec.conf.dRealPrecision = self.defaultPrecision
+
     def handover(self, ch, debug = False):
         w = xp2_world()
         progs = { "Arm": xp2_arm(),
@@ -196,13 +211,15 @@ class XpHandoverTest(unittest.TestCase):
             print("Checking VC", i, vc.title)
             if not vc.discharge(debug=debug):
                 print("Failed")
-                failed.append(vc)
+                failed.append((i,vc))
                 print(vc)
                 if vc.hasModel():
                     print(vc.modelStr())
                 else: 
                     print("Timeout")
-        self.assertTrue(failed = [])
+        for (i,vc) in failed:
+            print("Failed:", i, vc.title)
+        self.assertTrue(failed == [])
         end = time.time()
         print("VC solving:", end - start)
         start = end
@@ -219,11 +236,11 @@ class XpHandoverTest(unittest.TestCase):
         print("refinement:", end - start)
         start = end
     
-    def test_handover_1(self, debug = False):
-        self.handover(xp2_choreo_1(), debug)
+#   def test_handover_1(self, debug = False):
+#       self.handover(xp2_choreo_1(), debug)
 
-#   def test_handover_2(self, debug = False):
-#       self.handover(xp2_choreo_2(), debug)
+    def test_handover_2(self, debug = False):
+        self.handover(xp2_choreo_2(), debug)
 
 #TODO need proper AG contracts
 #   def test_handover_3(self, debug = False):

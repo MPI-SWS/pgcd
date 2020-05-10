@@ -18,7 +18,7 @@ class Cart(Process):
         self.radius = 0.30
         self.minRadius = 0.15
         self.maxRadius = 0.25
-        self.bedHeight= 0.09
+        self.bedHeight= 0.15 #TODO take FP overapprox into account
         # variables
         self._x = symbols(name + '_x')
         self._y = symbols(name + '_y')
@@ -50,10 +50,14 @@ class Cart(Process):
         assert(index == 0)
         return self._mount
 
-    def ownResources(self, point):
-        return semiRegularHexagon(self.position(), self.minRadius, self.maxRadius, self.height, point)
+    def ownResources(self, point, deltaXY = 0.0, deltaXYZ = 0.0):
+        return semiRegularHexagon(self.position(),
+                                  self.minRadius+deltaXY+deltaXYZ,
+                                  self.maxRadius+deltaXY+deltaXYZ,
+                                  self.height+deltaXYZ,
+                                  point)
 
-    def abstractResources(self, point, deltaXY = 0.01, deltaXYZ = 0.01):
+    def abstractResources(self, point, deltaXY = 0.001, deltaXYZ = 0.001):
         return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
 
 #the 2nd cart of a cube 0.18 wide, 0.17 long, 0.16 high
@@ -70,17 +74,48 @@ class CartSquare(Cart):
     def mountingPoint(self, index):
         assert False
 
-    def ownResources(self, point):
+    def ownResources(self, point, deltaXY = 0.0, deltaXYZ = 0.0):
         pos = self.position()
         o = pos.origin
-        l2 = self.length / 2
-        w2 = self.width / 2
-        lowerBackLeft = o.locate_new(self.name() + "_lowerBackLeft", -l2 * pos.i - w2 * pos.j)
-        upperFrontRight = o.locate_new(self.name() + "_upperFrontRight", l2 * pos.i + w2 * pos.j + self.height * pos.k)
+        l2 = self.length / 2 + deltaXY + deltaXYZ
+        w2 = self.width / 2 + deltaXY + deltaXYZ
+        lowerBackLeft = o.locate_new(self.name() + "_lowerBackLeft", -l2 * pos.i - w2 * pos.j - deltaXYZ * pos.k)
+        upperFrontRight = o.locate_new(self.name() + "_upperFrontRight", l2 * pos.i + w2 * pos.j + (self.height+deltaXYZ) * pos.k)
         return cube(pos, lowerBackLeft, upperFrontRight, point)
 
-    def abstractResources(self, point, deltaXY = 0.01, deltaXYZ = 0.01):
+    def abstractResources(self, point, deltaXY = 0.001, deltaXYZ = 0.001):
         return cylinder(self.position(), self.radius + deltaXY + deltaXYZ, self.height + deltaXYZ, point)
+
+
+class CartMotionPrimitive(MotionPrimitive):
+    
+    def __init__(self, name, component):
+        super().__init__(name, component)
+        self.err = 0.005
+        self._maxErrorPre = 0.005
+        self._maxErrorPost = 0.005
+        
+    def _locAsVec(self, loc):
+        return loc.position_wrt(self._frame)
+
+    def _onGroundVec(self, vec):
+        return Eq(self._component.frame().k.dot(vec) , 0)
+    
+    def _onGround(self, loc):
+        return Eq(self._component.frame().k.dot(self._locAsVec(loc)) , 0)
+
+    def preFP(self, point):
+        #return self._component.abstractResources(point, 0.0, self.err)
+        return self._component.ownResources(point, 0.0, self.err)
+
+    def postFP(self, point):
+        #return self._component.abstractResources(point, 0.0, self.err)
+        return self._component.ownResources(point, 0.0, self.err)
+
+    def invFP(self, point):
+        #i = self._component.abstractResources(point, 0.0, self.err)
+        i = self._component.ownResources(point, 0.0, self.err)
+        return self.timify(i)
 
 class MoveFromTo(MotionPrimitiveFactory):
 
@@ -95,20 +130,6 @@ class MoveFromTo(MotionPrimitiveFactory):
         return CartMove(self.name(), self._component, args[0], args[1])
 
 
-class CartMotionPrimitive(MotionPrimitive):
-    
-    def __init__(self, name, component):
-        super().__init__(name, component)
-        
-    def _locAsVec(self, loc):
-        return loc.position_wrt(self._frame)
-
-    def _onGroundVec(self, vec):
-        return Eq(self._component.frame().k.dot(vec) , 0)
-    
-    def _onGround(self, loc):
-        return Eq(self._component.frame().k.dot(self._locAsVec(loc)) , 0)
-
 class CartMove(CartMotionPrimitive):
 
     def __init__(self, name, component, src, dst):
@@ -118,8 +139,6 @@ class CartMove(CartMotionPrimitive):
         self._height = component.height
         self._src = src
         self._dst = dst
-        self._maxErrorPre = 0.1
-        self._maxErrorPost = 0.01
 
     def _srcFrame(self):
         return self._frame.locate_new("src", self._locAsVec(self._src))
@@ -147,14 +166,14 @@ class CartMove(CartMotionPrimitive):
         return self.timify(And(onGround, workSpace))
 
     def preFP(self, point):
-        return self._component.abstractResources(point, self._maxErrorPre, 0.005)
+        return self._component.abstractResources(point, self._maxErrorPre, self.err)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, self._maxErrorPost, 0.005)
+        return self._component.abstractResources(point, self._maxErrorPost, self.err)
 
     def invFP(self, point):
         dst_height = self._dst.locate_new('dsth', self._frame.k * self._height)
-        i = cube(self._frame, self._src, dst_height, point, self._maxErrorPost + self._radius, self._maxErrorPost + self._radius, 0.005)
+        i = cube(self._frame, self._src, dst_height, point, self._maxErrorPost + self._radius, self._maxErrorPost + self._radius, self.err)
         return self.timify(i)
 
 class Idle(MotionPrimitiveFactory):
@@ -169,7 +188,7 @@ class Idle(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return CartIdle(self.name(), self._component)
 
-class CartIdle(MotionPrimitive):
+class CartIdle(CartMotionPrimitive):
 
     def __init__(self, name, component):
         super().__init__(name, component)
@@ -189,16 +208,6 @@ class CartIdle(MotionPrimitive):
     def invG(self):
         return S.true
 
-    def preFP(self, point):
-        return self._component.abstractResources(point, 0.0, 0.005)
-
-    def postFP(self, point):
-        return self._component.abstractResources(point, 0.0, 0.005)
-
-    def invFP(self, point):
-        i = self._component.abstractResources(point, 0.0, 0.005)
-        return self.timify(i)
-
 class SetAngleCart(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -214,7 +223,7 @@ class SetAngleCart(MotionPrimitiveFactory):
         else:
             return CartSetAngle(self.name(), self._component, args[0], args[1])
 
-class CartSetAngle(MotionPrimitive):
+class CartSetAngle(CartMotionPrimitive):
 
     def __init__(self, name, component, angle, dt = None):
         super().__init__(name, component)
@@ -241,16 +250,6 @@ class CartSetAngle(MotionPrimitive):
 
     def invG(self):
         return S.true
-
-    def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
-        return self.timify(i)
 
 class MoveCart(MotionPrimitiveFactory):
 
@@ -301,8 +300,6 @@ class CartMoveDirection(CartMotionPrimitive):
         else:
             self._dMin = dt
             self._dMax = dt
-        self._maxErrorPre = 0.01
-        self._maxErrorPost = 0.005
         self._radius = component.radius
         self._height = component.height
 
@@ -330,20 +327,11 @@ class CartMoveDirection(CartMotionPrimitive):
 
     def invG(self):
         onGround = self._onGround(self._component.position())
-        #proj of position on direction is 0
-        workSpace = cube(self._frame, self._srcFrame().origin, self._dstFrame().origin, self._component.position().origin, self._maxErrorPost, self._maxErrorPost, 0.0)
-        return self.timify(And(onGround, workSpace))
+        pos = self._component.position().origin.position_wrt(self._srcFrame().origin)
+        traj = self._dstFrame().origin.position_wrt(self._srcFrame().origin)
+        proj = traj.projection(pos, scalar=True)
+        return And( proj >= 0, proj <= 1, (pos - traj.projection(pos)).magnitude() <= self.err)
 
-    def preFP(self, point):
-        return self._component.abstractResources(point, self._maxErrorPre, 0.005)
-
-    def postFP(self, point):
-        return self._component.abstractResources(point, self._maxErrorPost, 0.005)
-
-    def invFP(self, point):
-        dst_height = self._dstFrame().origin.locate_new('dsth', self._frame.k * self._height)
-        i = cube(self._frame, self._srcFrame().origin, dst_height, point, self._maxErrorPost + self._radius, self._maxErrorPost + self._radius, 0.005)
-        return self.timify(i)
 
 class Swipe(MotionPrimitiveFactory):
 
@@ -367,8 +355,6 @@ class CartSwipe(CartMotionPrimitive):
         self.t = t
         self.r = radius
         self.a = angle
-        self._maxErrorPre = 0.01
-        self._maxErrorPost = 0.005
     
     def modifies(self):
         return [self._component._x, self._component._y, self._component._theta]
@@ -412,10 +398,10 @@ class CartSwipe(CartMotionPrimitive):
         return self.timify(And(onGround, workSpace, self._angleRange()))
 
     def preFP(self, point):
-        return self._component.abstractResources(point, self._maxErrorPre, 0.005)
+        return self._component.abstractResources(point, self._maxErrorPre, self.err)
 
     def postFP(self, point):
-        return self._component.abstractResources(point, self._maxErrorPost, 0.005)
+        return self._component.abstractResources(point, self._maxErrorPost, self.err)
 
     def invFP(self, point):
         cor = self.centerOfRotation()

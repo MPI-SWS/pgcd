@@ -81,6 +81,27 @@ class CylinderProcess(PointProcess):
         return cylinder(pos, self.r, self.h, point, maxError)
 
 
+class FpProcess(Process):
+
+    def __init__(self, name, fp, parent = None, index = 0):
+        super().__init__(name, parent, index)
+        self.fp = fp #the "ownResources" function
+        self.dummyVar = Symbol(name + '_dummy')
+        Idle(self)
+        Wait(self)
+    
+    def internalVariables(self):
+        return [self.dummyVar]
+
+    def ownResources(self, point, maxError = 0.0):
+        return self.fp(self.frame(), point, maxError)
+
+    def abstractResources(self, point, maxError = 0.0):
+        return self.ownResources(point, maxError)
+
+    def mountingPoint(self, index):
+        return ValueException(self.name() + " does not have mounting moints.")
+
 #####################
 # Motion primitives #
 #####################

@@ -11,6 +11,7 @@ from experiments_setups import World
 from copy import deepcopy
 from choreography.projection import Projection
 import interpreter.parser as parser
+import spec.conf
 import time
 
 import unittest
@@ -288,6 +289,18 @@ while (true) {
 
 
 class XpSortingTest(unittest.TestCase):
+    
+    def setUp(self):
+        # self.defaultConf = spec.conf.enableFPCheck # trivial with that
+        self.defaultConf = spec.conf.enableMPincludeFPCheck
+        self.defaultPrecision = spec.conf.dRealPrecision
+        spec.conf.enableMPincludeFPCheck = False
+        spec.conf.dRealPrecision = 0.01
+
+    def tearDown(self):
+        # spec.conf.enableFPCheck = self.defaultConf
+        spec.conf.enableMPincludeFPCheck = self.defaultConf
+        spec.conf.dRealPrecision = self.defaultPrecision
 
     def test_sorting(self, debug = False):
         w = world()
