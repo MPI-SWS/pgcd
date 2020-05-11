@@ -28,7 +28,12 @@ class ExtraInfo():
     def __str__(self):
         return "ExtraInfo\n\tpre : " + str(self.pre) + "\n\tinv : " + str(self.inv) + "\n\tpost: " +  str(self.post) + "\n\tall : " + str(self.always)
 
-#TODO the footprints could be more or less detailed!
+def findLeastAncestorFrame(components):
+    for p in components:
+        children = p.allProcesses() #aslo contains p
+        if components.issubset(children):
+            return p.frame()
+    return spec.conf.worldFrame
 
 class AssumeGuaranteeContract(ABC):
 
@@ -45,11 +50,7 @@ class AssumeGuaranteeContract(ABC):
     def frame(self):
         """The frame in which this contract is expressed. By default take the frame from one of the components.
            As default, take the least common ancestor of the components or the world frame if there is none."""
-        for p in self.components():
-            children = p.allProcesses() #aslo contains p
-            if self.components().issubset(children):
-                return p.frame()
-        return spec.conf.worldFrame
+        return findLeastAncestorFrame(self.components())
 
     def inputs(self):
         """external inputs"""
@@ -163,22 +164,28 @@ class AssumeGuaranteeContract(ABC):
         vcs.append( VC(prefix + "preA",   [And(preExtra, contract.preA(), Not(self.preA()))]) ) # contract.A ⇒ self.A
         vcs.append( VC(prefix + "preG",   [And(preExtra, self.preG(), Not(contract.preG()))]) ) # self.G ⇒ contract.G
         if spec.conf.enableFPCheck:
-            vcs.append( VC(prefix + "preFP " + str(frame),  [And(preExtra, self.preG(), contract.preG(), pointDomain, # strengthened by preG
-                                                                 self.preFP(point), Not(contract.preFP(point)))]) ) # self.FP ⊆ contract.FP
+            preHypothesis = And(preExtra,
+                                self.preG(),        # strengthened by preG
+                                contract.preA())    # also strengthen by assumptions as the frame shift may depends on the assumption
+            vcs.append( VC(prefix + "preFP " + str(frame),  [And( preHypothesis, pointDomain, self.preFP(point), Not(contract.preFP(point)))]) ) # self.FP ⊆ contract.FP
         # inv
         invExtra = And(extra.always, contract.deTimifyFormula(self.deTimifyFormula(extra.inv)))
         vcs.append( VC(prefix + "invA",   [And(invExtra, contract.deTimifyFormula(contract.invA()), Not(self.deTimifyFormula(self.invA())))]) )
         vcs.append( VC(prefix + "invG",   [And(invExtra, self.deTimifyFormula(self.invG()), Not(contract.deTimifyFormula(contract.invG())))]) )
         if spec.conf.enableFPCheck:
-            vcs.append( VC(prefix + "invFP " + str(frame),  [And(invExtra, self.deTimifyFormula(self.invG()), contract.deTimifyFormula(contract.invG()), # strengthened by invG
-                                                                 pointDomain, self.deTimifyFormula(self.invFP(point)), Not(contract.deTimifyFormula(contract.invFP(point))))]) )
+            invHypothesis = And(invExtra,
+                                self.deTimifyFormula(self.invG()),
+                                contract.deTimifyFormula(contract.invA()))
+            vcs.append( VC(prefix + "invFP " + str(frame),  [And(invHypothesis, pointDomain, self.deTimifyFormula(self.invFP(point)), Not(contract.deTimifyFormula(contract.invFP(point))))]) )
         # post
         postExtra = And(extra.post, extra.always)
         vcs.append( VC(prefix + "postA",  [And(postExtra, contract.postA(), Not(self.postA()))]) )
         vcs.append( VC(prefix + "postG",  [And(postExtra, self.postG(), Not(contract.postG()))]) )
         if spec.conf.enableFPCheck:
-            vcs.append( VC(prefix + "postFP " + str(frame), [And(postExtra, self.postG(), contract.postG(), pointDomain, # strengthened by postG
-                                                                 self.postFP(point), Not(contract.postFP(point)))]) )
+            postHypothesis = And(postExtra,
+                                 self.postG(),
+                                 contract.postA())
+            vcs.append( VC(prefix + "postFP " + str(frame), [And(postHypothesis, pointDomain, self.postFP(point), Not(contract.postFP(point)))]) )
         return vcs
 
     def checkCollision(self, contract, connection, frame, extra = ExtraInfo()):
@@ -195,8 +202,10 @@ class AssumeGuaranteeContract(ABC):
         vcs = []
         #pre
         pre = And(pointDomain,
+                  self.preA(),
                   self.preG(),
                   self.preFP(point),
+                  contract.preA(),
                   contract.preG(),
                   contract.preFP(point),
                   connectionCstrs,
@@ -208,8 +217,10 @@ class AssumeGuaranteeContract(ABC):
         assert(self.isInvTimeInvariant())
         assert(contract.isInvTimeInvariant())
         inv = And(pointDomain,
+                  self.deTimifyFormula(self.invA()),
                   self.deTimifyFormula(self.invG()),
                   self.deTimifyFormula(self.invFP(point)),
+                  contract.deTimifyFormula(contract.invA()),
                   contract.deTimifyFormula(contract.invG()),
                   contract.deTimifyFormula(contract.invFP(point)),
                   connectionCstrs,
@@ -218,8 +229,10 @@ class AssumeGuaranteeContract(ABC):
         vcs.append( VC(prefix + "inv",  [inv]) )
         # post
         post = And(pointDomain,
+                   self.postA(),
                    self.postG(),
                    self.postFP(point),
+                   contract.postA(),
                    contract.postG(),
                    contract.postFP(point),
                    connectionCstrs,
@@ -239,6 +252,7 @@ class AssumeGuaranteeContract(ABC):
         vcs = []
         #pre
         pre = And(pointDomain,
+                  self.preA(),
                   self.preG(),
                   self.preFP(point),
                   obstacle.footprint(point),
@@ -249,6 +263,7 @@ class AssumeGuaranteeContract(ABC):
         # no quantification over time for the moment
         assert(self.isInvTimeInvariant())
         inv = And(pointDomain,
+                  self.deTimifyFormula(self.invA()),
                   self.deTimifyFormula(self.invG()),
                   self.deTimifyFormula(self.invFP(point)),
                   obstacle.footprint(point),
@@ -257,6 +272,7 @@ class AssumeGuaranteeContract(ABC):
         vcs.append( VC(prefix + "inv",  [inv]) )
         # post
         post = And(pointDomain,
+                   self.postA(),
                    self.postG(),
                    self.postFP(point),
                    obstacle.footprint(point),
@@ -277,15 +293,13 @@ class ComposedContract(AssumeGuaranteeContract):
         self._connection = connection
         # sanity checks
         assert contract1.components().isdisjoint(contract2.components()), "disjoint " + contract1.name + " "  + str(contract1.components()) + " and " + contract2.name + " " + str(contract2.components())
-        # duration intersect, FIXME put back after the thread analysis fills to duration
+        # duration intersect
+        # FIXME put back after the thread analysis fills to duration
         # self._contract1.duration().intersect(self._contract2.duration())
         # connection is valid
         for v1, v2 in connection.items():
             assert( (v1 in contract1.outputVariables() and v2 in contract2.inputVariables()) or
                     (v1 in contract2.outputVariables() and v2 in contract1.inputVariables()) )
-        # TODO are the frames related ?
-        # TODO compatible G ⇒ A
-        # TODO footprints are disjoint!
     
     def components(self):
         c1 = self._contract1.components()
@@ -361,6 +375,7 @@ class ComposedContract(AssumeGuaranteeContract):
             vcs.extend(self._contract1.checkCollision(self._contract2, self._connection, self.frame(), extra))
         return vcs
 
+# Below are some generic contracts with some of the elements specified
 
 class FpContract(AssumeGuaranteeContract):
     """A contract with only the FP specified, the rest is true"""
@@ -404,4 +419,33 @@ class FpContract(AssumeGuaranteeContract):
         return self.fp(point)
     
     def __str__(self):
-        return "FpContract(" + self.name + "{ (" + str(self._x) + ", " +  str(self._y) + ", " + str(self._z) + ") : " + str(self._fp) + " }"
+        return self.name + "{ (" + str(self._x) + ", " +  str(self._y) + ", " + str(self._z) + ") : " + str(self._fp) + " }"
+
+
+class StaticContract(FpContract):
+
+    def __init__(self, name, components, a, g, fp, duration = DurationSpec(1, 1, False)):
+        super().__init__(name,
+                         components, spec.conf.worldFrame, #right now the frontend assume fp are in the world frame
+                         Symbol('fpx'), Symbol('fpy'), Symbol('fpz'), fp,
+                         duration)
+        self._assumption = a
+        self._guarantee = g
+
+    def preA(self):
+        return self._assumption
+    
+    def preG(self):
+        return self._guarantee
+    
+    def invA(self):
+        return self._assumption #TODO timify!
+    
+    def invG(self):
+        return self._guarantee #TODO timify!
+    
+    def postA(self):
+        return self._assumption
+
+    def postG(self):
+        return self._guarantee

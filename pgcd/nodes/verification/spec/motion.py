@@ -58,6 +58,7 @@ class MotionPrimitive(AssumeGuaranteeContract):
             #pre
             pre = And(pointDomain,
                       self._component.invariantG(),
+                      self.preA(),
                       self.preG(),
                       Not(self.preFP(point)),
                       extra.pre,
@@ -69,6 +70,7 @@ class MotionPrimitive(AssumeGuaranteeContract):
             assert(self.isInvTimeInvariant())
             inv = And(pointDomain,
                       self._component.invariantG(),
+                      self.deTimifyFormula(self.invA()),
                       self.deTimifyFormula(self.invG()),
                       Not(self.deTimifyFormula(self.invFP(point))),
                       self.deTimifyFormula(extra.inv),
@@ -78,6 +80,7 @@ class MotionPrimitive(AssumeGuaranteeContract):
             # post
             post = And(pointDomain,
                        self._component.invariantG(),
+                       self.postA(),
                        self.postG(),
                        Not(self.postFP(point)),
                        extra.post,

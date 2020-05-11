@@ -139,7 +139,8 @@ class CompatibilityCheck:
         for p in processes:
             if not p in visited:
                 topSort(p)
-        return stack
+        filtered = [ p for p in stack if p in processes]
+        return filtered
 
     # compatibility of motion primitives
     def generateCompatibilityChecks(self, debug = False):
@@ -152,7 +153,11 @@ class CompatibilityCheck:
                 print("generateCompatibilityChecks for node " + str(node))
             # for the collision check to work, we need to follow the process structure!!
             # otherwise, there are gaps: carrier against arm without knowing where the cart is
-            processes = self.processTopSort(self.chor.getProcessesAt(node))
+            unorderedProcesses = self.chor.getProcessesAt(node)
+            processes = self.processTopSort(unorderedProcesses)
+            if debug:
+                print("unordered processes", unorderedProcesses)
+                print("processes", processes)
             if isinstance(node, Motion):
                 # state before
                 tracker = self.state_to_pred[node.start_state[0]]
@@ -180,8 +185,13 @@ class CompatibilityCheck:
                     else:
                         composedContracts = ComposedContract(composedContracts, mp, dict()) #TODO connection
                     self.vcs.extend(composedContracts.wellFormed(accumulatedExtra))
+                    #FIXME we need the constraints about the parents for the mounting point
+                    #Currently they are in the overallSpec assumptions ...
+                    #So the quick hack is to use that rather than write new specs ...
+                    extra2 = accumulatedExtra.strengthen(ExtraInfo(pre = overallSpec.preA(), inv = overallSpec.invA(), post = overallSpec.postA()))
                     for p2 in obstacles:
-                        self.vcs.extend(mp.checkCollisionAgainstObstacle(p2, self.chor.world.frame(), extra = extra))
+                        self.vcs.extend(mp.checkCollisionAgainstObstacle(p2, self.chor.world.frame(), extra = extra2))
+                # check the composed contract against the node contract
                 pInv = And(*[p.invariantG() for p in processes])
                 extra = ExtraInfo(pre = And(tracker.pred()),
                                   always = And(pInv, tracker2.pred()))

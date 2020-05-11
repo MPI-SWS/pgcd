@@ -14,12 +14,12 @@ import os
 
 class ChoreographyParser:
     precedence = (
-        ('left', 'AND', 'OR', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
-        ('right', 'NOT'),
+        ('left', 'AND', 'OR'),
+        ('left', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
         ('left', 'PLUS', 'MINUS'),
         ('left', 'TIMES', 'DIVIDE', 'MOD'),
         ('left', 'POW'),
-        ('right', 'UMINUS', 'SIN', 'TAN', 'COS', 'ABS', 'SQRT')
+        ('right', 'NOT', 'UMINUS', 'SIN', 'TAN', 'COS', 'ABS', 'SQRT')
     )
 
     def __init__(self, env):

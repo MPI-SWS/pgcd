@@ -164,7 +164,7 @@ class RetractArm(MotionPrimitiveFactory):
             return ArmSetAllAngles(self.name(), self._component,
                                    args[0], args[1], args[2],
                                    0, self._component.minAngleAB, self._component.maxAngleAB,
-                                   dt = args[3])
+                                   dt = DurationSpec(args[3],args[3],False))
 
 class ArmFold(ArmMP):
 

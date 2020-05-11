@@ -29,7 +29,7 @@ class Choreography():
         self.start_state = start_state
         self.world = None # world is a spec.Component
         self.state_to_processes  = None # filled later by the analysis
-        self.state_to_contracts  = None # filled later by the analysis, for the moment only FpContract!
+        self.state_to_contracts  = None # filled later by the analysis
 
     def __str__(self):
         string = "def " + self.id + " \n"
@@ -42,7 +42,7 @@ class Choreography():
         state_to_node = {}
         for s in self.statements:
             for pre in s.start_state:
-                assert not pre in state_to_node
+                assert not pre in state_to_node, str(pre) + " aleady in state_to_node"
                 state_to_node[pre] = s
         return state_to_node
 
