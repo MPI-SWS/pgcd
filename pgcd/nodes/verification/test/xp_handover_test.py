@@ -1,18 +1,10 @@
-from compatibility import *
 from utils.geometry import *
 from cart import Cart
 from cart import CartSquare
 from arm import Arm
-from refinement import *
-from vectorize import *
 from mpmath import mp
-from experiments_setups import World
-from copy import deepcopy
-from choreography.projection import Projection
-import interpreter.parser as parser
-import time
+from experiments_setups import World, XpTestHarness
 
-import unittest
 
 def xp2_world():
     w = World(  (0, 0, 0, 0),
@@ -21,26 +13,6 @@ def xp2_world():
     arm = Arm("Arm", cart)
     carrier = CartSquare("Carrier", w, 1)
     return w
-
-#TODO greater distance and normal code
-
-def xp2_choreo_0():
-    return ''' Handover =
-        def x0 = (Cart: MoveCart(0, 0, 0, 0.3, 5), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.5, 5) ) ; x1
-            x1 = Carrier -> Cart: OK(); x2
-            x2 = Cart -> Arm: OK(); x3
-            x3 = (Cart: Idle(), Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953), Carrier: Idle() ) ; x4
-            x4 = (Cart: Idle(), Arm: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659), Carrier: Idle() ) ; x5
-            x5 = (Cart: Idle(), Arm: Grip(9.5), Carrier: Idle() ) ; x6
-            x6 = (Cart: Idle(), Arm: RetractArm(), Carrier: Idle() ) ; x7
-            x7 = Arm -> Cart: OK(); x8
-            x8 = Cart -> Carrier: OK(); x9
-            x9 = (Cart: MoveCart(0.3, 0, 0, -0.3, 5), Arm: Idle(), Carrier: MoveCart(0.5, 0, 0, -0.5, 5) ) ; x10
-            x10 = end
-        in [  (Cart_theta == 0) && (Cart_x == 0) && (Cart_y == 0) &&
-              (Carrier_theta == 0) && (Carrier_x == 0) && (Carrier_y == 0) &&
-              (Arm_a == 2.2689280275926285) && (Arm_b == -2.2689280275926285) && (Arm_c == 0) ] x0
-    '''
 
 def xp2_choreo_1():
     return ''' Handover =
@@ -82,7 +54,7 @@ def xp2_choreo_2():
             x9 = { fpx < 0.558 } ca9 ||
                  { fpx > 0.558 } c9
             ca9 = (Cart: MoveCart(0.3, 0, 0, -0.3, 5), Arm: Idle()) ; ca10
-            c9 = (Carrier: MoveCart(0.4, 0, 0, -0.5, 5) ) ; c10
+            c9 = (Carrier: MoveCart(0.5, 0, 0, -0.5, 5) ) ; c10
             ca10 || c10 = x10
             x10 = end
         in [  (Cart_theta == 0) && (Cart_x == 0) && (Cart_y == 0) &&
@@ -167,82 +139,25 @@ def xp2_carrier():
     moveCart( -500 );
     '''
 
-class XpHandoverTest(unittest.TestCase):
-
-    def setUp(self):
-        # self.defaultConf = spec.conf.enableFPCheck # trivial with that
-        self.defaultConf = spec.conf.enableMPincludeFPCheck
-        # spec.conf.enableFPCheck = False
-        spec.conf.enableMPincludeFPCheck = False
-        #
-        self.defaultPrecision = spec.conf.dRealPrecision
-        spec.conf.dRealPrecision = 0.01
-
-    def tearDown(self):
-        spec.conf.enableFPCheck = self.defaultConf
-        # spec.conf.enableMPincludeFPCheck = self.defaultConf
-        #
-        spec.conf.dRealPrecision = self.defaultPrecision
-
-    def handover(self, ch, debug = False):
+class XpHandoverTest(XpTestHarness):
+    
+    def test_handover_1(self, debug = False):
+        ch = xp2_choreo_1()
+        contracts = []
         w = xp2_world()
         progs = { "Arm": xp2_arm(),
                   "Cart": xp2_cart(),
                   "Carrier": xp2_carrier() }
-        start = time.time()
-        start0 = start
-        visitor = Projection()
-        visitor.execute(ch, w, debug)
-        chor = visitor.choreography
-        vectorize(chor, w)
-        end = time.time()
-        print("Syntactic checks:", end - start)
-        start = end
-        checker = CompatibilityCheck(chor, w)
-        checker.localChoiceChecks()
-        checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
-        end = time.time()
-        print("VC generation:", end - start)
-        start = end
-        print("#VC:", len(checker.vcs))
-        failed = []
-        for i in range(0, len(checker.vcs)):
-            vc = checker.vcs[i]
-            print("Checking VC", i, vc.title)
-            if not vc.discharge(debug=debug):
-                print("Failed")
-                failed.append((i,vc))
-                print(vc)
-                if vc.hasModel():
-                    print(vc.modelStr())
-                else: 
-                    print("Timeout")
-        for (i,vc) in failed:
-            print("Failed:", i, vc.title)
-        self.assertTrue(failed == [])
-        end = time.time()
-        print("VC solving:", end - start)
-        start = end
-        processes = w.allProcesses()
-        for p in processes:
-            visitor.choreography = deepcopy(chor)
-            proj = visitor.project(p.name(), p, debug)
-            prser = parser.Parser()
-            prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug)
-            if not ref.check():
-                raise Exception("Refinement: " + p.name())
-        end = time.time()
-        print("refinement:", end - start)
-        print("total time:", end - start0)
-    
-    def test_handover_1(self, debug = False):
-        self.handover(xp2_choreo_1(), debug)
+        self.check(ch, w, contracts, progs, debug)
 
     def test_handover_2(self, debug = False):
-        self.handover(xp2_choreo_2(), debug)
+        ch = xp2_choreo_2()
+        contracts = []
+        w = xp2_world()
+        progs = { "Arm": xp2_arm(),
+                  "Cart": xp2_cart(),
+                  "Carrier": xp2_carrier() }
+        self.check(ch, w, contracts, progs, debug)
 
 #TODO need proper AG contracts
 #   def test_handover_3(self, debug = False):

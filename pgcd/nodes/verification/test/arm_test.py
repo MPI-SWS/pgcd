@@ -15,8 +15,8 @@ def world(x, y, z, a, b, c):
     # mounting pts:  x      y     z        θ     comp
     w = World(  (    0,     0,    0,       0), # arm
                 (    0,     0,    0,       0)) # point
-    #arm   = Arm("arm", w, 0, -2.2689280275926285, -2.2689280275926285, 0) #folded toward the back
-    arm   = Arm("arm", w, 0, a, b, c) #folded toward the back
+    #arm   = Arm("arm", w, 0, -2.2689280275926285, 2.2689280275926285, 0) #folded toward the back
+    arm   = Arm("arm", w, 0, a, b, c)
     point = PointProcess("point", x, y, z, w, 1)
     return w
 
@@ -125,6 +125,8 @@ class ArmTest(unittest.TestCase):
             (choreo1(),     0.28,   0,      0.29,   0,      -pi/2,  0,      True),
             (choreo1(),     0.35,   0,      0.29,   0,      pi/2,   0,      True),
             (choreo1(),     -0.35,  0,      0.29,   0,      -pi/2,  0,      True),
+            (choreo1(),     0,      -0.12,  0.45,   -pi/2,  0,      pi/2,   False), #funny I would expect the Z to work the other way around ...
+            (choreo1(),     0,      0.12,   0.45,   -pi/2,  0,      -pi/2,  False),
         ]
         for (ch, x, y, z, a, b, c, res) in tests:
             print("fixed", x, y, z, a, b, c)

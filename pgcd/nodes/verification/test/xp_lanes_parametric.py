@@ -1,7 +1,6 @@
 from compatibility import *
 from utils.geometry import *
 from cart import Cart
-from static_process import StaticProcess
 from refinement import *
 from vectorize import *
 from experiments_setups import World
@@ -134,9 +133,11 @@ class XpLaneParametricTest(unittest.TestCase):
 
     def test_range(self):
         print("n, m, par, time_syntax, nbr_vc, time_vc_gen, time_vc_solve, time_refine, time_total")
-        for n in range(2, 10):
-            for m in range(1, 5):
+        for n in range(2, 11):
+            for m in range(1, 2):
                 self.scenario(n, m, False, printCSV = True)
+        for n in range(2, 30):
+            for m in range(1, 2):
                 self.scenario(n, m, True, printCSV = True)
     
 #   def test_2_1(self, debug = False):

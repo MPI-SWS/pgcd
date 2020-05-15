@@ -119,7 +119,10 @@ class FixedPointDataflowAnalysis(ABC):
         # initialization
         for s in self.state_to_node.keys():
             n = self.state_to_node[s]
-            self.state_to_element[s] = self.initialValue(s, n)
+            tracker = self.initialValue(s, n)
+            self.state_to_element[s] = tracker
+            if self.debug:
+                print("initial", s, tracker)
         #loop
         changed = True
         counter = 0
@@ -141,7 +144,7 @@ class FixedPointDataflowAnalysis(ABC):
             for state in self.state_to_node.keys():
                 node = self.state_to_node[state]
                 if self.debug:
-                    print("processing ", state, str(node))
+                    print("processing ", state, str(node), self.state_to_element[state])
                 if isinstance(node, Message):
                     succ = node.end_state[0]
                     res = self._message(state, node, succ)

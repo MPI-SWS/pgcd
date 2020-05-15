@@ -81,7 +81,7 @@ class ComputeThreads(FixedPointDataflowAnalysis):
             forkNode = tracker.pop()[0]
             if not tracker.seen_mp:
                 trackerFork = self.state_to_element[forkNode]
-                tracker.processes = forkNode.processes
+                tracker.processes = trackerFork.processes
         return tracker
 
     def _fork(self, pred, succ):
@@ -89,7 +89,7 @@ class ComputeThreads(FixedPointDataflowAnalysis):
         tracker = trackerSrc.copy()
         tracker.push(pred, succ)
         tracker.clearProcesses()
-        tracker.seen_mp = False
+        #tracker.seen_mp = False
         return self._goesTo(tracker, pred, succ)
 
 
@@ -137,7 +137,7 @@ class ThreadChecks():
             elif isinstance(node, Merge):
                 t = node_to_trackers[state]
                 preds = getPreds(node)
-                assert all( p.equals(t) for p in preds ), "merge with processes: " + ",".join(map(str, preds))
+                assert all( p.equals(t) for p in preds ), "merge " + str(t) + " with processes: " + ",".join(map(str, preds))
             elif isinstance(node, Join):
                 preds = getPreds(node)
                 rep = preds[0]

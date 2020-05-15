@@ -25,6 +25,6 @@ enableFPCheck = True
 # Quite expensive, so disable for testing
 enableMPincludeFPCheck = True #TODO for MP which reuse the componenet FP, this is not needed
 
-dRealJobs = 4
-dRealTimeout = 240
+dRealJobs = 6
+dRealTimeout = 60
 dRealPrecision = 0.01

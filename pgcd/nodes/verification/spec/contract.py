@@ -449,3 +449,14 @@ class StaticContract(FpContract):
 
     def postG(self):
         return self._guarantee
+
+
+class GContract(StaticContract):
+
+    def __init__(self, component, expr, fp, duration = DurationSpec(1, 1, False)):
+        super().__init__("GContract", {component}, S.true, expr, fp, duration)
+
+class AContract(StaticContract):
+    
+    def __init__(self, component, expr, fp, duration = DurationSpec(1, 1, False)):
+        super().__init__("AContract", {component}, expr, S.true, fp, duration)

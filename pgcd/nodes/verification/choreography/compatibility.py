@@ -41,6 +41,8 @@ class ComputePreds(FixedPointDataflowAnalysis):
         else:
             procNames = self.chor.state_to_processes[state]
             proc = { self.chor.getProcess(name) for name in procNames }
+            if self.debug:
+                print("init value for", state , proc)
             return ProcessesPredicatesTracker(proc, S.false)
 
     def motion(self, tracker, motions):
@@ -71,8 +73,8 @@ class ComputePreds(FixedPointDataflowAnalysis):
     
 
     def _goesTo(self, tracker, pred, succ):
-        #if self.debug:
-        #    print("goes", "from", pred, "to", succ, "with", self.chor.state_to_processes[succ])
+        if self.debug:
+            print("goes", "from", pred, "to", succ, "with", self.chor.state_to_processes[succ])
         assert self.forward
         trackerOld = self.state_to_element[succ]
         res = super()._goesTo(tracker, pred, succ)
@@ -81,8 +83,8 @@ class ComputePreds(FixedPointDataflowAnalysis):
             tracker.join(trackerOld)
         else:
             tracker.restrictTo(self.chor.state_to_processes[succ])
-        #if self.debug:
-        #    print(tracker)
+        if self.debug:
+            print(tracker)
         return res
 
 
@@ -168,14 +170,19 @@ class CompatibilityCheck:
                     tracker2.relaxVariables(mp.modifies())
                 # make the VCs
                 overallSpec = self.chor.state_to_contracts[node.start_state[0]] # is FpContract
-                accumulatedExtra = ExtraInfo()
                 composedContracts = None
+                # check the composed contract against the node contract
+                processInv = And(*[p.invariantG() for p in processes])
+                #we need the constraints about the parents for the mounting point
+                extra = ExtraInfo(pre = And(tracker.pred()),
+                                  always = And(processInv, tracker2.pred()))
+                #FIXME Currently some knowledge is in the overallSpec assumptions
+                #So the quick hack is to use that rather than write new specs ...
+                #We can use that for the collision against obstacles but *not for the refinement of the overallSpec*
+                extra2 = extra.strengthen(ExtraInfo(pre = overallSpec.preA(), inv = overallSpec.invA(), post = overallSpec.postA()))
                 for p in processes:
                     otherProcesses = [ p2 for p2 in processes if p2 != p ]
                     mp = self.getMP(node, p)
-                    extra = ExtraInfo(pre = And(p.invariantG(), tracker.pred(p)),
-                                      always = And(p.invariantG(), tracker2.pred(p)))
-                    accumulatedExtra = accumulatedExtra.strengthen(extra)
                     if debug:
                         print("precondition for process " + str(p))
                     self.addVC("precondition of " + mp.name + " for " + p.name() + " @ " + str(node.start_state[0]), [And(extra.pre, extra.always, Not(mp.preG()))])
@@ -184,17 +191,9 @@ class CompatibilityCheck:
                         composedContracts = mp
                     else:
                         composedContracts = ComposedContract(composedContracts, mp, dict()) #TODO connection
-                    self.vcs.extend(composedContracts.wellFormed(accumulatedExtra))
-                    #FIXME we need the constraints about the parents for the mounting point
-                    #Currently they are in the overallSpec assumptions ...
-                    #So the quick hack is to use that rather than write new specs ...
-                    extra2 = accumulatedExtra.strengthen(ExtraInfo(pre = overallSpec.preA(), inv = overallSpec.invA(), post = overallSpec.postA()))
+                    self.vcs.extend(composedContracts.wellFormed(extra))
                     for p2 in obstacles:
                         self.vcs.extend(mp.checkCollisionAgainstObstacle(p2, self.chor.world.frame(), extra = extra2))
-                # check the composed contract against the node contract
-                pInv = And(*[p.invariantG() for p in processes])
-                extra = ExtraInfo(pre = And(tracker.pred()),
-                                  always = And(pInv, tracker2.pred()))
                 #print("motion: ", str(node))
                 #print(extra)
                 self.vcs.extend(composedContracts.refines(overallSpec, extra = extra))

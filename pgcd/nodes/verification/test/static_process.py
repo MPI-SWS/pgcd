@@ -9,7 +9,7 @@ from utils.geometry import *
 # a model static things that executes code like sensors.
 # they have a footprint (after the name, e.g., a cube), execute code, but cannot move.
 
-delta = 0.01 # dreal δ-sat
+delta = 0.001 # dreal δ-sat
 
 class PointProcess(Process):
 

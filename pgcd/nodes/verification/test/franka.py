@@ -5,6 +5,7 @@ from spec.component import *
 from spec.motion import *
 from spec.time import *
 from utils.geometry import *
+import utils.transition
 
 # A rough model for a franka emika panda arm
 #
@@ -143,6 +144,25 @@ class FrankaEmikaPanda(Process):
         return self._effector
 
 
+class FrankaMotionPrimitive(MotionPrimitive):
+    
+    def __init__(self, name, component):
+        super().__init__(name, component)
+        self.err = 0.005
+
+    def preFP(self, point):
+        #return self._component.abstractResources(point, self.err)
+        return self._component.ownResources(point, self.err)
+
+    def postFP(self, point):
+        #return self._component.abstractResources(point, self.err)
+        return self._component.ownResources(point, self.err)
+
+    def invFP(self, point):
+        #i = self._component.abstractResources(point, self.err)
+        i = self._component.ownResources(point, self.err)
+        return self.timify(i)
+
 
 class HomePos(MotionPrimitiveFactory):
 
@@ -150,10 +170,15 @@ class HomePos(MotionPrimitiveFactory):
         super().__init__(component)
 
     def setParameters(self, args):
-        assert(len(args) == 0)
-        return FrankaHomePos(self.name(), self._component)
+        assert(len(args) in {0, 7})
+        if len(args) == 0:
+            return FrankaHomePos(self.name(), self._component)
+        elif len(args) == 7:
+            return FrankaMoveTo( self.name(), self._component,
+                                 args[0], args[1], args[2], args[3], args[4], args[5], args[6],
+                                 0, 0, 0, 0, 0, 0, 0)
 
-class FrankaHomePos(MotionPrimitive):
+class FrankaHomePos(FrankaMotionPrimitive):
 
     def __init__(self, name, component):
         super().__init__(name, component)
@@ -167,16 +192,6 @@ class FrankaHomePos(MotionPrimitive):
     def postG(self):
         return And(Eq(self._component._a, 0), Eq(self._component._b, 0), Eq(self._component._c, 0), Eq(self._component._d, 0), Eq(self._component._e, 0), Eq(self._component._f, 0), Eq(self._component._g, 0))
 
-    def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
-        return self.timify(i)
-
 
 
 class Idle(MotionPrimitiveFactory):
@@ -188,7 +203,7 @@ class Idle(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return FrankaIdle(self.name(), self._component)
 
-class FrankaIdle(MotionPrimitive):
+class FrankaIdle(FrankaMotionPrimitive):
 
     def __init__(self, name, component):
         super().__init__(name, component)
@@ -207,17 +222,6 @@ class FrankaIdle(MotionPrimitive):
 
     def invG(self):
         return S.true
-
-    def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
-        return self.timify(i)
-
 
 
 # since we don't precisely model the gripper, it is like waiting
@@ -245,7 +249,7 @@ class Open(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return FrankaWait(self.name(), self._component)
 
-class FrankaWait(MotionPrimitive):
+class FrankaWait(FrankaMotionPrimitive):
 
     def __init__(self, name, component):
         super().__init__(name, component)
@@ -265,17 +269,6 @@ class FrankaWait(MotionPrimitive):
     def invG(self):
         return S.true
 
-    def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
-        return self.timify(i)
-
-
 
 class SetJoints(MotionPrimitiveFactory):
 
@@ -292,9 +285,12 @@ class SetJoints(MotionPrimitiveFactory):
                              args[0], args[1], args[2], args[3], args[4], args[5], args[6],
                              args[7], args[8], args[9], args[10], args[11], args[12], args[13])
 
-class FrankaMoveTo(MotionPrimitive):
+class FrankaMoveTo(FrankaMotionPrimitive):
 
-    def __init__(self, name, component, a0, b0, c0, d0, e0, f0, g0, a1, b1, c1, d1, e1, f1, g1):
+    def __init__(self, name, component,
+                 a0, b0, c0, d0, e0, f0, g0,
+                 a1, b1, c1, d1, e1, f1, g1,
+                 smooth = True):
         super().__init__(name, component)
         self.a0 = a0
         self.b0 = b0
@@ -310,54 +306,67 @@ class FrankaMoveTo(MotionPrimitive):
         self.e1 = e1
         self.f1 = f1
         self.g1 = g1
+        self.smooth = smooth
     
     def duration(self):
         return DurationSpec(0, 2, False) #TODO upper as function of the angle and speed
 
-    def preG(self, err = 0.1):
-        return And(self.a0 - err <= self._component._a, self._component._a <= self.a0 + err,
-                   self.b0 - err <= self._component._b, self._component._b <= self.b0 + err,
-                   self.c0 - err <= self._component._c, self._component._c <= self.c0 + err,
-                   self.d0 - err <= self._component._d, self._component._d <= self.d0 + err,
-                   self.e0 - err <= self._component._e, self._component._e <= self.e0 + err,
-                   self.f0 - err <= self._component._f, self._component._f <= self.f0 + err,
-                   self.g0 - err <= self._component._g, self._component._g <= self.g0 + err)
+    def preG(self):
+        return And(self.a0 - self.err <= self._component._a, self._component._a <= self.a0 + self.err,
+                   self.b0 - self.err <= self._component._b, self._component._b <= self.b0 + self.err,
+                   self.c0 - self.err <= self._component._c, self._component._c <= self.c0 + self.err,
+                   self.d0 - self.err <= self._component._d, self._component._d <= self.d0 + self.err,
+                   self.e0 - self.err <= self._component._e, self._component._e <= self.e0 + self.err,
+                   self.f0 - self.err <= self._component._f, self._component._f <= self.f0 + self.err,
+                   self.g0 - self.err <= self._component._g, self._component._g <= self.g0 + self.err)
 
     def invG(self, err = 0.1):
         cstr = S.true
-        cstr = And(cstr, Min(self.a0, self.a1) - err <= self._component._a )
-        cstr = And(cstr, self._component._a <= Max(self.a0, self.a1) + err )
-        cstr = And(cstr, Min(self.b0, self.b1) - err <= self._component._b )
-        cstr = And(cstr, self._component._b <= Max(self.b0, self.b1) + err )
-        cstr = And(cstr, Min(self.c0, self.c1) - err <= self._component._c )
-        cstr = And(cstr, self._component._c <= Max(self.c0, self.c1) + err )
-        cstr = And(cstr, Min(self.d0, self.d1) - err <= self._component._d )
-        cstr = And(cstr, self._component._d <= Max(self.d0, self.d1) + err )
-        cstr = And(cstr, Min(self.e0, self.e1) - err <= self._component._e )
-        cstr = And(cstr, self._component._e <= Max(self.e0, self.e1) + err )
-        cstr = And(cstr, Min(self.f0, self.f1) - err <= self._component._f )
-        cstr = And(cstr, self._component._f <= Max(self.f0, self.f1) + err )
-        cstr = And(cstr, Min(self.g0, self.g1) - err <= self._component._g )
-        cstr = And(cstr, self._component._g <= Max(self.g0, self.g1) + err )
-        changing = []
-        if self.a0 != self.a1:
-            changing.append( (self.a0,self.a1,self._component._a) )
-        if self.b0 != self.b1:
-            changing.append( (self.b0,self.b1,self._component._b) )
-        if self.c0 != self.c1:
-            changing.append( (self.c0,self.c1,self._component._c) )
-        if self.d0 != self.d1:
-            changing.append( (self.d0,self.d1,self._component._d) )
-        if self.e0 != self.e1:
-            changing.append( (self.e0,self.e1,self._component._e) )
-        if self.f0 != self.f1:
-            changing.append( (self.f0,self.f1,self._component._f) )
-        if self.g0 != self.g1:
-            changing.append( (self.g0,self.g1,self._component._g) )
-        for i in range(1, len(changing)):
-            a0, a1, a = changing[0]
-            b0, b1, b = changing[i] 
-            cstr = And(cstr, Eq( (a - a0) / (a1 - a0), (b - b0) / (b1 - b0) ) )
+        if self.smooth:
+            t = timeSymbol()
+            dt = self.duration().max
+            ta = Eq(self._component._a, utils.transition.smoothstep(t, self.a0, self.a1, dt))
+            tb = Eq(self._component._b, utils.transition.smoothstep(t, self.b0, self.b1, dt))
+            tc = Eq(self._component._c, utils.transition.smoothstep(t, self.c0, self.c1, dt))
+            td = Eq(self._component._d, utils.transition.smoothstep(t, self.d0, self.d1, dt))
+            te = Eq(self._component._e, utils.transition.smoothstep(t, self.e0, self.e1, dt))
+            tf = Eq(self._component._f, utils.transition.smoothstep(t, self.f0, self.f1, dt))
+            tg = Eq(self._component._g, utils.transition.smoothstep(t, self.g0, self.g1, dt))
+            cstr = And(t >= 0, t <= dt, ta, tb, tc, td, te, tf, tg)
+        else:
+            cstr = And(cstr, Min(self.a0, self.a1) - err <= self._component._a )
+            cstr = And(cstr, self._component._a <= Max(self.a0, self.a1) + err )
+            cstr = And(cstr, Min(self.b0, self.b1) - err <= self._component._b )
+            cstr = And(cstr, self._component._b <= Max(self.b0, self.b1) + err )
+            cstr = And(cstr, Min(self.c0, self.c1) - err <= self._component._c )
+            cstr = And(cstr, self._component._c <= Max(self.c0, self.c1) + err )
+            cstr = And(cstr, Min(self.d0, self.d1) - err <= self._component._d )
+            cstr = And(cstr, self._component._d <= Max(self.d0, self.d1) + err )
+            cstr = And(cstr, Min(self.e0, self.e1) - err <= self._component._e )
+            cstr = And(cstr, self._component._e <= Max(self.e0, self.e1) + err )
+            cstr = And(cstr, Min(self.f0, self.f1) - err <= self._component._f )
+            cstr = And(cstr, self._component._f <= Max(self.f0, self.f1) + err )
+            cstr = And(cstr, Min(self.g0, self.g1) - err <= self._component._g )
+            cstr = And(cstr, self._component._g <= Max(self.g0, self.g1) + err )
+            changing = []
+            if self.a0 != self.a1:
+                changing.append( (self.a0,self.a1,self._component._a) )
+            if self.b0 != self.b1:
+                changing.append( (self.b0,self.b1,self._component._b) )
+            if self.c0 != self.c1:
+                changing.append( (self.c0,self.c1,self._component._c) )
+            if self.d0 != self.d1:
+                changing.append( (self.d0,self.d1,self._component._d) )
+            if self.e0 != self.e1:
+                changing.append( (self.e0,self.e1,self._component._e) )
+            if self.f0 != self.f1:
+                changing.append( (self.f0,self.f1,self._component._f) )
+            if self.g0 != self.g1:
+                changing.append( (self.g0,self.g1,self._component._g) )
+            for i in range(1, len(changing)):
+                a0, a1, a = changing[0]
+                b0, b1, b = changing[i] 
+                cstr = And(cstr, Eq( (a - a0) / (a1 - a0), (b - b0) / (b1 - b0) ) )
         return cstr
 
     def postG(self, err = 0.0):
@@ -368,13 +377,3 @@ class FrankaMoveTo(MotionPrimitive):
                    self.e1 - err <= self._component._e, self._component._e <= self.e1 + err,
                    self.f1 - err <= self._component._f, self._component._f <= self.f1 + err,
                    self.g1 - err <= self._component._g, self._component._g <= self.g1 + err)
-
-    def preFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def postFP(self, point):
-        return self._component.abstractResources(point, 0.05)
-
-    def invFP(self, point):
-        i = self._component.abstractResources(point, 0.05)
-        return self.timify(i)

@@ -4,10 +4,20 @@ from spec.component import *
 from spec.motion import *
 from spec.time import *
 import spec.conf
+from spec.env import Env
 from utils.geometry import *
 from cart import *
 from arm import *
 from mpmath import mp
+from compatibility import *
+from refinement import *
+from vectorize import *
+from copy import deepcopy
+from choreography.projection import Projection
+import interpreter.parser as parser
+import time
+
+import unittest
 
 # world: a trivial componenent (with optional mounting points as args)
 class World(Component):
@@ -78,3 +88,71 @@ def mkDummyWorld(*cmpNames):
     for i, name in enumerate(cmpNames):
         c = DummyProcess(name, world, i)
     return w
+
+
+
+class XpTestHarness(unittest.TestCase):
+    
+    def setUp(self):
+        self.defaultConf = spec.conf.enableMPincludeFPCheck
+        spec.conf.enableMPincludeFPCheck = False
+        self.defaultPrecision = spec.conf.dRealPrecision
+        spec.conf.dRealPrecision = 0.01
+
+    def tearDown(self):
+        spec.conf.enableMPincludeFPCheck = self.defaultConf
+        spec.conf.dRealPrecision = self.defaultPrecision
+
+
+    def check(self, ch, w, contracts, progs, debug):
+        start = time.time()
+        start0 = start
+        env = Env(w, contracts)
+        visitor = Projection()
+        visitor.execute(ch, env, debug)
+        chor = visitor.choreography
+        if debug:
+            print("parsed", chor)
+        vectorize(chor, w)
+        end = time.time()
+        print("Syntactic checks:", end - start)
+        start = end
+        checker = CompatibilityCheck(chor, w)
+        checker.localChoiceChecks()
+        checker.generateTotalGuardsChecks()
+        checker.computePreds(debug)
+        checker.generateCompatibilityChecks(debug)
+        end = time.time()
+        print("VC generation:", end - start)
+        start = end
+        print("#VC:", len(checker.vcs))
+        failed = []
+        for i in range(0, len(checker.vcs)):
+            vc = checker.vcs[i]
+            print("Checking VC", i, vc.title)
+            if not vc.discharge(debug=debug):
+                print("Failed")
+                failed.append((i,vc))
+                print(vc)
+                if vc.hasModel():
+                    print(vc.modelStr())
+                else: 
+                    print("Timeout")
+        for (i,vc) in failed:
+            print("Failed:", i, vc.title)
+        end = time.time()
+        print("VC solving:", end - start)
+        start = end
+        processes = w.allProcesses()
+        for p in processes:
+            visitor.choreography = deepcopy(chor)
+            proj = visitor.project(p.name(), p, debug)
+            prser = parser.Parser()
+            prog = prser.parse(progs[p.name()])
+            ref = Refinement(prog, proj, debug)
+            if not ref.check():
+                raise Exception("Refinement: " + p.name())
+        end = time.time()
+        print("refinement:", end - start)
+        print("total time:", end - start0)
+        self.assertTrue(failed == [])

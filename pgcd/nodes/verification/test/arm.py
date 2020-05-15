@@ -4,6 +4,7 @@ from mpmath import mp
 from spec.component import *
 from spec.motion import *
 from spec.time import *
+import spec.conf
 from utils.geometry import *
 import utils.transition
 
@@ -139,8 +140,20 @@ class Fold(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 0)
-        return ArmFold(self.name(), self._component)
+        assert(len(args) == 0 or len(args) == 1 or len(args) == 3 or len(args) == 4)
+        if len(args) == 0:
+            return ArmFold(self.name(), self._component)
+        elif len(args) == 1:
+            return ArmFold(self.name(), self._component, args[0])
+        elif len(args) == 3:
+            return ArmSetAllAngles(self.name(), self._component, 
+                                   args[0], args[1], args[2], # c, b, a
+                                   0, self._component.minAngleAB, self._component.maxAngleAB)
+        else:
+            return ArmSetAllAngles(self.name(), self._component,
+                                   args[0], args[1], args[2],
+                                   0, self._component.minAngleAB, self._component.maxAngleAB,
+                                   dt = DurationSpec(args[3],args[3],False))
 
 class RetractArm(MotionPrimitiveFactory):
 
@@ -270,28 +283,75 @@ class Grab(MotionPrimitiveFactory):
         return ["target"]
 
     def setParameters(self, args):
-        assert(len(args) == 1)
-        return ArmGrab(self.name(), self._component, args[0])
+        assert(len(args) in {1,3})
+        if len(args) == 1:
+            return ArmGrab(self.name(), self._component, args[0])
+        else:
+            return ArmGrab(self.name(), self._component, args[0], args[1], args[2])
 
 class ArmGrab(ArmMP):
 
-    def __init__(self, name, component, target):
+    def __init__(self, name, component, target, pos = None, orientation = None):
         super().__init__(name, component)
         self._target = target
+        self._pos = pos
+        self._orientation = orientation
 
     def duration(self):
         return DurationSpec(0, 1, False) #TODO 
 
+    def mountA(self):
+        assert self._pos != None
+        (x1, y1, z1) = self._component.frame().origin.express_coordinates(spec.conf.worldFrame)
+        (x2, y2, z2) = self._pos.express_coordinates(spec.conf.worldFrame)
+        return ((x1,x2), (y1,y2), (Symbol('C_theta'), self._orientation)) #FIXME hack
+
+    def removeParentVar(self, f):
+        if self._pos != None:
+            ((x1,x2), (y1,y2), (t1,t2)) = self.mountA()
+            f2 = f.subs({x1:x2, y1:y2, t1: t2})
+            #print("remove parent", (x1,x2), (y1,y2), (t1,t2))
+            #print(f)
+            #print(f2)
+            return f2
+        else:
+            print("cannot remove parent var")
+            return f
+
+    def targetAngle(self):
+        (x, y, z) = self._target.express_coordinates(self._component.frame())
+        return self.removeParentVar(atan2(y, x))
+
+    def posCstr(self):
+        if self._pos != None:
+            ((x1,x2), (y1,y2), (t1,t2)) = self.mountA()
+            return And(Eq(x1,x2), Eq(y1,y2), Eq(t1,t2))
+        else:
+            return S.true
+
+    def preA(self):
+        return self.posCstr()
+
     def preG(self):
         maxRadius = self._component.upperArmLength + self._component.lowerArmLength + self._component.upperArmRadius + self._component.gripperReach
         #TODO min distance
-        return distance(self._component._upper.origin, self._target) <= maxRadius
-
-    def postG(self):
-        return S.true
+        dist = distance(self._component._upper.origin, self._target) <= maxRadius
+        return self.removeParentVar(dist)
+    
+    def preA(self):
+        return self.timify(self.posCstr())
 
     def invG(self):
         return S.true
+    
+    def postA(self):
+        return self.posCstr()
+
+    def postG(self):
+        a = S.true #TODO
+        b = S.true #TODO
+        c = Eq(self._component.c_eff(), self.targetAngle())
+        return self.removeParentVar(And(a, b, c))
 
 class PutInBin(MotionPrimitiveFactory):
 
@@ -452,9 +512,9 @@ class SetAngleTurntable(MotionPrimitiveFactory):
     def setParameters(self, args):
         assert(len(args) == 2 or len(args) == 3)
         if len(args) == 2:
-            return ArmSetAngle(self.name(), self._component, self._component.c_eff(), args[0], args[1])
+            return ArmSetAngle(self.name(), self._component, self._component._c, args[0], args[1])
         else:
-            return ArmSetAngle(self.name(), self._component, self._component.c_eff(), args[0], args[1], args[2])
+            return ArmSetAngle(self.name(), self._component, self._component._c, args[0], args[1], args[2])
 
 class SetAngleCantilever(MotionPrimitiveFactory):
 
@@ -467,9 +527,9 @@ class SetAngleCantilever(MotionPrimitiveFactory):
     def setParameters(self, args):
         assert(len(args) == 2 or len(args) == 3)
         if len(args) == 2:
-            return ArmSetAngle(self.name(), self._component, self._component.b_eff(), args[0], args[1])
+            return ArmSetAngle(self.name(), self._component, self._component._b, args[0], args[1])
         else:
-            return ArmSetAngle(self.name(), self._component, self._component.b_eff(), args[0], args[1], args[2])
+            return ArmSetAngle(self.name(), self._component, self._component._b, args[0], args[1], args[2])
 
 class SetAngleAnchorPoint(MotionPrimitiveFactory):
 
@@ -482,9 +542,9 @@ class SetAngleAnchorPoint(MotionPrimitiveFactory):
     def setParameters(self, args):
         assert(len(args) == 2 or len(args) == 3)
         if len(args) == 2:
-            return ArmSetAngle(self.name(), self._component, self._component.a_eff(), args[0], args[1])
+            return ArmSetAngle(self.name(), self._component, self._component._a, args[0], args[1])
         else:
-            return ArmSetAngle(self.name(), self._component, self._component.a_eff(), args[0], args[1], args[2])
+            return ArmSetAngle(self.name(), self._component, self._component._a, args[0], args[1], args[2])
 
 class ArmSetAngle(ArmMP):
 
@@ -527,8 +587,11 @@ class RotateAndGrab(MotionPrimitiveFactory):
                 "target turntable", "target cantilever", "target anchor"]
 
     def setParameters(self, args):
-        assert(len(args) == 6)
-        return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35)
+        assert(len(args) in {6, 7})
+        if len(args) == 6:
+            return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35)
+        else:
+            return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35, DurationSpec(args[6], args[6], False))
 
 class RotateAndPut(MotionPrimitiveFactory):
 
@@ -537,8 +600,11 @@ class RotateAndPut(MotionPrimitiveFactory):
                 "target turntable", "target cantilever", "target anchor"]
 
     def setParameters(self, args):
-        assert(len(args) == 6)
-        return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35)
+        assert(len(args) in {6, 7})
+        if len(args) == 6:
+            return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35)
+        else:
+            return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35, DurationSpec(args[6], args[6], False))
 
 class Rotate(MotionPrimitiveFactory):
 
@@ -547,8 +613,11 @@ class Rotate(MotionPrimitiveFactory):
                 "target turntable", "target cantilever", "target anchor"]
 
     def setParameters(self, args):
-        assert(len(args) == 6)
-        return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.0)
+        assert(len(args) in {6, 7})
+        if len(args) == 6:
+            return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0)
+        else:
+            return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0, DurationSpec(args[6], args[6], False))
 
 class ArmSetAllAngles(ArmMP):
 
@@ -572,9 +641,9 @@ class ArmSetAllAngles(ArmMP):
         return self.dt
 
     def preG(self):
-        return And( self._component.a_eff() >= self.angle3a - self.err, self._component.a_eff() <= self.angle3a + self.err,
-                    self._component.b_eff() >= self.angle2a - self.err, self._component.b_eff() <= self.angle2a + self.err,
-                    self._component.c_eff() >= self.angle1a - self.err, self._component.c_eff() <= self.angle1a + self.err)
+        return And( self._component._a >= self.angle3a - self.err, self._component._a <= self.angle3a + self.err,
+                    self._component._b >= self.angle2a - self.err, self._component._b <= self.angle2a + self.err,
+                    self._component._c >= self.angle1a - self.err, self._component._c <= self.angle1a + self.err)
 
     def postG(self):
         targetCanti = self.angle2b
@@ -582,9 +651,9 @@ class ArmSetAllAngles(ArmMP):
             targetCanti = targetCanti + self.delta
         else:
             targetCanti = targetCanti - self.delta
-        a = Eq( self._component.a_eff(), self.angle3b )
-        b = Eq( self._component.b_eff(), targetCanti )
-        c = Eq( self._component.c_eff(), self.angle1b )
+        a = Eq( self._component._a, self.angle3b )
+        b = Eq( self._component._b, targetCanti )
+        c = Eq( self._component._c, self.angle1b )
         return And(a, b, c)
 
     def invG(self):
@@ -592,23 +661,23 @@ class ArmSetAllAngles(ArmMP):
         if self.smooth:
             t = timeSymbol()
             dt = self.dt.max
-            ta = Eq(self._component.a_eff(), utils.transition.linear(t, self.angle3a, self.angle3b, dt))
-            tb = Eq(self._component.b_eff(), utils.transition.linear(t, self.angle2a, self.angle2b, dt))
-            tc = Eq(self._component.c_eff(), utils.transition.linear(t, self.angle1a, self.angle1b, dt))
+            ta = Eq(self._component._a, utils.transition.linear(t, self.angle3a, self.angle3b, dt))
+            tb = Eq(self._component._b, utils.transition.linear(t, self.angle2a, self.angle2b, dt))
+            tc = Eq(self._component._c, utils.transition.linear(t, self.angle1a, self.angle1b, dt))
             f = And(t >= 0, t <= dt, ta, tb, tc)
         else:
             if self.angle1a < self.angle1b:
-                f = And(f, self._component.c_eff() >= self.angle1a, self._component.c_eff() <= self.angle1b)
-            else:                          
-                f = And(f, self._component.c_eff() >= self.angle1b, self._component.c_eff() <= self.angle1a)
-            if self.angle2a < self.angle2b:
-                f = And(f, self._component.b_eff() >= self.angle2a, self._component.b_eff() <= self.angle2b)
-            else:                          
-                f = And(f, self._component.b_eff() >= self.angle2b, self._component.b_eff() <= self.angle2a)
-            if self.angle3a < self.angle3b:
-                f = And(f, self._component.a_eff() >= self.angle3a, self._component.a_eff() <= self.angle3b)
-            else:                          
-                f = And(f, self._component.a_eff() >= self.angle3b, self._component.a_eff() <= self.angle3a)
+                f = And(f, self._component._c >= self.angle1a, self._component._c <= self.angle1b)
+            else:                                                              
+                f = And(f, self._component._c >= self.angle1b, self._component._c <= self.angle1a)
+            if self.angle2a < self.angle2b:                                    
+                f = And(f, self._component._b >= self.angle2a, self._component._b <= self.angle2b)
+            else:                                                              
+                f = And(f, self._component._b >= self.angle2b, self._component._b <= self.angle2a)
+            if self.angle3a < self.angle3b:                                    
+                f = And(f, self._component._a >= self.angle3a, self._component._a <= self.angle3b)
+            else:                                                              
+                f = And(f, self._component._a >= self.angle3b, self._component._a <= self.angle3a)
         return self.timify(f)
 
 #TODO

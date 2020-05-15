@@ -1,21 +1,13 @@
 from spec.component import Cube
 from spec.contract import StaticContract
-from spec.env import Env
-from compatibility import *
+from spec.time import DurationSpec
 from utils.geometry import *
+from sympy import symbols, Eq, And, S
 from cart import Cart
 from cart import CartSquare
 from arm import Arm
-from refinement import *
-from vectorize import *
 from mpmath import mp
-from experiments_setups import World
-from copy import deepcopy
-from choreography.projection import Projection
-import interpreter.parser as parser
-import time
-
-import unittest
+from experiments_setups import World, XpTestHarness
 
 #> 180    3.1415926535897931
 #  130    2.2689280275926285
@@ -286,77 +278,8 @@ def xp2_carrier():
     moveCart( 700 );
     '''
 
-class XpUnderpass(unittest.TestCase):
+class XpUnderpass(XpTestHarness):
     
-    def setUp(self):
-        # self.defaultConf = spec.conf.enableFPCheck # trivial with that
-        self.defaultConf = spec.conf.enableMPincludeFPCheck
-        # spec.conf.enableFPCheck = False
-        spec.conf.enableMPincludeFPCheck = False
-        #
-        self.defaultPrecision = spec.conf.dRealPrecision
-        spec.conf.dRealPrecision = 0.001
-
-    def tearDown(self):
-        spec.conf.enableFPCheck = self.defaultConf
-        # spec.conf.enableMPincludeFPCheck = self.defaultConf
-        #
-        spec.conf.dRealPrecision = self.defaultPrecision
-
-
-    def check(self, ch, w, contracts, progs, debug):
-        start = time.time()
-        start0 = start
-        env = Env(w, contracts)
-        visitor = Projection()
-        visitor.execute(ch, env, debug)
-        chor = visitor.choreography
-        if debug:
-            print("parsed", chor)
-        vectorize(chor, w)
-        end = time.time()
-        print("Syntactic checks:", end - start)
-        start = end
-        checker = CompatibilityCheck(chor, w)
-        checker.localChoiceChecks()
-        checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
-        end = time.time()
-        print("VC generation:", end - start)
-        start = end
-        print("#VC:", len(checker.vcs))
-        failed = []
-        for i in range(0, len(checker.vcs)):
-            vc = checker.vcs[i]
-            print("Checking VC", i, vc.title)
-            if not vc.discharge(debug=debug):
-                print("Failed")
-                failed.append((i,vc))
-                print(vc)
-                if vc.hasModel():
-                    print(vc.modelStr())
-                else: 
-                    print("Timeout")
-        for (i,vc) in failed:
-            print("Failed:", i, vc.title)
-        self.assertTrue(failed == [])
-        end = time.time()
-        print("VC solving:", end - start)
-        start = end
-        processes = w.allProcesses()
-        for p in processes:
-            visitor.choreography = deepcopy(chor)
-            proj = visitor.project(p.name(), p, debug)
-            prser = parser.Parser()
-            prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug)
-            if not ref.check():
-                raise Exception("Refinement: " + p.name())
-        end = time.time()
-        print("refinement:", end - start)
-        print("total time:", end - start0)
-
     def test_underpass(self, debug = False):
         ch = xp1_choreo()
         w = xp1_world() 

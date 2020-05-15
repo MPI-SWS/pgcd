@@ -107,6 +107,9 @@ class ProcessesPredicatesTracker:
         #print(self._process_to_pred)
         #print(str(self))
         cpy = copy.copy(self)
+        #cpy._var_to_process = {}
+        #for v in self._var_to_process:
+        #    cpy._var_to_process[v] = self._var_to_process[v]
         cpy._process_to_pred = {}
         for p in self._process_set:
             cpy._process_to_pred[p] = self._process_to_pred[p].copy()
@@ -165,6 +168,8 @@ class ProcessesPredicatesTracker:
             else:
                 self._process_to_pred[p] = tracker._process_to_pred[p]
         self._process_set = all_procs
+        for (v,p) in tracker._var_to_process.items():
+            self._var_to_process[v] = p
 
     def contains(self, tracker):
         return all([ self._process_to_pred[p].contains(tracker._process_to_pred[p]) for p in self._process_set])
@@ -187,6 +192,7 @@ class ProcessesPredicatesTracker:
         acc = "ProcessPredicatesTracker:"
         for p in self._process_set:
             acc = acc + "\n  " + str(self._process_to_pred[p])
+        acc = acc + "\n  " + str(self._var_to_process)
         return acc
 
 
