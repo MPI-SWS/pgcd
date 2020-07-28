@@ -10,18 +10,18 @@ def generate_launch_description():
     return launch.LaunchDescription([
         Node(
             package='tf2_ros',
-            node_executable='static_transform_publisher',
+            executable='static_transform_publisher',
             arguments=['-1', '0', '0', '0', '0', '0', 'world', 'dummy_sender']
         ),
         Node(
             package='tf2_ros',
-            node_executable='static_transform_publisher',
+            executable='static_transform_publisher',
             arguments=['1', '0', '0', '0', '0', '0', 'world', 'dummy_receiver']
         ),
         Node(
             package='pgcd',
-            node_executable='component.py',
-            node_name='dummy_sender',
+            executable='component.py',
+            name='dummy_sender',
             output = 'screen',
             emulate_tty = True,
             parameters=[
@@ -30,8 +30,8 @@ def generate_launch_description():
         ),
         Node(
             package='pgcd',
-            node_executable='component.py',
-            node_name='dummy_receiver',
+            executable='component.py',
+            name='dummy_receiver',
             output = 'screen',
             emulate_tty = True,
             parameters=[
