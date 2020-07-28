@@ -8,3 +8,6 @@
 **/parsetab.py
 **/parselog.txt
 **/parser.out
+pgcd/build/
+pgcd/install/
+pgcd/log/
