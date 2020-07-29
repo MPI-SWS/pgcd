@@ -1,6 +1,6 @@
 cart:
     ros__parameters:
-        program_location: "xp_sorting/"
+        program_location: "experiments/sorting/"
         object_module_name: "src.pgcd.nodes.motions.cart"
         object_class_name: "cart"
         frame_1_parent: "cart"
@@ -8,26 +8,26 @@ cart:
         frame_1_updater: "getConfigurationMatrix"
 carrier:
     ros__parameters:
-        program_location: "xp_sorting/"
+        program_location: "experiments/sorting/"
         object_module_name: "src.pgcd.nodes.motions.carrier"
         object_class_name: "carrier"
 franka:
     ros__parameters:
-        program_location: "xp_sorting/"
+        program_location: "experiments/sorting/"
         object_module_name: "src.pgcd.nodes.motions.franka"
         object_class_name: "franka"
 arm:
     ros__parameters:
-        program_location: "xp_sorting/"
+        program_location: "experiments/sorting/"
         object_module_name: "src.pgcd.nodes.motions.arm"
         object_class_name: "arm"
 sensor:
     ros__parameters:
-        program_location: "xp_sorting/"
+        program_location: "experiments/sorting/"
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
 producer:
     ros__parameters:
-        program_location: "xp_sorting/"
+        program_location: "experiments/sorting/"
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
