@@ -2,10 +2,13 @@
 
 # this path is relative to the test folder, not this folder
 export PYTHONPATH=$PYTHONPATH:.:..:../..:../choreography:
+# echo PYTHONPATH is $PYTHONPATH
 
-echo PYTHONPATH is $PYTHONPATH
-
-echo These tests need dreal in the PATH to run.
+if ! command -v dreal &> /dev/null
+then
+    echo "dreal not found. Aborting."
+    exit
+fi
 
 files=()
 opts=()
@@ -23,7 +26,7 @@ while [ ! -z "$1" ]; do
     esac
 done
 
-echo Running tests
+echo "Running test(s)"
 cd test
 if [ ${#files[@]} -eq 0 ]; then
     for f in *_test.py; do
