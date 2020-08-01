@@ -3,7 +3,7 @@ import sympy as sp
 
 class BBox:
     """Bounding box"""
-    
+
     def __init__(self, minX = -10, maxX = 10, minY = 10, maxY = 10, minZ = 0, maxZ = 2):
         self.minX = minX
         self.maxX = maxX

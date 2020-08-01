@@ -1,3 +1,5 @@
+
+import spec.conf
 from compatibility import *
 from utils.geometry import *
 from cart import CartSquare
@@ -288,7 +290,7 @@ while (true) {
 
 class XpSortingTest(XpTestHarness):
     
-    def test_sorting(self, debug = False):
+    def test_sorting(self):
         w = world()
         ch = choreo()
         contracts = []
@@ -297,7 +299,7 @@ class XpSortingTest(XpTestHarness):
                   "carrier": code_carrier(),
                   "sensor": code_sensor(),
                   "producer": code_producer()}
-        self.check(ch, w, contracts, progs, debug)
+        self.check(ch, w, contracts, progs)
 
 if __name__ == '__main__':
     unittest.main()

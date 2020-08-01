@@ -7,7 +7,7 @@ import spec.conf
 
 
 class Component(ABC):
-    
+
     def __init__(self, name, parent = None, index = 0):
         """abstract component
         name -- an unique identifier
@@ -24,7 +24,7 @@ class Component(ABC):
 
     def name(self):
         return self._name
-    
+
     # returns a CoordSys3D
     def frame(self):
         if self._parent != None:
@@ -36,7 +36,7 @@ class Component(ABC):
     def mountingPoint(self, index):
         """returns a coordinate system"""
         pass
-    
+
     def addChildren(self, index, component):
         assert(not (index in self._children))
         self._children[index] = component
@@ -50,13 +50,13 @@ class Component(ABC):
     def allProcesses(self):
         cp = { p for c in self._children.values() for p in c.allProcesses() }
         if self.isProcess():
-           cp.add(self) 
+           cp.add(self)
         return cp
 
     def obstacles(self):
         cp = { p for c in self._children.values() for p in c.obstacles() }
         if self.isObstacle():
-           cp.add(self) 
+           cp.add(self)
         return cp
 
 
@@ -64,24 +64,24 @@ class Component(ABC):
 # In the future, we may check/automate that part
 
 class Process(Component):
-    
+
     def __init__(self, name, parent = None, index = 0):
         super().__init__(name, parent, index)
         self._connections = {}
         self._motionPrimitives = {}
-    
+
     def isProcess(self):
         return S.true
 
     def internalVariables(self):
         """returns a list internal variables as sympy symbols"""
         return []
-    
+
     def inputVariables(self):
         """returns a list input variables as sympy symbols"""
         # TODO the frame
         return []
-    
+
     def outputVariables(self):
         """returns a list output variables as sympy symbols"""
         # TODO the mounting points
@@ -90,7 +90,7 @@ class Process(Component):
     def ownVariables(self):
         """returns all the internal and output as sympy symbols"""
         return self.internalVariables() + self.outputVariables()
-    
+
     def variables(self):
         """returns all the variables as sympy symbols"""
         return self.internalVariables() + self.inputVariables() + self.outputVariables()
@@ -98,7 +98,7 @@ class Process(Component):
     def invariantA(self):
         """returns some constraints over the input variables"""
         return S.true
-    
+
     def invariantG(self):
         """returns some constraints over the output variables"""
         return S.true
@@ -106,29 +106,29 @@ class Process(Component):
     def ownResources(self, point):
         """returns constraints that are true if point is in the resources of this process"""
         return S.true
-    
+
     def allResources(self, point):
         """returns constraints that are true if point is in the resources of this process or its children"""
         own = self.ownResources(point)
         childrenRes = [x.allResources(point) for x in self._children.values()]
         return functools.reduce(Or, childrenRes, own)
-    
+
     def abstractResources(self, point):
         """an overapproximation of the resources, easier to solve"""
         return self.ownResources(point)
-    
+
     def connect(self, index, component, connection = {}):
         self.addChildren(index, component)
         self._connections[index] = connection
-    
+
     def addMotionPrimitive(self, mp):
         n = mp.name()
         assert(not (n in self._motionPrimitives))
         self._motionPrimitives[n] = mp
-    
+
     def motionPrimitive(self, name, *args):
         return self._motionPrimitives[name].setParameters(args)
-    
+
     def motionPrimitiveWithFreeParams(self, name):
         factory = self._motionPrimitives[name]
         params = []
@@ -148,13 +148,13 @@ class Process(Component):
 
 # Passive object in the environement which have a footprint (to check collision)
 class Obstacle(Component):
-    
+
     def __init__(self, name, parent = None, index = 0):
         super().__init__(name, parent, index)
-    
+
     def isObstacle(self):
         return True
-    
+
     def frame(self):
         return self._parent.frame() #by default use the parent's frame
 
@@ -169,7 +169,7 @@ class Obstacle(Component):
 class Cube(Obstacle):
 
     count = 0
-    
+
     def __init__(self, x, y, z, theta, dx, dy, dz, parent = None, index = 0):
         super().__init__("cube_" + str(Cube.count), parent, index)
         self.count = Cube.count

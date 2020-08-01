@@ -1,3 +1,4 @@
+import spec.conf
 from spec.component import Cube
 from spec.contract import StaticContract
 from spec.time import DurationSpec
@@ -280,23 +281,23 @@ def xp2_carrier():
 
 class XpUnderpass(XpTestHarness):
     
-    def test_underpass(self, debug = False):
+    def test_underpass(self):
         ch = xp1_choreo()
         w = xp1_world() 
         contracts = []
         progs = { "Arm": xp1_arm(),
                   "Cart": xp1_cart(),
                   "Carrier": xp1_carrier() }
-        self.check(ch, w, contracts, progs, debug)
+        self.check(ch, w, contracts, progs)
 
-    def test_underpass_new(self, debug = False):
+    def test_underpass_new(self):
         ch = xp2_choreo()
         w = xp1_world() 
         contracts = [CartContract, ArmCarrierContract, ArmContract]
         progs = { "Arm": xp2_arm(),
                   "Cart": xp2_cart(),
                   "Carrier": xp2_carrier() }
-        self.check(ch, w, contracts, progs, debug)
+        self.check(ch, w, contracts, progs)
 
 if __name__ == '__main__':
     unittest.main()

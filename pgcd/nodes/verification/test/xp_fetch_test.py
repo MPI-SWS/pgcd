@@ -1,3 +1,4 @@
+import spec.conf
 from spec.component import Cube
 from spec.contract import StaticContract, AContract, GContract
 from spec.time import DurationSpec
@@ -88,21 +89,21 @@ def choreo_new():
 
 class XpfetchTest(XpTestHarness):
 
-    def test_fetch(self, debug = False):
+    def test_fetch(self):
         ch = choreo_old()
         w = cartAndArmWorld()
         contracts = []
         progs = { "A": progFetchA(),
                   "C": progFetchC() }
-        self.check(ch, w, contracts, progs, debug)
+        self.check(ch, w, contracts, progs)
 
-    def test_fetch_new(self, debug = False):
+    def test_fetch_new(self):
         ch = choreo_new()
         w = cartAndArmWorld()
         contracts = [GContract, AContract]
         progs = { "A": progFetchA(),
                   "C": progFetchC() }
-        self.check(ch, w, contracts, progs, debug)
+        self.check(ch, w, contracts, progs)
 
 
 if __name__ == '__main__':

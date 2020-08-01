@@ -1,22 +1,25 @@
 import interpreter.ast_inter as ast_inter
+import logging
+
+log = logging.getLogger("CFA")
 
 class CFA():
 
-    def __init__(self, program, debug = False):
+    def __init__(self, program):
         self.program = program
         self.programLabels = program.label_as_root()
         self.initLabel = program.get_label()
-        if debug:
-            print("= Program =")
-            print(program)
-            print("> starting with", self.initLabel)
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("= Program =")
+            log.debug("%s", program)
+            log.debug("> starting with %s", self.initLabel)
         self.nextLabel = { l:set() for l in self.programLabels }
         self.buildCFA([], program)
-        if debug:
-            print("= CFA =")
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("= CFA =")
             for l, s in self.nextLabel.items():
-                print(l, "->", s)
-    
+                log.debug("  %s -> %s", l, s)
+
     def buildCFA(self, lastLabels, statment):
         #connect prev
         l = statment.get_label()

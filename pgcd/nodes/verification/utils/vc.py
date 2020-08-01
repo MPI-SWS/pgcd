@@ -2,6 +2,9 @@ from utils.DrealInterface import DrealInterface
 from sympy import *
 from sympy.logic.boolalg import to_nnf
 import spec.conf
+import logging
+
+log = logging.getLogger("VC")
 
 
 def getConjuncts(expr):
@@ -38,7 +41,7 @@ class VC:
             sat = "unsat"
         return "VC(" + self.title + ", " + str(self.formulas) + "," + sat + ")"
 
-    def _trivialOrSovler(self, formula, timeout, debug):
+    def _trivialOrSovler(self, formula, timeout):
         trivialSat = True
         trivialUnsat = False
         for f in formula:
@@ -61,8 +64,7 @@ class VC:
             # send the other cstr to the solver
             dr = DrealInterface(precision = spec.conf.dRealPrecision,
                                 timeout = timeout,
-                                jobs = spec.conf.dRealJobs,
-                                debug = debug)
+                                jobs = spec.conf.dRealJobs)
             res, model = dr.run(formula)
             self.model = model
             return res
@@ -73,21 +75,15 @@ class VC:
     def modelStr(self):
         return "\n".join( str(k) + " = " + str (v) for k,v in self.model.items() )
 
-    def discharge(self, timeout = spec.conf.dRealTimeout, debug = False):
-        if debug:
-            sat = ""
-            if self.sat:
-                sat = " (sat)"
-            else:
-                sat = " (unsat)"
-            print("VC: " + self.title + sat)
+    def discharge(self, timeout = spec.conf.dRealTimeout):
+        log.debug("VC: %s (%s)", self.title, "sat" if self.sat else "unsat")
         for f in self.formulas:
             #f2 = to_cnf(f)
             f3 = list(And.make_args(f))
-            if debug:
+            if log.isEnabledFor(logging.DEBUG):
                 for f in f3:
-                    print(f)
-            res = self._trivialOrSovler(f3, timeout, debug)
+                    log.debug("  %s", f)
+            res = self._trivialOrSovler(f3, timeout)
             if res == None:
                 return False
             elif res == self.sat:

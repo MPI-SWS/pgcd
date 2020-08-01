@@ -1,3 +1,4 @@
+import spec.conf
 from spec.component import Process
 from compatibility import *
 from utils.geometry import *
@@ -112,7 +113,7 @@ class XpHandoverChainParametricTest(unittest.TestCase):
             s += "send("+pre+", Ok);\n"
         return s
     
-    def scenario(self, n, par, debug = False):
+    def scenario(self, n, par):
         print("## n =", n, ", par =", par)
         w = self.world(n)
         if par:
@@ -129,7 +130,7 @@ class XpHandoverChainParametricTest(unittest.TestCase):
             print(c)
         start = time.time()
         visitor = Projection()
-        visitor.execute(ch, w, debug)
+        visitor.execute(ch, w)
         chor = visitor.choreography
         vectorize(chor, w)
         end = time.time()
@@ -138,8 +139,8 @@ class XpHandoverChainParametricTest(unittest.TestCase):
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
+        checker.computePreds()
+        checker.generateCompatibilityChecks()
         end = time.time()
         print("VC generation:", end - start)
         start = end
@@ -147,7 +148,7 @@ class XpHandoverChainParametricTest(unittest.TestCase):
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             #print("Checking VC", i, vc.title)
-            if not vc.discharge(debug=debug):
+            if not vc.discharge():
                 raise Exception(str(vc))
         end = time.time()
         print("VC solving:", end - start)
@@ -155,24 +156,24 @@ class XpHandoverChainParametricTest(unittest.TestCase):
         processes = w.allProcesses()
         for p in processes:
             visitor.choreography = deepcopy(chor)
-            proj = visitor.project(p.name(), p, debug)
+            proj = visitor.project(p.name(), p)
             prser = parser.Parser()
             prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug)
+            ref = Refinement(prog, proj)
             if not ref.check():
                 raise Exception("Refinement: " + p.name())
         end = time.time()
         print("refinement:", end - start)
         start = end
     
-#   def test_1(self, debug = False):
-#       self.scenario(1, False, debug)
+#   def test_1(self):
+#       self.scenario(1, False)
    
-#   def test_2(self, debug = False):
-#       self.scenario(2, False, debug)
+#   def test_2(self):
+#       self.scenario(2, False)
    
-#   def test_3(self, debug = False):
-#       self.scenario(3, False, debug)
+#   def test_3(self):
+#       self.scenario(3, False)
     
-    def test_1_p(self, debug = False):
-        self.scenario(1, True, debug)
+    def test_1_p(self):
+        self.scenario(1, True)

@@ -1,17 +1,19 @@
 from ast_chor import *
 from sympy import *
 from spec.contract import *
+import logging
+
+log = logging.getLogger("PropagateFootprint")
 
 # assume thread check passed
 class PropagateFootprint():
 
-    def __init__(self, chor, debug = False):
+    def __init__(self, chor):
         self.done = False
         self.visited = set()
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
         self.state_to_contracts = dict()
-        self.debug = debug
 
     def perform(self):
         if not self.done:
@@ -21,9 +23,9 @@ class PropagateFootprint():
                                          Symbol('fpx'), Symbol('fpy'), Symbol('fpz'), S.true)
             self._do(self.chor.start_state, [defaultContract])
             self.chor.state_to_contracts = self.state_to_contracts
-            if self.debug:
+            if log.isEnabledFor(logging.DEBUG):
                 for k, v in self.state_to_contracts.items():
-                    print(k, v)
+                    log.debug("%s %s", k, v)
 
     def _do(self, state, stack):
         if state in self.visited:

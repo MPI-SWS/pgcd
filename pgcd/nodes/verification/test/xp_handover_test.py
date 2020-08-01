@@ -1,3 +1,4 @@
+import spec.conf
 from utils.geometry import *
 from cart import Cart
 from cart import CartSquare
@@ -141,27 +142,27 @@ def xp2_carrier():
 
 class XpHandoverTest(XpTestHarness):
     
-    def test_handover_1(self, debug = False):
+    def test_handover_1(self):
         ch = xp2_choreo_1()
         contracts = []
         w = xp2_world()
         progs = { "Arm": xp2_arm(),
                   "Cart": xp2_cart(),
                   "Carrier": xp2_carrier() }
-        self.check(ch, w, contracts, progs, debug)
+        self.check(ch, w, contracts, progs)
 
-    def test_handover_2(self, debug = False):
+    def test_handover_2(self):
         ch = xp2_choreo_2()
         contracts = []
         w = xp2_world()
         progs = { "Arm": xp2_arm(),
                   "Cart": xp2_cart(),
                   "Carrier": xp2_carrier() }
-        self.check(ch, w, contracts, progs, debug)
+        self.check(ch, w, contracts, progs)
 
 #TODO need proper AG contracts
-#   def test_handover_3(self, debug = False):
-#       self.handover(xp2_choreo_3(), debug)
+#   def test_handover_3(self):
+#       self.handover(xp2_choreo_3())
 
 if __name__ == '__main__':
     unittest.main()

@@ -2,6 +2,9 @@ from copy import copy
 from parser_chor import *
 from ast_chor import *
 from ast_proj import *
+import logging
+
+log = logging.getLogger("ChoreographyMinimization")
 
 def removeUnreachable(choreography, state_to_node):
     visited = set()
@@ -58,7 +61,7 @@ def removeMerge(choreography, state_to_node):
                             pre.guarded_states[i].id = post
     removeUnreachable(choreography, state_to_node)
 
-def minimize(choreography, state_to_node, debug = False):
+def minimize(choreography, state_to_node):
     removeMerge(choreography, state_to_node)
     #states that can be similar
     compatible = {}
@@ -104,10 +107,10 @@ def minimize(choreography, state_to_node, debug = False):
                     changed = True
                     compatible[s1].discard(s2)
                     compatible[s2].discard(s1)
-    if debug:
-        print("equivalence classes")
+    if log.isEnabledFor(logging.DEBUG):
+        log.debug("equivalence classes")
         for n, eqs in compatible.items():
-            print(n, "->", eqs)
+            log.debug("  %s -> %s", n, eqs)
     # representative for eq class
     mapsTo = {}
     def findRep(state):

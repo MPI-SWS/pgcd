@@ -1,3 +1,5 @@
+
+import spec.conf
 from compatibility import *
 from utils.geometry import *
 from cart import Cart
@@ -77,7 +79,7 @@ class XpLaneParametricTest(unittest.TestCase):
         start = time.time()
         start0 = start
         visitor = Projection()
-        visitor.execute(ch, w, debug)
+        visitor.execute(ch, w)
         chor = visitor.choreography
         vectorize(chor, w)
         end = time.time()
@@ -88,8 +90,8 @@ class XpLaneParametricTest(unittest.TestCase):
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
+        checker.computePreds()
+        checker.generateCompatibilityChecks()
         end = time.time()
         time_vc_gen = end - start
         if not printCSV:
@@ -100,13 +102,9 @@ class XpLaneParametricTest(unittest.TestCase):
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             #print("Checking VC", i, vc.title)
-            if not vc.discharge(debug=debug):
+            if not vc.discharge():
                 print(n, ",", m, ",", par, ",", time_syntax, ",", len(checker.vcs), ",", time_vc_gen, ", TO, NA, TO")
                 return
-#               if vc.hasModel():
-#                   raise Exception(str(vc) + "\n" + vc.modelStr())
-#               else: 
-#                   raise Exception(str(vc))
         end = time.time()
         time_vc_solve = end - start
         if not printCSV:
@@ -115,10 +113,10 @@ class XpLaneParametricTest(unittest.TestCase):
         processes = w.allProcesses()
         for p in processes:
             visitor.choreography = deepcopy(chor)
-            proj = visitor.project(p.name(), p, debug)
+            proj = visitor.project(p.name(), p)
             prser = parser.Parser()
             prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug)
+            ref = Refinement(prog, proj)
             if not ref.check():
                 raise Exception("Refinement: " + p.name())
         end = time.time()

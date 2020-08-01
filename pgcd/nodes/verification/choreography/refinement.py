@@ -7,20 +7,20 @@ from utils.DrealInterface import DrealInterface
 from utils.vc import VC
 from utils.cfa import CFA
 from copy import *
+import logging
+
+log = logging.getLogger("Refinement")
 
 #the refinement check between a program and the projection
 
 class Refinement(CFA):
 
-    def __init__(self, program, projection, debug = False):
-        super().__init__(program, debug)
-        self.debug = debug
+    def __init__(self, program, projection):
+        super().__init__(program)
         self.projection = projection
         self.state_to_node = projection.mk_state_to_node()
         self.cachedImplication = {}
-        if debug:
-            print("= Proj =")
-            print(projection)
+        log.debug("= Proj =\n%s", projection)
         self.compat = {}
 
     def implies(self, cond1, cond2):
@@ -30,8 +30,7 @@ class Refinement(CFA):
             f = simplify(And(cond1, Not(cond2)))
             vc = VC("implication", [f])
             res = vc.discharge()
-            if self.debug:
-                print(cond1, "=>", cond2, res)
+            log.debug("%s => %s: %s", cond1, cond2, res)
             self.cachedImplication[(cond1,cond2)] = res
             return res
 
@@ -59,11 +58,7 @@ class Refinement(CFA):
                 #TODO check the args
                 #print("1")
                 res = self.sameMpName(statment.value, node.motions[0].mp_name) and self._refines(self.nextStatement(statmentL), node.end_state[0])
-                if self.debug:
-                    if res:
-                        print("compatible", statmentL, nodeL, '\t', statment.value, '\t', node.motions[0].mp_name)
-                    else:
-                        print("not compatible", statmentL, nodeL, '\t', statment.value, '\t', node.motions[0].mp_name)
+                log.debug("%s %s %s\t%s\t%s", "compatible" if res else "not compatible", statmentL, nodeL, '\t', statment.value, '\t', node.motions[0].mp_name)
                 return res
             else:
                 return False
@@ -151,20 +146,20 @@ class Refinement(CFA):
         # main algorithm
         changed = True
         while changed:
-            if self.debug:
-                print("= Current Refinement =")
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("= Current Refinement =")
                 for l in allLabels:
                     if len(self.compat[l]) > 0:
-                        print(l, "->", self.compat[l])
+                        log.debug("%s -> %s", l, self.compat[l])
             changed = False
             for l in allLabels:
                 for s in copy(self.compat[l]):
                     if not self.compatible(l, s):
                         changed = True
                         self.compat[l].discard(s)
-        if self.debug:
-            print("= Final Refinement =")
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("= Final Refinement =")
             for l in allLabels:
                 if len(self.compat[l]) > 0:
-                    print(l, "->", self.compat[l])
+                    log.debug("%s -> %s", l, self.compat[l])
         return self.projection.start_state in self.compat[self.program.get_label()]

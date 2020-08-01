@@ -5,7 +5,7 @@ from parser_test import cartAndArmFetch, binSorting, armsHandover, ferry, ferry1
 from parser_chor import *
 from vectorize import *
 import minimize
-import normalization_chor
+import normalization
 
 import unittest
 

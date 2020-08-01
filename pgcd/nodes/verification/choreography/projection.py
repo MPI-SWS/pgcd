@@ -2,6 +2,7 @@ import inspect
 import threading
 import math
 import itertools
+import logging
 from copy import copy
 from sympy import S
 
@@ -13,6 +14,7 @@ from normalization import *
 from spec.component import Component
 from spec.env import Env
 
+log = logging.getLogger("Projection")
 
 class Projection:
 
@@ -25,28 +27,24 @@ class Projection:
         self.artificial_nodes_counter += 1
         return '__x__' + str(self.artificial_nodes_counter)
 
-    def execute(self, code, env = None, debug = False):
+    def execute(self, code, env = None):
         if isinstance(env, Component):
             env = Env(env)
         parser = ChoreographyParser(env)
-        self.choreography = parser.parse(code, debug)
+        self.choreography = parser.parse(code)
         return self.choreography
 
-    def project(self, proj_name, process, debug = False):
-        if debug:
-            print("== Global ==")
-            print(self.choreography)
+    def project(self, proj_name, process):
+        log.debug("== Global ==\n%s", self.choreography)
         projection = CreateProjectionFromChoreography(self.choreography, proj_name, process)
         state_to_node = projection.mk_state_to_node()
-        if debug:
-            print("-- Raw projection (before normalization) --")
-            print(projection)
+        log.debug("-- Raw projection (before normalization) --\n%s", projection)
         try:
-            self.normalize_projection(projection, state_to_node, debug)
+            self.normalize_projection(projection, state_to_node)
         except Exception as ex:
-            print("ERROR during projection, nodes are")
+            logger.error("ERROR during projection, nodes are")
             for v in state_to_node.values():
-                print(v)
+                logger.error("%s", v)
             raise
         return projection
 
@@ -74,17 +72,11 @@ class Projection:
                                 raise Exception("ambiguous external choice for message: " + str(node1) + ", " + str(node2))
 
 
-    def normalize_projection(self, choreography, state_to_node, debug = False):
+    def normalize_projection(self, choreography, state_to_node):
         removeIndirections(choreography, state_to_node)
-        if debug:
-            print("-- after remove indirections --")
-            print(choreography)
-        removeForkJoin(self, choreography, state_to_node, debug)
-        if debug:
-            print("-- after remove fork/join --")
-            print(choreography)
-        minimize(choreography, state_to_node, debug)
-        if debug:
-            print("-- after minimize --")
-            print(choreography)
+        log.debug("-- after remove indirections --\n%s", choreography)
+        removeForkJoin(self, choreography, state_to_node)
+        log.debug("-- after remove fork/join --\n%s", choreography)
+        minimize(choreography, state_to_node)
+        log.debug("-- after minimize --\n%s", choreography)
         self.checkProjection(choreography, state_to_node)

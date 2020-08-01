@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE, run, CalledProcessError, TimeoutExpired
 import tempfile
 import os
+import logging
 
 from typing import List, Dict, Any, cast, Tuple
 
@@ -17,6 +18,8 @@ from sympy.polys.polytools import poly
 from sympy.printing.precedence import precedence, PRECEDENCE
 from sympy.printing.printer import Printer
 from sympy import And, Or, QQ
+
+log = logging.getLogger("dReal")
 
 class DrealPrinter(Printer):
     printmethod = "_dreal"
@@ -115,10 +118,9 @@ class DrealParseTreeVisitor(PTNodeVisitor):
 
 class DrealInterface:
 
-    def __init__(self, precision: float = 0.001, timeout: int = 120, jobs = 1, debug: bool = True) -> None:
+    def __init__(self, precision: float = 0.001, timeout: int = 120, jobs = 1) -> None:
         self.precision = precision
         self.timeout = timeout
-        self.debug = debug
         self.jobs = jobs
 
     # parsing using https://github.com/igordejanovic/Arpeggio
@@ -128,7 +130,7 @@ class DrealInterface:
         def variable():   return ident, ":", "[", number, ",", number, "]"
         def model():      return ZeroOrMore(variable)
         def top():        return model, EOF
-        return ParserPython(top) #, debug = self.debug)
+        return ParserPython(top)
 
     def parseResult(self, string):
         try:
@@ -140,17 +142,15 @@ class DrealInterface:
 
     def readUntil(self, stream, expected):
         line = stream.readline().strip();
-        if self.debug:
-            print("< " + line)
+        log.debug("< %s", line)
         while line != expected:
             line = stream.readline().strip();
-            if self.debug:
-                print("< " + line)
+            log.debug("< %s", line)
     
     def write(self, stream, string):
         stream.write(string)
-        if self.debug:
-            print(string, end='')
+        if log.isEnabledFor(logging.DEBUG):
+            print(string, end='') #TODO avoid print, use logger
 
     def approximateModel(self, model):
         m2 = {}
@@ -162,7 +162,6 @@ class DrealInterface:
     def run(self, exprs: List[Expr]):
         variables = { v for x in exprs for v in x.free_symbols }
         printer = DrealPrinter()
-        # cat test.smt2 |  dreal --in
         #command = ["docker", "run", "-i", "-a", "stdin", "-a", "stdout", "-a", "stderr", "dreal/dreal4", "dreal", "--jobs", str(self.jobs), "--precision", str(self.precision), "--model", "--in"]
         command = ["dreal", "--jobs", str(self.jobs), "--precision", str(self.precision), "--model", "--in"]
         proc = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE, universal_newlines=True)
@@ -185,8 +184,7 @@ class DrealInterface:
             outs, errs = proc.communicate(timeout=self.timeout)
             exit_code = proc.wait()
             if exit_code == 0:
-                if self.debug:
-                    print("< " + outs)
+                log.debug("< %s", outs)
                 lines = outs.split("\n")
                 if lines[0].startswith("delta-sat"):
                     model = self.parseResult("\n".join(lines[1:]))
@@ -198,10 +196,10 @@ class DrealInterface:
                     print( "lines=",lines)
                     raise Exception(s)
             else:
-                if self.debug:
-                    print("< " + errs)
+                log.warning("< %s", errs)
                 raise Exception(errs)
         except TimeoutExpired:
+            log.warning("Timeout")
             proc.kill()
             outs, errs = proc.communicate() # for clean-up
             return (None, None)

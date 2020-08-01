@@ -28,3 +28,18 @@ enableMPincludeFPCheck = True #TODO for MP which reuse the componenet FP, this i
 dRealJobs = 6
 dRealTimeout = 60
 dRealPrecision = 0.01
+
+## https://stackoverflow.com/questions/51412465/python-best-way-to-setup-global-logger-and-set-the-logging-level-from-command-li
+import logging
+import sys
+# from argparse import ArgumentParser
+# parser = ArgumentParser()
+# parser.add_argument("-v", "--verbose", help="Increase output verbosity", action="store_const", const=logging.DEBUG, default=logging.INFO)
+# args = parser.parse_args()
+# logging.basicConfig(level = args.verbose)
+print("running", sys.argv)
+if "-v" in sys.argv or "--verbose" in sys.argv:
+    logging.basicConfig(level = logging.DEBUG)
+else:
+    logging.basicConfig(level = logging.INFO)
+#TODO dreal as opts

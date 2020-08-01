@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 from ast_chor import *
 from typing import List
+import logging
+
+log = logging.getLogger("FixedPoint")
 
 class FixedPointDataflowAnalysis(ABC):
 
-    def __init__(self, chor, processes, forward = True, debug = False):
+    def __init__(self, chor, processes, forward = True):
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
         if type(processes) is set:
@@ -14,7 +17,6 @@ class FixedPointDataflowAnalysis(ABC):
         self.state_to_element = {}
         self._mergeMap = {}
         self.forward = forward
-        self.debug = debug
         self.done = False
     
     ##################################
@@ -96,8 +98,8 @@ class FixedPointDataflowAnalysis(ABC):
             tracker.join(trackerOld)
         self.state_to_element[state] = tracker
         res = not trackerOld.equals(tracker)
-        if self.debug and res:
-            print("changed ", state, node, " to ", tracker)
+        if log.isEnabledFor(logging.DEBUG) and res:
+            log.debug("changed %s %s to %s", state, node, tracker)
         return res
     
     def processForMotion(self, motion):
@@ -121,30 +123,24 @@ class FixedPointDataflowAnalysis(ABC):
             n = self.state_to_node[s]
             tracker = self.initialValue(s, n)
             self.state_to_element[s] = tracker
-            if self.debug:
-                print("initial", s, tracker)
+            log.debug("initial %s %s", s, tracker)
         #loop
         changed = True
         counter = 0
         while changed:
-            if self.debug:
-                print("")
-                print("")
-                print("==========================")
-                print("==========================")
-                print("iteration " + str(counter))
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug("\n\n==========================")
+                log.debug("iteration %s", counter)
                 for state in self.state_to_node.keys():
-                    node = self.state_to_node[state]
-                    print(state, node)
-                    print(self.state_to_element[state])
-                print("==========================")
+                    log.debug("%s %s", state, self.state_to_node[state])
+                    log.debug("%s", self.state_to_element[state])
+                log.debug("--------------------------")
             counter = counter + 1
             changed = False
             # first the non-merge
             for state in self.state_to_node.keys():
                 node = self.state_to_node[state]
-                if self.debug:
-                    print("processing ", state, str(node), self.state_to_element[state])
+                log.debug("processing %s %s %s", state, node, self.state_to_element[state])
                 if isinstance(node, Message):
                     succ = node.end_state[0]
                     res = self._message(state, node, succ)

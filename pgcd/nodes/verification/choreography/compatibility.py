@@ -10,6 +10,8 @@ import copy
 import logging
 import functools
 
+log = logging.getLogger("CompatibilityChecks")
+
 def choiceAt(node, process_set):
     allGuards = { v for gs in node.guarded_states for v in gs.expression.free_symbols }
     choiceCandidates = [ p for p in process_set if any([ v in allGuards for v in p.variables() ]) ]
@@ -32,8 +34,8 @@ def motionForProcess(motions, process):
 
 class ComputePreds(FixedPointDataflowAnalysis):
 
-    def __init__(self, chor, processes, debug = False):
-        super().__init__(chor, processes, True, debug)
+    def __init__(self, chor, processes):
+        super().__init__(chor, processes, True)
 
     def initialValue(self, state, node):
         if state == self.chor.start_state:
@@ -41,8 +43,7 @@ class ComputePreds(FixedPointDataflowAnalysis):
         else:
             procNames = self.chor.state_to_processes[state]
             proc = { self.chor.getProcess(name) for name in procNames }
-            if self.debug:
-                print("init value for", state , proc)
+            log.debug("init value for %s is %s", state , proc)
             return ProcessesPredicatesTracker(proc, S.false)
 
     def motion(self, tracker, motions):
@@ -73,8 +74,7 @@ class ComputePreds(FixedPointDataflowAnalysis):
     
 
     def _goesTo(self, tracker, pred, succ):
-        if self.debug:
-            print("goes", "from", pred, "to", succ, "with", self.chor.state_to_processes[succ])
+        log.debug("goes from %s to %s with %s", pred, succ, self.chor.state_to_processes[succ])
         assert self.forward
         trackerOld = self.state_to_element[succ]
         res = super()._goesTo(tracker, pred, succ)
@@ -83,8 +83,8 @@ class ComputePreds(FixedPointDataflowAnalysis):
             tracker.join(trackerOld)
         else:
             tracker.restrictTo(self.chor.state_to_processes[succ])
-        if self.debug:
-            print(tracker)
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("%s", tracker)
         return res
 
 
@@ -99,14 +99,14 @@ class CompatibilityCheck:
         self.predComputed = False
         self.vcs = []
 
-    def computePreds(self, debug = False):
-        cp = ComputePreds(self.chor, self.processes, debug = debug)
+    def computePreds(self):
+        cp = ComputePreds(self.chor, self.processes)
         cp.perform()
         self.state_to_pred = cp.result()
-        if debug:
-            print("PREDS")
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("PREDS")
             for k, v in self.state_to_pred.items():
-                print(k, v)
+                log.debug("  %s  -> %s", k, v)
         self.predComputed = True
 
     def addVC(self, title, formulae, sat = False):
@@ -118,12 +118,11 @@ class CompatibilityCheck:
         return p.motionPrimitive(motion.mp_name, *motion.mp_args)
 
 
-    def checkProcessAbstraction(self, debug = False):
+    def checkProcessAbstraction(self):
         px, py, pz = symbols('inFpX inFpY inFpZ')
         pointDomain = And(px >= minX, px <= maxX, py >= minY, py <= maxY, pz >= minZ, pz <= maxZ)
         for p in self.processes:
-            if debug:
-                print("correctness of footprint abstraction for " + p.name())
+            log.debug("correctness of footprint abstraction for %a", p.name())
             point = p.frame().origin.locate_new("inFp", px * p.frame().i + py * p.frame().j + pz * p.frame().k )
             hypotheses = And(p.invariantG(), pointDomain, p.ownResources(point))
             concl = p.abstractResources(point)
@@ -145,21 +144,19 @@ class CompatibilityCheck:
         return filtered
 
     # compatibility of motion primitives
-    def generateCompatibilityChecks(self, debug = False):
+    def generateCompatibilityChecks(self):
         assert(self.predComputed)
         obstacles = self.chor.world.obstacles()
         if spec.conf.enableProcessAbstractionCheck:
-            self.checkProcessAbstraction(debug)
+            self.checkProcessAbstraction()
         for node in self.state_to_node.values():
-            if debug:
-                print("generateCompatibilityChecks for node " + str(node))
+            log.debug("generateCompatibilityChecks for node %s", node)
             # for the collision check to work, we need to follow the process structure!!
             # otherwise, there are gaps: carrier against arm without knowing where the cart is
             unorderedProcesses = self.chor.getProcessesAt(node)
             processes = self.processTopSort(unorderedProcesses)
-            if debug:
-                print("unordered processes", unorderedProcesses)
-                print("processes", processes)
+            log.debug("unordered processes: %s", unorderedProcesses)
+            log.debug("processes: %s", processes)
             if isinstance(node, Motion):
                 # state before
                 tracker = self.state_to_pred[node.start_state[0]]
@@ -183,8 +180,7 @@ class CompatibilityCheck:
                 for p in processes:
                     otherProcesses = [ p2 for p2 in processes if p2 != p ]
                     mp = self.getMP(node, p)
-                    if debug:
-                        print("precondition for process " + str(p))
+                    log.debug("precondition for process %s", p)
                     self.addVC("precondition of " + mp.name + " for " + p.name() + " @ " + str(node.start_state[0]), [And(extra.pre, extra.always, Not(mp.preG()))])
                     self.vcs.extend(mp.wellFormed(extra))
                     if composedContracts == None:
@@ -198,8 +194,7 @@ class CompatibilityCheck:
                 #print(extra)
                 self.vcs.extend(composedContracts.refines(overallSpec, extra = extra))
             if isinstance(node, Fork):
-                if debug:
-                   print("fork: ", str(node))
+                log.debug("fork: %s", node)
                 overallSpec = self.chor.state_to_contracts[node.start_state[0]] # is FpContract
                 composedContracts = None
                 extra = ExtraInfo()

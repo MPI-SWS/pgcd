@@ -4,8 +4,11 @@ from minimize import *
 from parser_chor import *
 from ast_chor import *
 from ast_proj import *
+import logging
 
-def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
+log = logging.getLogger("Normalization")
+
+def removeForkJoin(nameGen, choreography, state_to_node):
     # if there are nested forks then we should work inside out
     def noForkBeforeJoin(state, first = True):
         node = state_to_node[state]
@@ -46,13 +49,11 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
     # takes a list of threads and generate the permutation of events
     # TODO diverge in case of loop within fork-join
     def mergeThreads(pred, pred_index, pendingMotion, states):
-        if debug:
-            print("  pred: ", pred, " @ ", pred_index)
-            print("  states: ", states)
-            print("  pendingMotion: ", pendingMotion)
+        log.debug("  pred: %s @ %s", pred, pred_index)
+        log.debug("  states: %s", states)
+        log.debug("  pendingMotion: %s", pendingMotion)
         states = [ s for s in states if hasAction(s) ]
-        if debug:
-            print("  relevant states: ", states)
+        log.debug("  relevant states: %s", states)
         #first step categorise the next event
         internal = []
         external = []
@@ -131,8 +132,7 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
                 return [(pred, pred_index)], joinTarget.pop()
         elif len(msgAlternatives) == 1:
             a = state_to_node[msgAlternatives.pop()]
-            if debug:
-                print("    next (unique) action:", a)
+            log.debug("    next (unique) action: %s", a)
             a2 = copy(a)
             newId = nameGen.get_artificial_name()
             a2.start_state[0] = newId
@@ -198,8 +198,7 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
                         joinAt = j
                     else:
                         assert(joinAt == j)
-            if debug:
-                print("    next choice action:", choice)
+            log.debug("    next choice action: %s", choice)
             return acc, joinAt
     # get the fork we need to remove
     forks = [ state for (state, node) in state_to_node.items() if isinstance(node, Fork) ]
@@ -210,8 +209,7 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
         for s in nonNestedFork:
             pred, idx = findPred(s)
             lastIds, join = mergeThreads(pred, idx, [], state_to_node[s].end_state)
-            if debug:
-                print("    connecting", lastIds, "to", join)
+            log.debug("    connecting %s to %s", lastIds, join)
             # replace the last join by a merge is needed
             if len(lastIds) == 1:
                 last, idx = lastIds.pop()
@@ -223,17 +221,17 @@ def removeForkJoin(nameGen, choreography, state_to_node, debug = False):
                     pred.end_state[index] = newId
                     merge.start_state.append(newId)
         # update work list
-        if debug:
-            print("after processing:", nonNestedFork)
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("after processing: %s", nonNestedFork)
             for v in state_to_node.values():
-                print(v)
+                log.debug("%s", v)
         forks = [ s for s in forks if not s in nonNestedFork ]
         nonNestedFork = [ s for s in forks if noForkBeforeJoin(s) ]
         # remove unreachable node
         removeUnreachable(choreography, state_to_node)
 
 #to make our life simpler, let us add an external choice before every receive
-def addExternalChoice(nameGen, choreography, state_to_node, debug = False):
+def addExternalChoice(nameGen, choreography, state_to_node):
     recv = [ node.start_state[0] for node in choreography.statements if isinstance(node, ReceiveMessage) ]
     needChoice = [ node for node in choreography.statements if not isinstance(node, ExternalChoice) and any(n in recv for n in node.end_state) ]
     for node in needChoice:

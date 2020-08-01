@@ -1,6 +1,9 @@
 from ast_chor import *
 from utils.fixed_point import *
 import copy
+import logging
+
+log = logging.getLogger("ThreadPartition")
 
 # thread partition and correctness checks
 
@@ -22,13 +25,13 @@ class ThreadTracker:
         if any( n == nodeFrom for n,t in self.stack ):
             raise Exception("fork again on " + nodeFrom + " before joining.")
         self.stack.append( (nodeFrom, nodeTo) )
-    
+
     def pop(self):
         return self.stack.pop()
 
     def addProcess(self, proc):
         self.processes = self.processes | {proc}
-    
+
     def clearProcesses(self):
         self.processes = set()
 
@@ -53,8 +56,8 @@ class ThreadTracker:
 
 class ComputeThreads(FixedPointDataflowAnalysis):
 
-    def __init__(self, chor, processes, debug = False):
-        super().__init__(chor, processes, True, debug)
+    def __init__(self, chor, processes):
+        super().__init__(chor, processes, True)
 
     def getProcesses(self):
         return { p if isinstance(p, str) else p.name() for p in self.processes }
@@ -75,7 +78,7 @@ class ComputeThreads(FixedPointDataflowAnalysis):
             tracker.addProcess(mp.id)
         tracker.seen_mp = True
         return tracker
-    
+
     def join(self, tracker):
         if len(tracker.stack) > 0:
             forkNode = tracker.pop()[0]
@@ -99,9 +102,8 @@ class ThreadChecks():
         self.chor = chor
         self.processes = processes
 
-    def fillBackward(self, node_to_trackers, state_to_node, debug):
-        if debug:
-            print("fillBackward")
+    def fillBackward(self, node_to_trackers, state_to_node):
+        log.debug("fillBackward")
         again = True
         while again:
             again = False
@@ -115,17 +117,15 @@ class ThreadChecks():
                                 if p not in ns.processes:
                                     again = True
                                     ns.addProcess(p)
-                                    if debug:
-                                        print("adding", p, "to", s, "from", e)
+                                    log.debug("adding %s to %s from %s", p, s, e)
 
-    def perform(self, debug = False):
-        if debug:
-            print("thread correctness and partition")
-        cp = ComputeThreads(self.chor, self.processes, debug)
+    def perform(self):
+        log.debug("thread correctness and partition")
+        cp = ComputeThreads(self.chor, self.processes)
         cp.perform()
         node_to_trackers = cp.result()
         state_to_node = self.chor.mk_state_to_node()
-        self.fillBackward(node_to_trackers, state_to_node, debug)
+        self.fillBackward(node_to_trackers, state_to_node)
         def getPreds(node):
             return [ node_to_trackers[s] for s in node.start_state ]
         for state in node_to_trackers.keys():

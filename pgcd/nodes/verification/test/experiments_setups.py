@@ -1,9 +1,9 @@
+import spec.conf
 from sympy import *
 from sympy.vector import CoordSys3D
 from spec.component import *
 from spec.motion import *
 from spec.time import *
-import spec.conf
 from spec.env import Env
 from utils.geometry import *
 from cart import *
@@ -18,13 +18,16 @@ import interpreter.parser as parser
 import time
 
 import unittest
+import logging
+
+log = logging.getLogger("XP")
 
 # world: a trivial componenent (with optional mounting points as args)
 class World(Component):
 
     def __init__(self, *mnts):
         super().__init__('World', None)
-        f = spec.conf.worldFrame 
+        f = spec.conf.worldFrame
         self._frame = f
         self._mountingPoints = [f.orient_new_axis('world_mount_' + str(i), t, f.k, location= x * f.i + y * f.j + z * f.k) for i, (x,y,z,t) in enumerate(mnts)]
         self._mount = f
@@ -92,7 +95,7 @@ def mkDummyWorld(*cmpNames):
 
 
 class XpTestHarness(unittest.TestCase):
-    
+
     def setUp(self):
         self.defaultConf = spec.conf.enableMPincludeFPCheck
         spec.conf.enableMPincludeFPCheck = False
@@ -104,55 +107,54 @@ class XpTestHarness(unittest.TestCase):
         spec.conf.dRealPrecision = self.defaultPrecision
 
 
-    def check(self, ch, w, contracts, progs, debug):
+    def check(self, ch, w, contracts, progs):
         start = time.time()
         start0 = start
         env = Env(w, contracts)
         visitor = Projection()
-        visitor.execute(ch, env, debug)
+        visitor.execute(ch, env)
         chor = visitor.choreography
-        if debug:
-            print("parsed", chor)
+        log.debug("parsed\n%s", chor)
         vectorize(chor, w)
         end = time.time()
-        print("Syntactic checks:", end - start)
+        log.info("Syntactic checks: %s", end - start)
         start = end
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
+        checker.computePreds()
+        checker.generateCompatibilityChecks()
         end = time.time()
-        print("VC generation:", end - start)
+        log.info("VC generation: %s", end - start)
         start = end
-        print("#VC:", len(checker.vcs))
+        log.info("#VC: %s", len(checker.vcs))
         failed = []
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
-            print("Checking VC", i, vc.title)
-            if not vc.discharge(debug=debug):
-                print("Failed")
+            log.info("Checking VC %s %s", i, vc.title)
+            if not vc.discharge():
+                log.warning("Failed VC %s", i)
                 failed.append((i,vc))
-                print(vc)
+                log.debug("%s", vc)
                 if vc.hasModel():
-                    print(vc.modelStr())
-                else: 
-                    print("Timeout")
+                    log.debug("%s", vc.modelStr())
+                else:
+                    log.debug("Timeout")
         for (i,vc) in failed:
-            print("Failed:", i, vc.title)
+            log.info("Failed: %s %s", i, vc.title)
         end = time.time()
-        print("VC solving:", end - start)
+        log.info("VC solving: %s", end - start)
         start = end
         processes = w.allProcesses()
         for p in processes:
             visitor.choreography = deepcopy(chor)
-            proj = visitor.project(p.name(), p, debug)
+            proj = visitor.project(p.name(), p)
             prser = parser.Parser()
             prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug)
+            ref = Refinement(prog, proj)
             if not ref.check():
                 raise Exception("Refinement: " + p.name())
         end = time.time()
-        print("refinement:", end - start)
-        print("total time:", end - start0)
+        log.info("refinement: %s", end - start)
+        log.info("total time: %s", end - start0)
         self.assertTrue(failed == [])

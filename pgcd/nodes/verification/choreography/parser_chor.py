@@ -11,7 +11,6 @@ from check_chor import *
 
 import os
 
-
 class ChoreographyParser:
     precedence = (
         ('left', 'AND', 'OR'),
@@ -28,19 +27,14 @@ class ChoreographyParser:
         self.parser = yacc.yacc(module=self)
         self.env = env
 
-    def parse(self, text, debug = False):
-        if debug:
-            logging.basicConfig(level = logging.INFO)
-            log = logging.getLogger()
-            choreography = self.parser.parse(text, self.lexer.lexer, debug=log)
-        else:
-            choreography = self.parser.parse(text, self.lexer.lexer)
+    def parse(self, text):
+        choreography = self.parser.parse(text, self.lexer.lexer)
         choreography.world = self.env.world
-        self.check_well_formedness(choreography, debug)
+        self.check_well_formedness(choreography)
         return choreography
 
-    def check_well_formedness(self, chor, debug = False):
-        check = ChoreographyCheck(chor, debug)
+    def check_well_formedness(self, chor):
+        check = ChoreographyCheck(chor)
         check.check_well_formedness()
 
 

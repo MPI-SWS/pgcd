@@ -4,11 +4,13 @@ from utils.causality_tracker import *
 from threads import *
 from spec.time import DurationSpec
 from propagate_footprints import *
+import logging
+
+log = logging.getLogger("ChoreographyCheck")
 
 class ChoreographyCheck:
 
-    def __init__(self, chor, debug = False):
-        self.debug = debug
+    def __init__(self, chor):
         self.chor = chor
         self.state_to_node = chor.mk_state_to_node()
         self.scope = 0
@@ -30,33 +32,27 @@ class ChoreographyCheck:
     def check_well_formedness(self):
         self.syntacic_checks()
         self.thread_checks()
-        if self.debug:
-            print("causality, local choice, connectedness, and ... checks")
+        log.debug("causality, local choice, connectedness, and ... checks")
         self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
-        if self.debug:
-            print("propagate footprint")
-        fill_fp = PropagateFootprint(self.chor, self.debug)
+        log.debug("propagate footprint")
+        fill_fp = PropagateFootprint(self.chor)
         fill_fp.perform()
 
     def thread_checks(self):
-        if self.debug:
-            print("thread checks")
+        log.debug("thread checks")
         if self.chor.world != None:
             tc = ThreadChecks(self.chor, self.chor.world.allProcesses())
         else:
             tc = ThreadChecks(self.chor, self.chor.getProcessNames())
-        self.threadTrackers = tc.perform(self.debug)
-        if self.debug:
-            print("thread tracker result:")
+        self.threadTrackers = tc.perform()
+        log.debug("thread tracker result:")
         self.chor.state_to_processes = dict()
         for k,v in self.threadTrackers.items():
             self.chor.state_to_processes[k] = v.processes
-            if self.debug:
-                print("\t" + k + ":\t" + ", ".join(v.processes))
+            log.debug("\t%s:\t%s", k, ", ".join(v.processes))
 
     def syntacic_checks(self):
-        if self.debug:
-            print("Syntacic checks")
+        log.debug("Syntacic checks")
         # at most one end state
         ends = [ s for s in self.chor.statements if s.tip == Type.end ]
         if len(ends) > 1:
@@ -101,8 +97,7 @@ class ChoreographyCheck:
         node = self.state_to_node[state]
         visited.add(state)
 
-        if self.debug:
-            print("visiting: ", causality.time, node)
+        log.debug("visiting: %s %s", causality.time, node)
 
         if isinstance(node, Message):
             #TODO the message sequence must touch all the process in the thread
@@ -160,11 +155,10 @@ class ChoreographyCheck:
 
         elif isinstance(node, End): #TODO no supported for the moment
             return
-        
+
         self.check_no_disconnected_parts(visited)
         self.check_every_process_has_motion_in_one_thread()
-        if self.debug:
-            print('---> Test passed ✓✓✓')
+        log.debug('---> Test passed ✓')
 
     def check_same_path_twice(self, node, visited, process, causality):
         for s in node.end_state:

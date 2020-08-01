@@ -24,10 +24,9 @@ class Parser:
             filemode="w",
             format="%(filename)10s:%(lineno)4d:%(message)s"
         )
-        log = logging.getLogger()
-        self.lexer = rlex.Lexer(debuglog=log, debug=True)
+        self.lexer = rlex.Lexer()
         self.tokens = self.lexer.tokens
-        self.parser = yacc.yacc(module=self, debuglog=log, debug=True)
+        self.parser = yacc.yacc(module=self)
 
     def parse(self, text):
         parsed = self.parser.parse(text, self.lexer.lexer)
