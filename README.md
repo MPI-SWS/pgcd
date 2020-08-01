@@ -50,6 +50,13 @@ The current workaround is to manually implement the appropriate transform and ma
     ros2 launch pgcd simple_example.launch.py
     ```
 
+#### Verification Dependencies
+
+Additionally for the verification, the following are required:
+* [dReal 4](https://github.com/dreal/dreal4),
+* [Spin](http://spinroot.com/spin/whatispin.html) (optional, not needed when using choreographic specifications)
+
+
 ## PGCD Program structure
 
 ### Program
@@ -112,7 +119,7 @@ TODO this got broken in the port to ROS 2...
 For the purpose of the runtime, the motion primitives are invoked as normal method within the python interpreter.
 Therefore, they are currently implemented in python and put in the `PYTHONPATH`.
 
-Uninterruptible motion primitive executes a single block until completion. 
+Uninterruptible motion primitive executes a single block until completion.
 Buy interruptible motion primitive should be implemented in a specific way.
 We assume the interruptible motion primitive is a loop that read some sensor data, do some computation, and produces some outputs.
 Currently, the primitive should do only one iteration of the loop.
@@ -140,25 +147,94 @@ Then, the motion primitives also need a specification.
 
 #### Choreography
 
-...
+Choreographies are expressed in a state machine-like form.
+```
+ChoreographyName =
+def Transitions
+in [ predicate ] InitialState
+```
+
+The transitions are of the following form:
+
+* Message:
+  ```
+  state = sender -> receiver: message; state
+  ```
+* Motion primitive:
+  ```
+  state = (component: motion, ...); state
+  ```
+* Branch and merge:
+  ```
+  state = state + state + ...
+  state + state + state = state
+  ```
+* Fork and join:
+  ```
+  state = contract state || contract state || ...
+  state || state || state = state
+  ```
+  On a fork, for each part and assume-guarantee (AG) contract needs to be provided.
+  The syntax of AG contract is `@contract(parameters)`.
+  AG contracts are defined separately by extending the class `AssumeGuaranteeContract` in [verification/spec/contract.py](pgcd/nodes/verification/spec/contract.py).
+  For independent robots, the AG contracts only need to specify footprints and we offer the syntax: `{ contstraints over fpx fpy fpz }`.
+  A point is included in the footprint if the constraints evaluate to true when `fpx`, `fpy`, and `fpz` are replaced with the point's coordinates.
+
+The [test folder](pgcd/nodes/verification/test/) contains examples (files with name starting with `xp_`).
+
+#### Model of the Environment
+
+The environment is models using [components](pgcd/nodes/verification/spec/component.py).
+A component can be either a `Process` or an `Obstacle`.
+Processes are active and executes programs while obstacle are passive.
+
+Components are linked together through a parent/child relationship.
+The links specifies how the relative coordinate systems are related.
+We provide a [World](pgcd/nodes/verification/test/experiments_setups.py) component with frame shifts given as parameters as placeholder for the room in which the robots are placed.
+
 
 #### Model of the Robots
 
-...
+Robots are modeled as [Process](pgcd/nodes/verification/spec/component.py).
+A process has variables (input and output), a footprint, a default AG contract (invariant), motion primitives.
+A process can be connected to other processes, e.g., arm attached on top of the cart.
+
+Examples of robots models are:
+[cart](pgcd/nodes/verification/test/cart.py),
+[simple arm](pgcd/nodes/verification/test/arm.py),
+[Franka Emika Panda arm](pgcd/nodes/verification/test/franka.py),
+[static process](pgcd/nodes/verification/test/static_process.py).
 
 #### Motion Primitives Specification
 
-...
+Motion primitive are specified by extending the [MotionPrimitive](pgcd/nodes/verification/spec/motion.py) class.
+Motion primitive extends AG contracts.
+To create motion primitives which may have parameters, a corresponding `MotionPrimitiveFactory` needs to be created.
+Examples of motion primitives specifications can be found along the robot models listed above.
 
 Currently, we assume the motion primitive specifications but do not verify this.
 There are plenty of work which focus on that and can be used there.
 Our focus is how specify the communication and motions to help compositional verification.
 
+#### Calling the Verifier
+
+world, choreography, contracts, program
+
+The simplest it to extend the class [XpTestHarness](pgcd/nodes/verification/test/experiments_setups.py).
+Then calling `self.check(choreography, world, contracts, programs)` setup the verifier and calls it.
+The arguments are
+* `choreography`: the choreographic specification as a string,
+* `world`: the environment specification a `Component`,
+* `contracts`: a list of AG contracts (names of the classes),
+* `programs`: a map from process IDs to programs.
+
+`XpTestHarness` does the following:
+1. parse the choreography and perform some syntactic checks on it,
+2. analyzing the choreography in more details (checking the times, (un)interruptible motions, process partition in forks, etc.) and generates the verification conditions (VCs),
+3. discharge the VCs,
+4. refinement check of the programs against the choreography's endpoints projections.
+
+
 ## Need to fix:
 
 See [TODO.md](TODO.md)
-
-### Verification Dependencies
-
-Additionally for the verification, the following are required:
-* program: [dreal](https://github.com/dreal/dreal4), [spin](http://spinroot.com/spin/whatispin.html)

@@ -15,6 +15,8 @@ import time
 
 import unittest
 
+# FIXME not yet finished 
+
 # A "microbenchmark" to emphasize the benefit of having the parallel composition as part of the spec.
 # Consider a series of arm in a line and handing over objects between each others.
 

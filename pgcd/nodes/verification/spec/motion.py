@@ -12,7 +12,7 @@ class MotionPrimitiveFactory(ABC):
     def __init__(self, component):
         self._component = component
         component.addMotionPrimitive(self)
-    
+
     def name(self):
         return self.__class__.__name__
 
@@ -25,11 +25,11 @@ class MotionPrimitiveFactory(ABC):
         pass
 
 class MotionPrimitive(AssumeGuaranteeContract):
-    
+
     def __init__(self, name, component):
         super().__init__(name)
         self._component = component
-    
+
     def name(self):
         return self._name
 
@@ -43,7 +43,7 @@ class MotionPrimitive(AssumeGuaranteeContract):
     def modifies(self):
         '''some motion primitive (like idle) does not change all the variables'''
         return self._component.ownVariables()
-    
+
     def wellFormed(self, extra = ExtraInfo()):
         vcs = super().wellFormed(extra)
         if spec.conf.enableFPCheck and spec.conf.enableMPincludeFPCheck:

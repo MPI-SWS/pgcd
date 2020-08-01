@@ -6,7 +6,7 @@ class Env():
     def __init__(self, world, contracts = []):
         self.world = world
         self.contracts = dict( ( (c.__name__, c) for c in contracts ) )
-    
+
     def frame(self):
         return self.world.frame();
 

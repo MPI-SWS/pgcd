@@ -90,7 +90,7 @@ class XpfetchTest(XpTestHarness):
 
     def test_fetch(self, debug = False):
         ch = choreo_old()
-        w = cartAndArmWorld() 
+        w = cartAndArmWorld()
         contracts = []
         progs = { "A": progFetchA(),
                   "C": progFetchC() }
@@ -98,7 +98,7 @@ class XpfetchTest(XpTestHarness):
 
     def test_fetch_new(self, debug = False):
         ch = choreo_new()
-        w = cartAndArmWorld() 
+        w = cartAndArmWorld()
         contracts = [GContract, AContract]
         progs = { "A": progFetchA(),
                   "C": progFetchC() }
@@ -107,4 +107,3 @@ class XpfetchTest(XpTestHarness):
 
 if __name__ == '__main__':
     unittest.main()
-        
