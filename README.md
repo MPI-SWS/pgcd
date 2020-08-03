@@ -2,12 +2,12 @@
 
 PGCD is a programming language and verification system for programming and verification of robotic choreographies.
 
-TODO link to papers
+The goal of this project is to develop a kind of choreographic specification which help verify CPS by decomposing the verification task around the communication and using assume-guarantee contracts.
+The main ideas can be found in the following papers:
+[ICCPS 2019](https://dzufferey.github.io/files/2019_Motion_Session_Types_for_Robotic_Interactions_updated.pdf) and
+[ECOOP 2020](https://dzufferey.github.io/files/2019_PGCD_Robot_Programming_and_Verification_with_Geometry_Concurrency_and_Dynamics.pdf).
+(More to come :) )
 
-
-## Features
-
-TODO ...
 
 ## Status
 
@@ -19,19 +19,23 @@ Currently there is some issue with the frame conversion.
 
 The current workaround is to manually implement the appropriate transform and manually register it with `tf2_ros`.
 
+
 ## Project Setup
 
-1.  Install ROS 2 Foxy (tested with ubuntu 20.04)
-2.  Install colcon: `sudo apt install python3-colcon-common-extensions`
-3.  Install some extra python package: `pip3 install arpeggio numpy sympy ply`
-4.  Checkout this repository:
+### Runtime
+
+1.  Install Python > 3.5 (tested with 3.8) and `pip`: `sudo apt install python3 python3-pip`
+2.  [Install ROS 2 Foxy](https://index.ros.org/doc/ros2/Installation/Foxy/) (tested with ubuntu 20.04)
+3.  Install colcon: `sudo apt install python3-colcon-common-extensions`
+4.  Install some extra python package: `pip3 install arpeggio numpy sympy ply`
+5.  Checkout this repository:
     ```bash
     cd
     git clone https://github.com/MPI-SWS/pgcd.git
     mkdir ~/ros2_ws
     ln -s ~/pgcd ~/ros2_ws/src
     ```
-5.  Compile and source:
+6.  Compile and source:
     ```bash
     cd ~/ros2_ws
     colcon build --symlink-install
@@ -41,7 +45,7 @@ The current workaround is to manually implement the appropriate transform and ma
     ```bash
     echo "source ~/ros2_ws/src/pgcd/install/local_setup.bash" >> ~/.bashrc
     ```
-6.  Running a Test.
+7.  Running a Test.
     Let us run a simple example of two processes sending a message to each other.
     To run the example you need to:
     ```bash
@@ -50,11 +54,23 @@ The current workaround is to manually implement the appropriate transform and ma
     ros2 launch pgcd simple_example.launch.py
     ```
 
-#### Verification Dependencies
+### Verification Only (no Runtime)
 
-Additionally for the verification, the following are required:
-* [dReal 4](https://github.com/dreal/dreal4),
-* [Spin](http://spinroot.com/spin/whatispin.html) (optional, not needed when using choreographic specifications)
+1. Install Python > 3.5 (tested with 3.8) and `pip`: `sudo apt install python3 python3-pip`
+2. Install some extra python package: `pip3 install arpeggio numpy sympy ply`
+3. Install [dReal 4](https://github.com/dreal/dreal4),
+4. Checkout this repository:
+    ```bash
+    cd
+    git clone https://github.com/MPI-SWS/pgcd.git
+    ```
+5.  Running a Test.
+    ```bash
+    cd pgcd/pgcd/nodes/verification
+    ./run_tests.sh test/xp_handover_02_test.py
+    ```
+
+Additionally for some older tests [spin](http://spinroot.com/spin/whatispin.html) is used (optional, not needed when using choreographic specifications).
 
 
 ## PGCD Program structure
@@ -106,13 +122,18 @@ There are examples in the [experiments/sorting]() folder and details of the synt
 The semantics is mostly what you would expect for an imperative programming language.
 The message passing layer and the motion primitives are the non-standard bits.
 
-TODO explain ...
+The communication model is synchronous.
+In practice, this means every message is followed by an `ack` and the sender blocks until it receives the acknowledgment.
+We use that semantics as choreographies with asynchronous communication and time are not well-understood.
+Right now, checking the choreographic specification includes information about the duration of the motion primitives to make sure that a receiver is ready to receive when a sender sends.
 
 #### Physical Connections Between Robots
 
-frame dependencies and shift
+One design goal of PGCD is facilitating modular verification by making sure each robot's controller work in the components local frame.
+The message are automatically updated to account for the frame shift between the sender and receiver.
 
-TODO this got broken in the port to ROS 2...
+__Unfortunately, this part got broken in the port to ROS 2. I'll fixt it as soon as I have time.__
+The messages are still send and received but the data they contain is not updated...
 
 #### Motion Primitive
 
@@ -217,8 +238,6 @@ There are plenty of work which focus on that and can be used there.
 Our focus is how specify the communication and motions to help compositional verification.
 
 #### Calling the Verifier
-
-world, choreography, contracts, program
 
 The simplest it to extend the class [XpTestHarness](pgcd/nodes/verification/test/experiments_setups.py).
 Then calling `self.check(choreography, world, contracts, programs)` setup the verifier and calls it.
