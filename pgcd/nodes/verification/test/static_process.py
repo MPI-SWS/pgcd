@@ -21,10 +21,10 @@ class PointProcess(Process):
         self.dummyVar = Symbol(name + '_dummy')
         Idle(self)
         Wait(self)
-    
+
     def internalVariables(self):
         return [self.dummyVar]
-    
+
     def ownResources(self, point, maxError = 0.0):
         f = self.frame()
         if maxError > 0.0:
@@ -33,7 +33,7 @@ class PointProcess(Process):
         else:
             (px,py,pz) = point.express_coordinates(f)
             return And(Eq(px, self.x), Eq(py, self.y), Eq(pz, self.z))
-    
+
     def abstractResources(self, point, maxError = 0.0):
         return self.ownResources(point, maxError)
 
@@ -49,7 +49,7 @@ class CubeProcess(PointProcess):
         self.dy = dy
         self.dz = dz
         self.theta = theta
-    
+
     def ownResources(self, point, maxError = 0.0):
         f = self.frame()
         cf = f.orient_new_axis(self.name(), self.theta, f.k, location = self.x * f.i + self.y * f.j + self.z * f.k)
@@ -61,12 +61,12 @@ class SphereProcess(PointProcess):
     def __init__(self, name, x, y, z, r, parent = None, index = 0):
         super().__init__(name, x, y, z, parent, index)
         self.r = r
-    
+
     def ownResources(self, point, maxError = 0.0):
         f = self.frame()
         pos = f.locate_new(self.name() + "_pos", self.x * f.i + self.y * f.j + self.z * f.k)
         return sphere(pos, self.r + maxError, point)
-    
+
 
 class CylinderProcess(PointProcess):
 
@@ -89,7 +89,7 @@ class FpProcess(Process):
         self.dummyVar = Symbol(name + '_dummy')
         Idle(self)
         Wait(self)
-    
+
     def internalVariables(self):
         return [self.dummyVar]
 
@@ -125,9 +125,9 @@ class StaticIdle(MotionPrimitive):
 
     def modifies(self):
         return [self._component.dummyVar]
-    
+
     def duration(self):
-        return DurationSpec(0, float('inf'), True) 
+        return DurationSpec(0, float('inf'), True)
 
     def preG(self):
         return S.true
@@ -170,7 +170,7 @@ class StaticWait(MotionPrimitive):
 
     def modifies(self):
         return [self._component.dummyVar]
-    
+
     def duration(self):
         return DurationSpec(self.t_min, self.t_max, False)
 

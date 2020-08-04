@@ -10,7 +10,6 @@ from arpeggio import Parser, RegExMatch, ParserPython, NoMatch
 from arpeggio import PTNodeVisitor, visit_parse_tree
 
 from sympy.core import Expr, Add, Mul, Pow, Symbol, Integer, sympify, Float
-from sympy.core.compatibility import default_sort_key, string_types
 from sympy.core.function import _coeff_isneg
 from sympy.core.mul import _keep_coeff
 from sympy.core.relational import Eq, Ne, Lt, Le, Gt, Ge
@@ -51,7 +50,7 @@ class DrealPrinter(Printer):
             return sign_pre + self._print(args[0]) + sign_post
         else:
             return sign_pre + "(* " + " ".join([ self._print(arg) for arg in args ]) + ")" + sign_post
-    
+
     def _print_And(self, expr):
         return "(and " + " ".join([ self._print(arg) for arg in expr.args ]) + ")"
 

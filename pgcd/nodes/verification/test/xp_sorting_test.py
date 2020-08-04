@@ -32,9 +32,6 @@ def world():
     sensor    = CubeProcess("sensor", 0, 0, 0, 0, 0.1, 0.1, 0.2, w, 4)
     return w
 
-# largest choreography ever ?
-# TODO footprint annotations
-# if no annotation given: take the union of the component footprint without restriction on their state variables
 def choreo():
     return ''' Sorting =
         def start = (producer: Wait(1), arm: Idle(), franka: Idle(), carrier: Idle(), sensor: Idle()); x0
@@ -46,8 +43,8 @@ def choreo():
             fork_producer = { fpx > -0.81 } x5 ||   # all - producer
                             { fpx < -0.82 } x10a    # producer
             x5 = { (fpx > -0.8) && (fpx < 0.1) && (fpy > -0.2) && (fpy < 0.2) } x6a ||  # carrier
-                 { (fpx > -0.4) && (fpy > 0.3) } x7a ||                                # arm
-                 { (fpx > -0.8) && (fpy < -0.3) } x8a ||                                 # franka
+                 { (fpx > -0.4) && (fpy > 0.3) } x7a ||                                 # arm
+                 { (fpx > -0.8) && (fpy < -0.3) } x8a ||                                # franka
                  { (fpx >  0.1) && (fpy > -0.15) && (fpy < 0.15) } x9a                  # sensor
             #  carrier move, the other stay
             x6a = (carrier: MoveCart(0, 0, 0, 0.5)) ; x6b
@@ -67,7 +64,7 @@ def choreo():
             x13b = carrier -> franka: Ok() ; x13c
             x13c = carrier -> arm: Done() ; x13d
             x13d = { (fpx > -0.8) && (fpy < 0.2) && ( (fpy < -0.2) || (fpx < 0.14) ) } x13d1a || # franka + carrier
-                   { (fpx > -0.8) && (fpy > 0.3)  } x13d2a ||                                   # arm
+                   { (fpx > -0.8) && (fpy > 0.3)  } x13d2a ||                                    # arm
                    { (fpx >  0.14) && (fpy > -0.15) && (fpy < 0.15) } x13d3a                     # sensor
             x13d1a = { (fpx > -0.8) && (fpy < -0.3) && ( (fpy < -0.6) || (fpz > 0.25) ) } frank_fast1 ||
                      { (fpx > -0.8) && (fpx < 0.14) && (fpy < 0.2) && (fpy > -0.5) && (fpz < 0.2) } carrier_slow_green1
@@ -82,7 +79,7 @@ def choreo():
             x13d1d = (franka: SetJoints(0.178310,0.635300,-0.449920,-0.234,2.866786,2.016097,1.141317, 0, 0, 0, 0, 0, 0, 0), carrier: Idle()); x13d1e
             x13d1e = franka -> carrier: Ok() ; fork_franka_carrier
             fork_franka_carrier = { (fpx > -0.8) && (fpy < -0.3) && ( (fpy < -0.6) || (fpz > 0.25) ) } x13d1f1a ||            # franka
-                                  { (fpx > -0.8) && (fpx < 0.14) && (fpy < 0.2) && (fpy > -0.5) && (fpz < 0.2) } x13d1f2a    # carrier
+                                  { (fpx > -0.8) && (fpx < 0.14) && (fpy < 0.2) && (fpy > -0.5) && (fpz < 0.2) } x13d1f2a     # carrier
             #x13d1f1a = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.926170,-1.693679,1.469714,-2.709620,1.511592,1.437029,0.573354)); x13d1f1b
             x13d1f1a = (franka: SetJoints(0, 0, 0, 0, 0, 0, 0, 0.926170,-0.908281,1.469714,-0.35425,1.511592,1.437029,0.573354)); x13d1f1b
             x13d1f1b = (franka: Open()); x13d1f1c
@@ -100,9 +97,9 @@ def choreo():
             x14a = sensor -> carrier: Red() ; x14b
             x14b = carrier -> arm: Ok() ; x14c
             x14c = carrier -> franka: Done() ; x14d
-            x14d = { (fpx > -0.8) && (fpy > -0.2) && ( (fpy > 0.2) || (fpx < 0.14) ) } x14d1a || # arm + carrier
-                   { (fpx > -0.8) && (fpy < -0.3) } x14d2a ||                                     # franka
-                   { (fpx >  0.14) && (fpy > -0.2) && (fpy < 0.2) } x14d3a                     # sensor
+            x14d = { (fpx > -0.8) && (fpy > -0.2) && ( (fpy > 0.2) || (fpx < 0.14) ) } x14d1a ||    # arm + carrier
+                   { (fpx > -0.8) && (fpy < -0.3) } x14d2a ||                                       # franka
+                   { (fpx >  0.14) && (fpy > -0.2) && (fpy < 0.2) } x14d3a                          # sensor
             x14d1a = (arm: Rotate(0, 0, 0, rad(90), 0, rad(90)), carrier: MoveCart(0.6, 0, rad(-90), -0.4)); x14d1b
             x14d1b = carrier -> arm: Ok() ; x14d1c
             x14d1c = (arm: Rotate(rad(90), 0, rad(90), rad(90), 0, rad(150)), carrier: Idle()); x14d1d
@@ -110,8 +107,8 @@ def choreo():
             x14d1e = (arm: Rotate(rad(90), 0, rad(150), rad(45), rad(-210), rad(150)), carrier: Idle()) ; x14d1f
             x14d1f = (arm: OpenGripper(), carrier: Idle()) ; x14d1g
             x14d1g = arm -> carrier: Ok() ; fork_arm_carrier
-            fork_arm_carrier = { (fpx > -0.8) && (fpy > 0.2) && ( (fpy > 0.5) || (fpz > 0.17) ) } x14d1h1a ||          # arm
-                               { (fpx > -0.8) && (fpx < 0.14) && (fpy < 0.5) && (fpy > -0.2) && (fpz < 0.17) } x14d1h2a  # carrier
+            fork_arm_carrier = { (fpx > -0.8) && (fpy > 0.2) && ( (fpy > 0.5) || (fpz > 0.17) ) } x14d1h1a ||             # arm
+                               { (fpx > -0.8) && (fpx < 0.14) && (fpy < 0.5) && (fpy > -0.2) && (fpz < 0.17) } x14d1h2a   # carrier
             x14d1h1a = (arm: Rotate(rad(45), rad(-210), rad(150), 0, 0, 0)); x14d1h1b
             x14d1h1b = (arm: Idle()); x14d1h1z
             x14d1h2a = (carrier: MoveCart(0.6, 0.4, rad(-90), 0.4)); x14d1h2b
@@ -129,9 +126,9 @@ def choreo():
             merge_sensor || x10z = join_producer
             join_producer = carrier -> producer: Ok() ; x17
         in [
-          (franka_a == 0.0) && (franka_b == 0.0) && (franka_c == 0.0) && (franka_d == 0.0) && (franka_e == 0.0) && (franka_f == 0.0) && (franka_g == 0.0) && 
+          (franka_a == 0.0) && (franka_b == 0.0) && (franka_c == 0.0) && (franka_d == 0.0) && (franka_e == 0.0) && (franka_f == 0.0) && (franka_g == 0.0) &&
           (carrier_theta == 0) && (carrier_x == 0) && (carrier_y == 0) &&
-          (arm_a == 0) && (arm_b == 0) && (arm_c == 0) 
+          (arm_a == 0) && (arm_b == 0) && (arm_c == 0)
         ] start
     '''
 
@@ -218,7 +215,7 @@ while (true) {
                     moveCart(400);
                     send(franka, Ok);
                     receive(franka, idle) {
-            	        case Ok() => {
+                        case Ok() => {
                             moveCart(-400);
                             strafeCart( 100 );
                             setAngleCart( 0 );
@@ -232,7 +229,7 @@ while (true) {
                     moveCart(-340);
                     send(arm, Ok);
                     receive(arm, idle) {
-            	        case Ok() => {
+                        case Ok() => {
                             moveCart( 340 );
                             strafeCart( 100 );
                             setAngleCart( -0 );
@@ -289,7 +286,7 @@ while (true) {
 
 
 class XpSortingTest(XpTestHarness):
-    
+
     def test_sorting(self):
         w = world()
         ch = choreo()

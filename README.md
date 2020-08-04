@@ -58,7 +58,7 @@ The current workaround is to manually implement the appropriate transform and ma
 
 1. Install Python > 3.5 (tested with 3.8) and `pip`: `sudo apt install python3 python3-pip`
 2. Install some extra python package: `pip3 install arpeggio numpy sympy ply`
-3. Install [dReal 4](https://github.com/dreal/dreal4),
+3. Install [dReal 4](https://github.com/dreal/dreal4) and make sure the `dreal` executable is in the path.
 4. Checkout this repository:
     ```bash
     cd

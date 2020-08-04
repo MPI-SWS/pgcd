@@ -2,10 +2,6 @@ from experiments_setups import XpTestHarness, cartAndArmWorld
 from fetch_setup import progFetchA, progFetchC
 from spec.contract import AContract, GContract
 
-
-#TODO grab spec, fold spec
-# contract in the frame of A for the collision ...
-
 def choreo_new():
     return '''Fetch  =
         def prepare0 = C -> A: fold(); split1
