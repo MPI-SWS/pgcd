@@ -26,7 +26,7 @@ enableFPCheck = True
 enableMPincludeFPCheck = True #TODO for MP which reuse the componenet FP, this is not needed
 
 dRealJobs = 6
-dRealTimeout = 60
+dRealTimeout = 3600
 dRealPrecision = 0.01
 
 ## https://stackoverflow.com/questions/51412465/python-best-way-to-setup-global-logger-and-set-the-logging-level-from-command-li

@@ -61,7 +61,7 @@ class XpLaneParametricTest(unittest.TestCase):
         s += ' &&\n    '.join( "(Cart"+str(i)+"_x == 0) && (Cart"+str(i)+"_y == 0) && (Cart"+str(i)+"_theta == 0)" for i in range(0, n))
         s += ' ] x0'
         return s
-    
+
     def code(self, n, m):
         return ''.join('moveCart( 500); moveCart(-500);' for i in range(0, m))
 
