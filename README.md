@@ -54,7 +54,7 @@ We cover:
 To simplify running the tests, there is one script per test.
 For each code snippet below, we assume that the current directory is the root of the repository.
 
-Before, running the experiments you should edit the file `pgcd/nodes/verification/spec/conf.py` and modify the `dRealJobs` value to match the number of cores available on your machine.
+Before running the experiments, you should edit the file `pgcd/nodes/verification/spec/conf.py` and modify the `dRealJobs` value to match the number of cores available on your machine.
 If you encounter timeouts you can increase the value of `dRealTimeout`.
 
 __Remark.__
