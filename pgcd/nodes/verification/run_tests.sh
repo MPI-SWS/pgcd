@@ -31,11 +31,11 @@ cd test
 if [ ${#files[@]} -eq 0 ]; then
     for f in *_test.py; do
         echo $f
-        python3 -m unittest $f $opts
+        python3.8 -m unittest $f $opts
     done
 else
     for f in $files; do
         echo $f
-        python3 -m unittest `basename $f` $opts
+        python3.8 -m unittest `basename $f` $opts
     done
 fi

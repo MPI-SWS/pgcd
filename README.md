@@ -31,14 +31,14 @@ The following instructions correspond to "Project Setup" → "Verification Only 
     cd
     git clone https://github.com/MPI-SWS/pgcd.git
     cd pgcd
-    git checkout oospla_artifact
+    git checkout oospla20_artifact
     ```
 5.  Running a Test.
     ```bash
     cd pgcd/nodes/verification
     ./run_tests.sh test/xp_fetch_02_test.py
     ```
-    This command should terminates succesfully.
+    This command should terminate succesfully.
 
 
 ## Step by Step Instructions
