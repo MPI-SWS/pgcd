@@ -58,9 +58,9 @@ Before running the experiments, you should edit the file `pgcd/nodes/verificatio
 If you encounter timeouts you can increase the value of `dRealTimeout`.
 
 __Remark.__
-To keep the codebase simple and the comparison fair, we try to share as much code as possible between the old version ("[35]") and the new version ("This work") of choreographic specifications.
+To keep the codebase simple and the comparison fair, we try to share as much code as possible between the old version ("[35]") and the new version ("this work") of choreographic specifications.
 The motion compatibility/synchronization check primarily handles the duration intervals and (un)interruptible checks.
-We added a special case in this check for motions which duration is a precise values rather than an interval.
+We added a special case in this check for motions which duration is a precise value rather than an interval.
 This model corresponds to the older style of specifications.
 In that case, we allow more than one uninterruptible motion primitives when they finish exactly at the same time.
 This covers what is allowed in both the old and new version.
@@ -114,7 +114,7 @@ The experiments are located in the following files:
   - `pgcd/nodes/verification/test/xp_underpass_01_test.py`
   - `pgcd/nodes/verification/test/xp_underpass_02_test.py`
 
-Let use look at the fetch old version as an example.
+Let us look at the fetch old version as an example.
 The other experiments have a similar structure.
 
 At the end of the file `pgcd/nodes/verification/test/xp_fetch_01_test.py` there is the following test definition
@@ -227,8 +227,8 @@ The output format is the same as the previous experiment.
 
 ## Caveats
 
-We run dReal with multiple threads.
-(The number of threads can be changed with an option in `pgcd/nodes/verification/spec/conf.py`)
+We run dReal with multiple threads
+(the number of threads can be changed with an option in `pgcd/nodes/verification/spec/conf.py`). 
 However, in this mode dReal is not deterministic.
 The running time of dReal may change across runs.
 Usually the variation is rather small but it can be quite dramatic on rare occasions.
