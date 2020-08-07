@@ -8,7 +8,7 @@ The artifact is hosted at [https://github.com/MPI-SWS/pgcd/tree/oopsla20_artifac
 The artifact covers the verification results presented in the paper.
 The physical realisation (robots) is outside the scope of the artifact.
 We provided a video in the supplementary material along the paper to show the experiments.
-Obvioulsy, the exact verification time will depend on the machine on which the test are performed.
+Obvioulsy, the exact verification times depend on the machine on which the tests are performed.
 
 ## Getting Started Guide
 
