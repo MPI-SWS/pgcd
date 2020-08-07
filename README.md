@@ -8,7 +8,8 @@ The artifact is hosted at [https://github.com/MPI-SWS/pgcd/tree/oopsla20_artifac
 The artifact covers the verification results presented in the paper.
 The physical realisation (robots) is outside the scope of the artifact.
 We provided a video in the supplementary material along the paper to show the experiments.
-Obvioulsy, the exact verification times depend on the machine on which the tests are performed.
+(Video available at the link: [https://www.dropbox.com/s/onrfmd9w691454g/oopsla2020.mp4](https://www.dropbox.com/s/onrfmd9w691454g/oopsla2020.mp4))
+Obviously, the exact verification times depend on the machine on which the tests are performed.
 
 ## Getting Started Guide
 
@@ -40,7 +41,7 @@ The following instructions correspond to "Project Setup" → "Verification Only 
     cd pgcd/nodes/verification
     ./run_tests.sh test/xp_fetch_02_test.py
     ```
-    This command should terminate succesfully.
+    This command should terminate successfully.
 
 
 ## Step by Step Instructions
@@ -257,7 +258,7 @@ The current workaround is to manually implement the appropriate transform and ma
 #### Runtime
 
 1.  Install Python > 3.5 (tested with 3.8) and `pip`: `sudo apt install python3 python3-pip`
-2.  [Install ROS 2 Foxy](https://index.ros.org/doc/ros2/Installation/Foxy/) (tested with ubuntu 20.04)
+2.  [Install ROS 2 Foxy](https://index.ros.org/doc/ros2/Installation/Foxy/) (tested with Ubuntu 20.04)
 3.  Install colcon: `sudo apt install python3-colcon-common-extensions`
 4.  Install some extra python package: `pip3 install arpeggio numpy sympy ply`
 5.  Checkout this repository:
@@ -364,7 +365,7 @@ Right now, checking the choreographic specification includes information about t
 One design goal of PGCD is facilitating modular verification by making sure each robot's controller work in the components local frame.
 The message are automatically updated to account for the frame shift between the sender and receiver.
 
-__Unfortunately, this part got broken in the port to ROS 2. I'll fixt it as soon as I have time.__
+__Unfortunately, this part got broken in the port to ROS 2. I'll fix it as soon as I have time.__
 The messages are still send and received but the data they contain is not updated...
 
 #### Motion Primitive
