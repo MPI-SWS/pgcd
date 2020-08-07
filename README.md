@@ -1,12 +1,14 @@
 # 25. Multiparty Motion Coordination: From Choreographies to Robotics Programs
 
-Artifact for OOPSLA 2020
+Artifact for OOPSLA 2020.
+The artifact is hosted at [https://github.com/MPI-SWS/pgcd/tree/oopsla20_artifact](https://github.com/MPI-SWS/pgcd/tree/oopsla20_artifact).
 
 ## Scope of the Artifact
 
 The artifact covers the verification results presented in the paper.
 The physical realisation (robots) is outside the scope of the artifact.
 We provided a video in the supplementary material along the paper to show the experiments.
+Obvioulsy, the exact verification time will depend on the machine on which the test are performed.
 
 ## Getting Started Guide
 
@@ -204,6 +206,9 @@ The running reported can be read as:
   INFO:XP:refinement: 0.708824634552002
   ```
 
+_About `test/xp_fetch_01_test.py`._
+As some verification conditions timeout in that test, the test harness reports this as a failure.
+
 ### Complex Case Study (Table 3)
 
 The programs and the global type are in the file `pgcd/nodes/verification/test/xp_sorting_test.py`.
@@ -225,15 +230,8 @@ cd pgcd/nodes/verification
 
 The output format is the same as the previous experiment.
 
-## Caveats
 
-We run dReal with multiple threads
-(the number of threads can be changed with an option in `pgcd/nodes/verification/spec/conf.py`). 
-However, in this mode dReal is not deterministic.
-The running time of dReal may change across runs.
-Usually the variation is rather small but it can be quite dramatic on rare occasions.
-
-## Playing Around with PGCD
+## More explanation about PGCD
 
 Below is the content of the README file in the PGCD repository.
 This provides some explanations on the format of the specification, robot model, etc.
@@ -241,10 +239,6 @@ This provides some explanations on the format of the specification, robot model,
 PGCD is a programming language and verification system for programming and verification of robotic choreographies.
 
 The goal of this project is to develop a kind of choreographic specification which help verify CPS by decomposing the verification task around the communication and using assume-guarantee contracts.
-The main ideas can be found in the following papers:
-[ICCPS 2019](https://dzufferey.github.io/files/2019_Motion_Session_Types_for_Robotic_Interactions_updated.pdf) and
-[ECOOP 2020](https://dzufferey.github.io/files/2019_PGCD_Robot_Programming_and_Verification_with_Geometry_Concurrency_and_Dynamics.pdf).
-
 
 ### Status
 
@@ -253,6 +247,7 @@ __Partially working.__
 
 Currently there is some issue with the frame conversion.
 (I cannot import `tf2_geometry_msgs` for some reason.)
+This does not interfere with the examples described above.
 
 The current workaround is to manually implement the appropriate transform and manually register it with `tf2_ros`.
 
