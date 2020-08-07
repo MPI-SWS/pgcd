@@ -14,7 +14,6 @@ def choreo():
         def start = (p1: Wait(1), p2: Wait(1)); x0
             x0 = end
         in [ true ] start
-          
     '''
 
 class ArmTest(unittest.TestCase):
@@ -26,24 +25,24 @@ class ArmTest(unittest.TestCase):
 #   def tearDown(self):
 #       spec.conf.enableMPincludeFPCheck = self.defaultConf
 
-    def check(self, P1, P2, debug = False):
+    def check(self, P1, P2):
         w = World()
         p1 = P1(w, 0)
         p2 = P2(w, 1)
         env = Env(w, [])
         ch = choreo()
         visitor = Projection()
-        visitor.execute(ch, env, debug)
+        visitor.execute(ch, env)
         chor = visitor.choreography
         vectorize(chor, w)
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
+        checker.computePreds()
+        checker.generateCompatibilityChecks()
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
-            if not vc.discharge(debug=debug):
+            if not vc.discharge():
                 print(i, "inFP", vc.title)
                 if vc.hasModel():
                     print(vc.modelStr())
@@ -52,7 +51,7 @@ class ArmTest(unittest.TestCase):
 
 
 
-    def test_01(self, debug = False):
+    def test_01(self):
         tests = [
             #x1 y1 z1 r1 x2 y2 z2 r2 res
             (0, 0, 0, 1, 3, 0, 0, 1, True),
@@ -70,7 +69,7 @@ class ArmTest(unittest.TestCase):
             p2 = lambda w, i: SphereProcess("p2", x2, y2, z2, r2, w, i)
             self.assertTrue(self.check(p1, p2) == res)
 
-    def test_02(self, debug = False):
+    def test_02(self):
         tests = [
             #x1 y1 z1 r1 h1 x2 y2 z2 r2 h2 res
             (0, 0, 0, 1, 1, 3, 0, 0, 1, 1, True),

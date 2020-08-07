@@ -69,7 +69,7 @@ Wait(1);
 
 class ContractParsingTest(unittest.TestCase):
 
-    def test_01(self, debug = False):
+    def test_01(self):
         w = world()
         env = Env(w, [Xless, Xmore])
         ch = choreo1()
@@ -77,7 +77,7 @@ class ContractParsingTest(unittest.TestCase):
                   "producer": code_producer()}
         start = time.time()
         visitor = Projection()
-        visitor.execute(ch, env, debug)
+        visitor.execute(ch, env)
         chor = visitor.choreography
         vectorize(chor, w)
         end = time.time()
@@ -86,8 +86,8 @@ class ContractParsingTest(unittest.TestCase):
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
+        checker.computePreds()
+        checker.generateCompatibilityChecks()
         end = time.time()
         print("VC generation:", end - start)
         start = end
@@ -96,7 +96,7 @@ class ContractParsingTest(unittest.TestCase):
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
             print("Checking VC", i, vc.title)
-            if not vc.discharge(debug=debug):
+            if not vc.discharge():
                 failed.append(vc)
                 print("Failed")
                 print(vc)
@@ -109,10 +109,10 @@ class ContractParsingTest(unittest.TestCase):
         processes = w.allProcesses()
         for p in processes:
             visitor.choreography = deepcopy(chor)
-            proj = visitor.project(p.name(), p, debug)
+            proj = visitor.project(p.name(), p)
             prser = parser.Parser()
             prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug)
+            ref = Refinement(prog, proj)
             if not ref.check():
                 raise Exception("Refinement: " + p.name())
         end = time.time()

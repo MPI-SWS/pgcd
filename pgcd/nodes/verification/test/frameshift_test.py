@@ -9,6 +9,7 @@ from copy import deepcopy
 from choreography.projection import Projection
 import interpreter.parser as parser
 import time
+from experiments_setups import XpTestHarness
 
 import unittest
 
@@ -48,56 +49,15 @@ Wait(1);
 
 
 
-class FrameShiftTest(unittest.TestCase):
+class FrameShiftTest(XpTestHarness):
 
-    def test_01(self, debug = False):
+    def test_01(self):
         w = world()
         ch = choreo1()
+        contracts = []
         progs = { "sensor": code_sensor(),
                   "producer": code_producer()}
-        start = time.time()
-        visitor = Projection()
-        visitor.execute(ch, w, debug)
-        chor = visitor.choreography
-        vectorize(chor, w)
-        end = time.time()
-        print("Syntactic checks:", end - start)
-        start = end
-        checker = CompatibilityCheck(chor, w)
-        checker.localChoiceChecks()
-        checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
-        end = time.time()
-        print("VC generation:", end - start)
-        start = end
-        print("#VC:", len(checker.vcs))
-        failed = []
-        for i in range(0, len(checker.vcs)):
-            vc = checker.vcs[i]
-            print("Checking VC", i, vc.title)
-            if not vc.discharge(debug=debug):
-                failed.append(vc)
-                print("Failed")
-                print(vc)
-                if vc.hasModel():
-                    print(vc.modelStr())
-        end = time.time()
-        print("VC solving:", end - start)
-        self.assertTrue(failed == [])
-        start = end
-        processes = w.allProcesses()
-        for p in processes:
-            visitor.choreography = deepcopy(chor)
-            proj = visitor.project(p.name(), p, debug)
-            prser = parser.Parser()
-            prog = prser.parse(progs[p.name()])
-            ref = Refinement(prog, proj, debug)
-            if not ref.check():
-                raise Exception("Refinement: " + p.name())
-        end = time.time()
-        print("refinement:", end - start)
-        start = end
+        self.check(ch, w, contracts, progs)
 
 if __name__ == '__main__':
     unittest.main()

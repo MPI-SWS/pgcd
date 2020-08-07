@@ -1,5 +1,5 @@
 from spec.env import *
-import spec.conf 
+import spec.conf
 from compatibility import *
 from projection import Projection
 from arm import Arm
@@ -26,7 +26,6 @@ def choreo1():
         def start = (arm: Wait(1), point: Wait(1)); x0
             x0 = end
         in [ (arm_a == 0) && (arm_b == 0) && (arm_c == 0) ] start
-          
     '''
 
 def choreo2(a_lb, a_ub, b_lb, b_ub, c_lb, c_ub):
@@ -55,33 +54,33 @@ class ArmTest(unittest.TestCase):
     def tearDown(self):
         spec.conf.enableMPincludeFPCheck = self.defaultConf
         spec.conf.dRealPrecision = self.defaultPrecision
-    
-    def check0(self, ch, w, debug = False):
+
+    def check0(self, ch, w):
         env = Env(w, [])
         visitor = Projection()
-        visitor.execute(ch, env, debug)
+        visitor.execute(ch, env)
         chor = visitor.choreography
         vectorize(chor, w)
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()
-        checker.computePreds(debug)
-        checker.generateCompatibilityChecks(debug)
+        checker.computePreds()
+        checker.generateCompatibilityChecks()
         for i in range(0, len(checker.vcs)):
             vc = checker.vcs[i]
-            if not vc.discharge(debug=debug):
+            if not vc.discharge():
                 print(i, "inFP", vc.title)
                 if vc.hasModel():
                     print(vc.modelStr())
                 return False
         return True
 
-    def check(self, ch, x, y, z, a, b, c, debug = False):
+    def check(self, ch, x, y, z, a, b, c):
         w = world(x, y, z, a, b, c)
         return self.check0(ch, w)
 
 
-    def test_fixed_positions(self, debug = False):
+    def test_fixed_positions(self):
         pi = mp.pi
         tests = [
             #ch             x       y       z       a       b       c       result (False == in FP)
@@ -130,10 +129,10 @@ class ArmTest(unittest.TestCase):
         ]
         for (ch, x, y, z, a, b, c, res) in tests:
             print("fixed", x, y, z, a, b, c)
-            self.assertTrue(self.check(ch, x, y, z, a, b, c, debug) == res)
+            self.assertTrue(self.check(ch, x, y, z, a, b, c) == res)
 
 
-    def test_a_free(self, debug = False):
+    def test_a_free(self):
         pi = mp.pi
         ch = choreo2(-pi, pi, 0, 0, 0, 0)
         tests = [
@@ -151,7 +150,7 @@ class ArmTest(unittest.TestCase):
         ]
         for (ch, x, y, z, a, b, c, res) in tests:
             print("a_free", x, y, z, a, b, c)
-            self.assertTrue(self.check(ch, x, y, z, a, b, c, debug) == res)
+            self.assertTrue(self.check(ch, x, y, z, a, b, c) == res)
 
     def below0(self, z, frame, p):
         (px,py,pz) = p.express_coordinates(frame)
@@ -160,14 +159,14 @@ class ArmTest(unittest.TestCase):
     def below(self, z):
         return lambda f, p, maxErr: self.below0(z+maxErr, f, p)
 
-    def test_folded_above_0(self, debug = False):
+    def test_folded_above_0(self):
         # mounting pts:  x      y     z        θ     comp
         w = World(  (    0,     0,    1,       0), # arm
                     (    0,     0,    0,       0)) # point
         arm = Arm("arm", w, 0, -2.2689280275926285, -2.2689280275926285, 0) #folded toward the back
         below = FpProcess("point", self.below(0.97), w, 1) #The folded arm FP extends 2-3cm below 0 due to maxFP
         ch = choreo1()
-        self.assertTrue(self.check0(ch, w, debug))
+        self.assertTrue(self.check0(ch, w))
 
 if __name__ == '__main__':
     unittest.main()
