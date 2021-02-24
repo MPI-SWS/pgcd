@@ -11,7 +11,7 @@ import std_msgs.msg
 
 import queue
 import numpy as np
-import sympy.core.numbers
+from sympy.core.numbers import Float, Zero, One, NegativeOne
 
 from interpreter.parser import *
 
@@ -132,9 +132,9 @@ class Interpreter:
             return False
         else:
             evaluated = N(expr2)
-            if type(evaluated) == numbers.Float:
+            if type(evaluated) == Float:
                 return float(evaluated)
-            elif type(evaluated) == numbers.Zero or type(evaluated) == numbers.One or type(evaluated) == numbers.NegativeOne:
+            elif type(evaluated) == Zero or type(evaluated) == One or type(evaluated) == NegativeOne:
                 return float(evaluated)
                 #return int(evaluated)
             return evaluated
