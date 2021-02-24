@@ -1,31 +1,264 @@
-# PGCD - robot Programming and verification with Geometry, Concurrency, and Dynamics
+# 25. Multiparty Motion Coordination: From Choreographies to Robotics Programs
+
+Artifact for OOPSLA 2020.
+The artifact is hosted at [https://github.com/MPI-SWS/pgcd/tree/oopsla20_artifact](https://github.com/MPI-SWS/pgcd/tree/oopsla20_artifact).
+
+## Scope of the Artifact
+
+The artifact covers the verification results presented in the paper.
+The physical realisation (robots) is outside the scope of the artifact.
+We provided a video in the supplementary material along the paper to show the experiments.
+(Video available at the link: [https://www.dropbox.com/s/onrfmd9w691454g/oopsla2020.mp4](https://www.dropbox.com/s/onrfmd9w691454g/oopsla2020.mp4))
+Obviously, the exact verification times depend on the machine on which the tests are performed.
+
+## Getting Started Guide
+
+We give the instructions to setup the verification part of PGCD on Ubuntu Linux.
+We tested the artifact with a machine running Ubuntu 20.04.
+
+The following instructions correspond to "Project Setup" → "Verification Only (no Runtime)" from the main branch's `README.md`.
+
+1. Install Python ≥ 3.6 (tested with 3.8.2) and pip:
+   ```sh
+   sudo apt install python3 python3-pip
+   ```
+2. Install some extra Python packages:
+   ```
+   pip3 install arpeggio numpy sympy ply
+   ```
+3. Install [dReal 4](https://github.com/dreal/dreal4) following the instructions in the dReal repository.
+   Make sure the `dreal` executable is in the path.
+   At the time of this writing, the latest version of dReal is [4.20.08.1](https://github.com/dreal/dreal4/releases/tag/4.20.08.1).
+4. Checkout this repository:
+    ```bash
+    cd
+    git clone https://github.com/MPI-SWS/pgcd.git
+    cd pgcd
+    git checkout oospla20_artifact
+    ```
+5.  Running a Test.
+    ```bash
+    cd pgcd/nodes/verification
+    ./run_tests.sh test/xp_fetch_02_test.py
+    ```
+    This command should terminate successfully.
+
+
+## Step by Step Instructions
+
+After you followed the getting started instructions and make sure the test works as expected.
+
+We now explain how to reproduce the results in the paper.
+We cover:
+1. Micro-benchmarks (Figure 5)
+2. Comparison against earlier version of PGCD (Table 2)
+3. Complex Case Study (Table 3)
+
+To simplify running the tests, there is one script per test.
+For each code snippet below, we assume that the current directory is the root of the repository.
+
+Before running the experiments, you should edit the file `pgcd/nodes/verification/spec/conf.py` and modify the `dRealJobs` value to match the number of cores available on your machine.
+If you encounter timeouts you can increase the value of `dRealTimeout`.
+
+__Remark.__
+To keep the codebase simple and the comparison fair, we try to share as much code as possible between the old version ("[35]") and the new version ("this work") of choreographic specifications.
+The motion compatibility/synchronization check primarily handles the duration intervals and (un)interruptible checks.
+We added a special case in this check for motions which duration is a precise value rather than an interval.
+This model corresponds to the older style of specifications.
+In that case, we allow more than one uninterruptible motion primitives when they finish exactly at the same time.
+This covers what is allowed in both the old and new version.
+
+### Micro-benchmarks (Figure 5)
+
+The micro-benchmarks can be run with
+```sh
+# From the root of the PGCD folder
+cd pgcd/nodes/verification
+./run_tests.sh test/xp_lanes_parametric.py
+```
+
+Running the test produces an output in CSV format.
+The output should look like
+```
+n, m, par, time_syntax, nbr_vc, time_vc_gen, time_vc_solve, time_refine, time_total
+2 , 1 , False , 0.02748560905456543 , 104 , 5.860173463821411 , 7.440612316131592 , 0.01813483238220215 , 13.34640622138977
+3 , 1 , False , 0.034852027893066406 , 146 , 13.080613851547241 , 10.344654083251953 , 0.03982806205749512 , 23.499948024749756
+4 , 1 , False , 0.04803609848022461 , 188 , 22.45517373085022 , 14.30628776550293 , 0.07254290580749512 , 36.88204050064087
+...
+```
+
+The important information for the plot are the column `n`, `par`, and `time_total`.
+`n` is the number of robots (X axis of the plot) and the `time_total` is the total verification time (Y axis of the plot).
+`par` indicates whether this uses the old- (`False`) or new-style specification (`True`).
+
+The file `xp_lanes_parametric.py` contains the function to generate the choreographies.
+The robot model used in this experiments is defined in `cart.py`.
+Both files are in the test folder.
+
+### Comparison against earlier version of PGCD (Table 2)
+
+#### Program and global types (LoC)
+
+The experiments are located in the following files:
+* __Fetch.__
+  - `pgcd/nodes/verification/test/fetch_setup.py`
+  - `pgcd/nodes/verification/test/xp_fetch_01_test.py`
+  - `pgcd/nodes/verification/test/xp_fetch_02_test.py`
+* __Handover.__
+  - `pgcd/nodes/verification/test/handover_setup.py`
+  - `pgcd/nodes/verification/test/xp_handover_01_test.py`
+  - `pgcd/nodes/verification/test/xp_handover_02_test.py`
+* __Twist and turn.__
+  - `pgcd/nodes/verification/test/twistNturn_setup.py`
+  - `pgcd/nodes/verification/test/xp_twistNturn_01_test.py`
+  - `pgcd/nodes/verification/test/xp_twistNturn_02_test.py`
+* __Underpass.__
+  - `pgcd/nodes/verification/test/underpass_setup.py`
+  - `pgcd/nodes/verification/test/xp_underpass_01_test.py`
+  - `pgcd/nodes/verification/test/xp_underpass_02_test.py`
+
+Let us look at the fetch old version as an example.
+The other experiments have a similar structure.
+
+At the end of the file `pgcd/nodes/verification/test/xp_fetch_01_test.py` there is the following test definition
+```python
+class XpFetch01Test(XpTestHarness):
+
+    def test_fetch_ecoop(self):
+        ch = choreo_old()
+        w = cartAndArmWorld()
+        contracts = []
+        progs = { "A": progFetchA(),
+                  "C": progFetchC() }
+        self.check(ch, w, contracts, progs)
+```
+
+The last line (`self.check(ch, w, contracts, progs)`) feeds the argument to the verifier.
+These arguments are
+- `ch` is the global type. In this case, it is `choreo_old` which is located in the same file.
+- `w` is the specification of which robots are in the test.
+- `contracts` are assume-guarantee contracts needed for the global type.
+   We include these contracts as part of the global type for the LoC count.
+- `progs` are the program that each robot runs.
+   In this case, these programs are located in the `fetch_setup.py` file.
+
+For the line count, we removed whitespaces, comments, and some boilerplate.
+
+#### Running times
+
+The verification for the experiment can be run as follow:
+
+```sh
+# From the root of the PGCD folder
+cd pgcd/nodes/verification
+
+# Fetch example, old version
+./run_tests.sh test/xp_fetch_01_test.py
+# Fetch example, new version
+./run_tests.sh test/xp_fetch_02_test.py
+
+# Handover example, old version
+./run_tests.sh test/xp_handover_01_test.py
+# Handover example, new version
+./run_tests.sh test/xp_handover_02_test.py
+
+# Twist and turn example, old version
+./run_tests.sh test/xp_twistNturn_01_test.py
+# Twist and turn example, new version
+./run_tests.sh test/xp_twistNturn_02_test.py
+
+# Underpass example, old version
+./run_tests.sh test/xp_underpass_01_test.py
+# Underpass example, new version
+./run_tests.sh test/xp_underpass_02_test.py
+```
+
+For each test, the output looks as follow:
+```
+Running test(s)
+test/xp_fetch_02_test.py
+running ['python3 -m unittest', 'xp_fetch_02_test.py']
+INFO:XP:Syntactic checks: 0.02940535545349121
+INFO:XP:VC generation: 3.969669818878174
+INFO:XP:#VC: 387
+INFO:XP:Checking VC 0 total guard @ ['go1']
+INFO:XP:Checking VC 1 total guard @ ['return1']
+INFO:XP:Checking VC 2 GContract well-formed: components
+INFO:XP:Checking VC 3 GContract well-formed: preA
+...
+INFO:XP:Checking VC 386 Idle refines AContract: postFP C_mount
+INFO:XP:VC solving: 3.492173671722412
+INFO:XP:refinement: 0.708824634552002
+INFO:XP:total time: 8.200073480606079
+```
+
+The running reported can be read as:
+- _Syntactic Checks_ from the line
+  ```
+  INFO:XP:Syntactic checks: 0.02940535545349121
+  ```
+- _Motion Compatibility_ as the sum of the two lines
+  ```
+  INFO:XP:VC generation: 3.969669818878174
+  INFO:XP:VC solving: 3.492173671722412
+  ```
+- _Typing_:
+  ```
+  INFO:XP:refinement: 0.708824634552002
+  ```
+
+_About `test/xp_fetch_01_test.py`._
+As some verification conditions timeout in that test, the test harness reports this as a failure.
+
+### Complex Case Study (Table 3)
+
+The programs and the global type are in the file `pgcd/nodes/verification/test/xp_sorting_test.py`.
+The robot's specifications are in the following files:
+* Moveo arm: `pgcd/nodes/verification/test/arm.py`
+* Panda arm: `pgcd/nodes/verification/test/panda.py`
+* Carts: `pgcd/nodes/verification/test/cart.py`
+* Sensor/Producer: `pgcd/nodes/verification/test/static_process.py`
+
+For the line count, we removed whitespaces, comments, and some boilerplate.
+We also ignore the motion primitives that are not used in the experiment.
+
+The verification can be run with the following script:
+```sh
+# From the root of the PGCD folder
+cd pgcd/nodes/verification
+./run_tests.sh test/xp_sorting_test.py
+```
+
+The output format is the same as the previous experiment.
+
+
+## More explanation about PGCD
+
+Below is the content of the README file in the PGCD repository.
+This provides some explanations on the format of the specification, robot model, etc.
 
 PGCD is a programming language and verification system for programming and verification of robotic choreographies.
 
 The goal of this project is to develop a kind of choreographic specification which help verify CPS by decomposing the verification task around the communication and using assume-guarantee contracts.
-The main ideas can be found in the following papers:
-[ICCPS 2019](https://dzufferey.github.io/files/2019_Motion_Session_Types_for_Robotic_Interactions_updated.pdf) and
-[ECOOP 2020](https://dzufferey.github.io/files/2019_PGCD_Robot_Programming_and_Verification_with_Geometry_Concurrency_and_Dynamics.pdf).
-(More to come :) )
 
+### Status
 
-## Status
-
-Recently ported to ROS 2.
+Runtime recently ported to ROS 2.
 __Partially working.__
 
 Currently there is some issue with the frame conversion.
 (I cannot import `tf2_geometry_msgs` for some reason.)
+This does not interfere with the examples described above.
 
 The current workaround is to manually implement the appropriate transform and manually register it with `tf2_ros`.
 
 
-## Project Setup
+### Project Setup
 
-### Runtime
+#### Runtime
 
 1.  Install Python > 3.5 (tested with 3.8) and `pip`: `sudo apt install python3 python3-pip`
-2.  [Install ROS 2 Foxy](https://index.ros.org/doc/ros2/Installation/Foxy/) (tested with ubuntu 20.04)
+2.  [Install ROS 2 Foxy](https://index.ros.org/doc/ros2/Installation/Foxy/) (tested with Ubuntu 20.04)
 3.  Install colcon: `sudo apt install python3-colcon-common-extensions`
 4.  Install some extra python package: `pip3 install arpeggio numpy sympy ply`
 5.  Checkout this repository:
@@ -54,10 +287,10 @@ The current workaround is to manually implement the appropriate transform and ma
     ros2 launch pgcd simple_example.launch.py
     ```
 
-### Verification Only (no Runtime)
+#### Verification Only (no Runtime)
 
 1. Install Python > 3.5 (tested with 3.8) and `pip`: `sudo apt install python3 python3-pip`
-2. Install some extra python package: `pip3 install arpeggio numpy sympy ply`
+2. Install some extra Python packages: `pip3 install arpeggio numpy sympy ply`
 3. Install [dReal 4](https://github.com/dreal/dreal4) and make sure the `dreal` executable is in the path.
 4. Checkout this repository:
     ```bash
@@ -67,15 +300,15 @@ The current workaround is to manually implement the appropriate transform and ma
 5.  Running a Test.
     ```bash
     cd pgcd/pgcd/nodes/verification
-    ./run_tests.sh test/xp_handover_02_test.py
+    ./run_tests.sh test/xp_fetch_02_test.py
     ```
 
 Additionally for some older tests [spin](http://spinroot.com/spin/whatispin.html) is used (optional, not needed when using choreographic specifications).
 
 
-## PGCD Program structure
+### PGCD Program structure
 
-### Program
+#### Program
 
 A PGCD program is written in an imperative style.
 The control structure has branches,
@@ -117,7 +350,7 @@ receive(sender, motion) {
 Motion primitives are method calls: `id(args)`.
 The parenthesis can be omitted when there is not arguments.
 
-There are examples in the [experiments/sorting]() folder and details of the syntax can be found in the [parser](pgcd/nodes/interpreter/parser.py).
+There are examples in the [experiments/sorting](experiments/sorting) folder and details of the syntax can be found in the [parser](pgcd/nodes/interpreter/parser.py).
 
 The semantics is mostly what you would expect for an imperative programming language.
 The message passing layer and the motion primitives are the non-standard bits.
@@ -132,7 +365,7 @@ Right now, checking the choreographic specification includes information about t
 One design goal of PGCD is facilitating modular verification by making sure each robot's controller work in the components local frame.
 The message are automatically updated to account for the frame shift between the sender and receiver.
 
-__Unfortunately, this part got broken in the port to ROS 2. I'll fixt it as soon as I have time.__
+__Unfortunately, this part got broken in the port to ROS 2. I'll fix it as soon as I have time.__
 The messages are still send and received but the data they contain is not updated...
 
 #### Motion Primitive
@@ -159,7 +392,7 @@ As part of the launch is it also possible to define extra coordinate systems (`s
 Then, there is a parameter files which tells PGCD what program to run for each robot (source file) and which file contains the implementation of the motion primitives.
 The parameters also specifies the frame and mounting points for each robot.
 
-In the  [experiments/sorting]() folder the launch file is [xp.launch.py](experiments/sorting/xp.launch.py) and the parameter file [params.yaml](experiments/sorting/params.yaml).
+In the [experiments/sorting](experiments/sorting) folder the launch file is [xp.launch.py](experiments/sorting/xp.launch.py) and the parameter file [params.yaml](experiments/sorting/params.yaml).
 
 ### Specification and Verification
 
@@ -195,7 +428,7 @@ The transitions are of the following form:
   state = contract state || contract state || ...
   state || state || state = state
   ```
-  On a fork, for each part and assume-guarantee (AG) contract needs to be provided.
+  On a fork, for each part an assume-guarantee (AG) contract has to be provided.
   The syntax of AG contract is `@contract(parameters)`.
   AG contracts are defined separately by extending the class `AssumeGuaranteeContract` in [verification/spec/contract.py](pgcd/nodes/verification/spec/contract.py).
   For independent robots, the AG contracts only need to specify footprints and we offer the syntax: `{ contstraints over fpx fpy fpz }`.
@@ -253,7 +486,3 @@ The arguments are
 3. discharge the VCs,
 4. refinement check of the programs against the choreography's endpoints projections.
 
-
-## Need to fix:
-
-See [TODO.md](TODO.md)
