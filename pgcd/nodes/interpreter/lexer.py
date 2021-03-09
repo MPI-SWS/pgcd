@@ -14,7 +14,8 @@ class Lexer:
     # RESERVED WORDS
     reserved = (
                    'SKIP', 'SEND', 'RECEIVE', 'IF',
-                   'ELSE', 'WHILE', 'PRINT', 'EXIT', 'CASE'
+                   'ELSE', 'WHILE', 'PRINT', 'EXIT', 'CASE',
+                   'CHECKPOINT'
                ) + functions
 
     tokens = reserved + (

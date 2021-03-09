@@ -136,6 +136,8 @@ class Refinement(CFA):
         elif isinstance(statment, ast_inter.Exit):
             #print("19")
             return isinstance(node, End)
+        elif isinstance(statment, ast_inter.Checkpoint):
+            return isinstance(node, Checkpoint) and self._refines(self.nextStatement(statmentL), node.end_state[0])
         else:
             raise Exception("unexpected " + str(type(statment)) + ": " + str(statment))
 

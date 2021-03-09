@@ -13,7 +13,7 @@ class ChoreographyLexer:
 
     # RESERVED WORDS
     reserved = (
-                   'DEF', 'END', 'IN'
+                   'DEF', 'END', 'IN', 'CHECKPOINT'
                ) + functions
 
     tokens = reserved + (

@@ -53,6 +53,7 @@ class Parser:
                       | print SEMI
                       | skip SEMI
                       | exit SEMI 
+                      | checkpoint SEMI 
                       | labelled '''
         p[0] = p[1]
 
@@ -105,6 +106,10 @@ class Parser:
     def p_exit_function(self, p):
         'exit : EXIT LPAREN expression RPAREN'
         p[0] = Exit(p[3])
+    
+    def p_exit_function(self, p):
+        'checkpoint : CHECKPOINT'
+        p[0] = Checkpoint()
     
     def p_labelled(self, p):
         'labelled : ID COLON statement'

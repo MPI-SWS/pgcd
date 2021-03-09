@@ -71,7 +71,7 @@ class ComputePreds(FixedPointDataflowAnalysis):
     def guard(self, tracker, guard):
         tracker.addFormula(guard)
         return tracker
-    
+
 
     def _goesTo(self, tracker, pred, succ):
         log.debug("goes from %s to %s with %s", pred, succ, self.chor.state_to_processes[succ])

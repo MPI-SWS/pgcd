@@ -9,6 +9,7 @@ import tf2_ros
 import geometry_msgs.msg
 import std_msgs.msg
 
+from enum import Enum
 import queue
 import numpy as np
 from sympy.core.numbers import Float, Zero, One, NegativeOne
@@ -19,14 +20,24 @@ class Termination(Exception):
     def __init__(self, value):
         self.value = value
 
+class InterpreterStatus(Enum):
+    IDLE = 1
+    RUNNING = 2
+    INTERRUPTED = 3
+    ERROR = 4
+    TERMINATED = 5
 
 class Interpreter:
+
+    #TODO a way to interrupt and return where we are in the execution + snapshot of the state
 
     def __init__(self, component_id):
         self.id = component_id
         self.parser = Parser()
         self.variables = {}
         self.program = Skip()
+        self.status = IDLE
+        self.last_checkpoint = None
         # messages
         self.msg_types = {}
         self.send_to = {}
@@ -45,8 +56,12 @@ class Interpreter:
 
     def execute(self):
         try:
-            return self.visit(self.program)
+            self.status = RUNNING
+            retval = self.visit(self.program)
+            self.status = TERMINATED
+            return retval
         except Termination as t:
+            self.status = TERMINATED
             return t.value
 
     def parse(self, code):
@@ -140,30 +155,44 @@ class Interpreter:
             return evaluated
 
     def visit(self, node):
-        if node.tip == Type.statement:
-            self.visit_statement(node)
-        elif node.tip == Type.skip:
+        #TODO check for interruption
+        # catch error in motion
+        if self.status == RUNNING:
+            if node.tip == Type.statement:
+                self.visit_statement(node)
+            elif node.tip == Type.skip:
+                pass
+            elif node.tip == Type.send:
+                self.visit_send(node)
+            elif node.tip == Type.receive:
+                self.visit_receive(node)
+            elif node.tip == Type.action:
+                return self.visit_action(node)
+            elif node.tip == Type._if:
+                self.visit_if(node)
+            elif node.tip == Type._print:
+                self.visit_print(node)
+            elif node.tip == Type._while:
+                self.visit_while(node)
+            elif node.tip == Type.assign:
+                self.visit_assign(node)
+            elif node.tip == Type.motion:
+                self.visit_motion(node)
+            elif node.tip == Type.exit:
+                self.visit_exit(node)
+            elif node.tip == Type.checkpoint:
+                self.visit_checkpoint(node)
+            else:
+                assert False, "no visitor for " + node.tip
+        elif self.status == INTERRUPTED:
+            #TODO we got notified of failure
             pass
-        elif node.tip == Type.send:
-            self.visit_send(node)
-        elif node.tip == Type.receive:
-            self.visit_receive(node)
-        elif node.tip == Type.action:
-            return self.visit_action(node)
-        elif node.tip == Type._if:
-            self.visit_if(node)
-        elif node.tip == Type._print:
-            self.visit_print(node)
-        elif node.tip == Type._while:
-            self.visit_while(node)
-        elif node.tip == Type.assign:
-            self.visit_assign(node)
-        elif node.tip == Type.motion:
-            self.visit_motion(node)
-        elif node.tip == Type.exit:
-            self.visit_exit(node)
+        elif self.status == ERROR:
+            #TODO a motion failed
+            pass
         else:
-            assert False, "no visitor for " + node.tip
+            assert False, "status is " + self.status
+            
 
     def visit_statement(self, node):
         # print('\n'.join(str(c) for c in node.children))
@@ -203,6 +232,7 @@ class Interpreter:
         actions = [self.visit(a) for a in node.actions]
         next_prog = Skip()
         waiting_msg = True
+        push = True
         while waiting_msg:
             try:
                 msg = self.receive_from[node.sender].get_nowait()
@@ -229,7 +259,9 @@ class Interpreter:
                 else:
                     assert False, "did not find handler for " + str(msg)
             except queue.Empty:
-                self.visit_motion(node.motion)
+                #first time push on stack
+                self.visit_motion(node.motion, push)
+                push = False
         self.visit(next_prog)
 
     def visit_action(self, node):
@@ -252,7 +284,7 @@ class Interpreter:
     def visit_assign(self, node):
         self.__setattr__(node.id, self.calculate_sympy_exp(node.value))
 
-    def visit_motion(self, node):
+    def visit_motion(self, node, push = True):
         if not hasattr(self.robot, node.value):
             rclpy.logging._root_logger.log("visit_motion: could not find " + node.value, LoggingSeverity.WARNING)
             pass
@@ -260,7 +292,11 @@ class Interpreter:
             if node.value != "idle":
                 rclpy.logging._root_logger.log("visit_motion: " + str(node), LoggingSeverity.INFO)
             try:
-                getattr(self.robot, node.value)(*list(self.calculate_sympy_exp(x) for x in node.exps))
+                args = list(self.calculate_sympy_exp(x) for x in node.exps)
+                # push on stack if needed
+                if (push)
+                    self.robot.stack.push((node.value,args))
+                getattr(self.robot, node.value)(*args)
             except Exception as e:
                 rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.ERROR)
 
@@ -273,3 +309,7 @@ class Interpreter:
     def visit_exit(self, node):
         res = self.calculate_sympy_exp(node.expr)
         raise Termination(res)
+    
+    def visit_checkpoint(self, node):
+        self.last_checkpoint = node
+        self.robot.stack.clear()

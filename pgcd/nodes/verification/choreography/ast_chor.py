@@ -12,12 +12,13 @@ class Type(Enum):
     guard = 7
     join_fork_arg = 8
     expression = 10
-    motion = 33
-    end = 34
-    send_message = 41
-    receive_message = 42
-    indirection = 43
-    external_choice = 44
+    motion = 11
+    end = 12
+    send_message = 13
+    receive_message = 14
+    indirection = 15
+    external_choice = 16
+    checkpoint = 17
 
 
 class Choreography():
@@ -56,7 +57,7 @@ class Choreography():
                 for m in s.motions:
                     procs.add(m.id)
         return procs
-    
+
     def getProcess(self, name):
         if self.world == None:
             return None
@@ -66,7 +67,7 @@ class Choreography():
             return lst[0]
         else:
             return None
-    
+
     def getProcessesNamesAt(self, n):
         if isinstance(n, type('  ')):
             name = n
@@ -297,6 +298,21 @@ class End(DistributedStateNode):
 
     def __str__(self):
         return ''.join(self.start_state) + ' = end'
+
+    def accept(self, visitor):
+        visitor.visit(self)
+
+    def shift_delay_check(self, node):
+        return  self == node
+
+
+class Checkpoint(DistributedStateNode):
+
+    def __init__(self, start_state, end_state):
+        DistributedStateNode.__init__(self, Type.checkpoint, start_state, end_state)
+
+    def __str__(self):
+        return ''.join(self.start_state) + ' = checkpoint.' + ''.join(self.end_state)
 
     def accept(self, visitor):
         visitor.visit(self)

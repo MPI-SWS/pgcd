@@ -60,6 +60,7 @@ class ChoreographyParser:
                       | merge
                       | fork
                       | join
+                      | checkpoint
                       | end '''
         p[0] = p[1]
 
@@ -191,6 +192,10 @@ class ChoreographyParser:
     def p_end(self, p):
         ''' end : ID EQUALS END '''
         p[0] = End([p[1]])
+    
+    def p_checkpoint(self, p):
+        ''' checkpoint : ID EQUALS CHECKPOINT ID '''
+        p[0] = Checkpoint([p[1]],[p[4]])
 
     # ------------------------------------EXPRESSIONS--------------------------------------
     # TODO better handling of priority

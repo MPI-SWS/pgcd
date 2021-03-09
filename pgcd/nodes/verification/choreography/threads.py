@@ -95,6 +95,8 @@ class ComputeThreads(FixedPointDataflowAnalysis):
         #tracker.seen_mp = False
         return self._goesTo(tracker, pred, succ)
 
+    #TODO checkpoint at the top level only ...
+
 
 class ThreadChecks():
 

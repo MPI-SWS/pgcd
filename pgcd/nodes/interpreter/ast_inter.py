@@ -10,10 +10,11 @@ class Type(Enum):
     _if = 6
     _while = 7
     assign = 8
-    expression = 10
-    motion = 33
-    _print = 34
-    exit = 35
+    expression = 9
+    motion = 10
+    _print = 11
+    exit = 12
+    checkpoint = 13
 
 
 
@@ -42,7 +43,7 @@ class Node:
         label_to_node = {}
         self.label(label_to_node)
         return label_to_node
-    
+
     def label(self, label_to_node):
         label_to_node[self.get_label()] = self
 
@@ -260,3 +261,11 @@ class Exit(Node):
             string += self._label + ": "
         string += 'exit(' + str(self.expr) + ')'
         return string
+
+class Checkpoint(Node):
+
+    def __init__(self):
+        Node.__init__(self, Type.checkpoint)
+
+    def __str__(self):
+        return 'checkpoint'

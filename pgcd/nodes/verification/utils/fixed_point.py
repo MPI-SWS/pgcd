@@ -18,7 +18,7 @@ class FixedPointDataflowAnalysis(ABC):
         self._mergeMap = {}
         self.forward = forward
         self.done = False
-    
+
     ##################################
     ## Begin operations to override ##
     ## the default methods are for  ##
@@ -36,19 +36,21 @@ class FixedPointDataflowAnalysis(ABC):
 
     def message(self, tracker, node):
         return tracker
-    
+
     def guard(self, tracker, guard):
         return tracker
 
     def merge(self, tracker):
         return tracker
-    
+
     def fork(self, tracker):
         return tracker
 
     def join(self, tracker):
         return tracker
 
+    def checkpoint(self, tracker):
+        return tracker
 
     def _motion(self, pred, motions, succ):
         trackerSrc = self.state_to_element[pred if self.forward else succ]
@@ -59,7 +61,7 @@ class FixedPointDataflowAnalysis(ABC):
         trackerSrc = self.state_to_element[pred if self.forward else succ]
         tracker = self.message(trackerSrc.copy(), node)
         return self._goesTo(tracker, pred, succ)
-    
+
     def _guard(self, pred, guard, succ):
         trackerSrc = self.state_to_element[pred if self.forward else succ]
         tracker = self.guard(trackerSrc.copy(), guard)
@@ -74,16 +76,21 @@ class FixedPointDataflowAnalysis(ABC):
         trackerSrc = self.state_to_element[pred if self.forward else succ]
         tracker = self.fork(trackerSrc.copy())
         return self._goesTo(tracker, pred, succ)
-    
+
     def _join(self, pred, succ):
         trackerSrc = self.state_to_element[pred if self.forward else succ]
         tracker = self.join(trackerSrc.copy())
         return self._goesTo(tracker, pred, succ)
-    
+
+    def _checkpoint(self, pred, succ):
+        trackerSrc = self.state_to_element[pred if self.forward else succ]
+        tracker = self.checkpoint(trackerSrc.copy())
+        return self._goesTo(tracker, pred, succ)
+
     ################################
     ## End operations to override ##
     ################################
-    
+
     def _goesTo(self, tracker, pred, succ):
         state = succ if self.forward else pred
         node = self.state_to_node[pred]
@@ -101,7 +108,7 @@ class FixedPointDataflowAnalysis(ABC):
         if log.isEnabledFor(logging.DEBUG) and res:
             log.debug("changed %s %s to %s", state, node, tracker)
         return res
-    
+
     def processForMotion(self, motion):
         candidates = [ p for p in self.processes if p == motion.id or p.name() == motion.id ]
         assert(len(candidates) <= 1)
@@ -165,6 +172,10 @@ class FixedPointDataflowAnalysis(ABC):
                 elif isinstance(node, Join):
                     succ = node.end_state[0]
                     res = self._join(state, succ)
+                    changed = changed or res
+                elif isinstance(node, Checkpoint):
+                    succ = node.end_state[0]
+                    res = self._checkpoint(state, succ)
                     changed = changed or res
                 elif isinstance(node, End):
                     pass
