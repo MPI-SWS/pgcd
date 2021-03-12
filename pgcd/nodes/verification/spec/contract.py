@@ -55,14 +55,14 @@ class AssumeGuaranteeContract(ABC):
     def inputs(self):
         """external inputs"""
         return { v for c in self.components() for v in c.inputVariables() }
-    
+
     def outputs(self):
         """outputs"""
         return { v for c in self.components() for v in c.outputVariables() }
 
     def allVariables(self):
         return self.inputs() | self.outputs()
-    
+
     def reallyAllVariables(self): # this includes the internal variables of the components
         return { v for c in self.components() for v in c.variables() }
 
@@ -94,7 +94,7 @@ class AssumeGuaranteeContract(ABC):
     def invFP(self, point):
         """footprint of the invariant"""
         return S.true
-    
+
     def isInvTimeInvariant(self):
         """Are the invariant constraints fime invariant"""
         #TODO for the moment, what we have is ok but it needs to be checked
@@ -114,6 +114,18 @@ class AssumeGuaranteeContract(ABC):
     def postFP(self, point):
         """footprint of the postcondition"""
         return S.true
+
+    def postErrA(self):
+        """[optional] assumption when the contract fails"""
+        return None
+
+    def postErrG(self):
+        """[optional] guarantees when the contract fails"""
+        return None
+
+    def postErrFP(self, point):
+        """[optional] footprint of the error postcondition"""
+        return None
 
     def wellFormed(self, extra = ExtraInfo()):
         """check that the contract is not empty, returns VCs """
@@ -139,6 +151,33 @@ class AssumeGuaranteeContract(ABC):
         # post
         vcs.append( VC(prefix + "postA",  [And(self.postA(), extra.post, extra.always)], True) )
         vcs.append( VC(prefix + "postG",  [And(self.postG(), extra.post, extra.always)], True) )
+        # post err (if exists)
+        assert((self.postErrA == None) == (self.postErrG == None))
+        assert((self.postErrA == None) == (self.postErrFP == None))
+        assert((self.postErrA == None) or (self.postErrA().free_symbols.isdisjoint(self.postErrG().free_symbols)))
+        if self.postErrA != None:
+            vcs.append( VC(prefix + "postErrA",  [And(self.postErrA(), extra.always)], True) ) #extra.post_err ?
+            vcs.append( VC(prefix + "postErrA ⇒ invA",  [And(self.deTimifyFormula(self.invA()), self.deTimifyFormula(extra.inv), Not(self.postErrA()), extra.always)], False) ) #extra.post_err ?
+        if self.postErrG != None:
+            vcs.append( VC(prefix + "postErrG",  [And(self.postErrG(), extra.always)], True) ) #extra.post_err ?
+            vcs.append( VC(prefix + "postErrG ⇒ invG",  [And(self.deTimifyFormula(self.invG()), self.deTimifyFormula(extra.inv), Not(self.postErrG()), extra.always)], False) ) #extra.post_err ?
+        if self.postErrFP != None:
+            # for the footprint
+            px, py, pz = symbols('inFpX inFpY inFpZ')
+            frame = self.frame()
+            point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
+            pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX,
+                              py >= spec.conf.minY, py <= spec.conf.maxY,
+                              pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
+            inv = And(pointDomain,
+                      self.deTimifyFormula(self.invA()),
+                      self.deTimifyFormula(self.invG()),
+                      self.deTimifyFormula(self.invFP(point)),
+                      self.deTimifyFormula(extra.inv))
+            post_err = And(self.postErrA(),
+                           self.postErrG(),
+                           Not(self.postErrFP(point)) #extra.post_err ?
+            vcs.append( VC(prefix + "postErrFP ⊆ invFP",  [And(inv, post_err, extra.always)], False) )
         return vcs
 
     def refines(self, contract, extra = ExtraInfo()):
@@ -149,7 +188,7 @@ class AssumeGuaranteeContract(ABC):
         px, py, pz = symbols('inFpX inFpY inFpZ')
         frame = self.frame()
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX,
                           py >= spec.conf.minY, py <= spec.conf.maxY,
                           pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
         # no quantification over time for the moment
@@ -186,6 +225,16 @@ class AssumeGuaranteeContract(ABC):
                                  self.postG(),
                                  contract.postA())
             vcs.append( VC(prefix + "postFP " + str(frame), [And(postHypothesis, pointDomain, self.postFP(point), Not(contract.postFP(point)))]) )
+        # post err
+        if self.postErrA != None:
+            postErrExtra = extra.always # extra.post_err ?
+            vcs.append( VC(prefix + "postErrA",  [And(postExtra, contract.postErrA(), Not(self.postErrA()))]) )
+            vcs.append( VC(prefix + "postErrG",  [And(postExtra, self.postErrG(), Not(contract.postErrG()))]) )
+            if spec.conf.enableFPCheck:
+                postHypothesis = And(postExtra,
+                                     self.postErrG(),
+                                     contract.postErrA())
+                vcs.append( VC(prefix + "postErrFP " + str(frame), [And(postHypothesis, pointDomain, self.postErrFP(point), Not(contract.postErrFP(point)))]) )
         return vcs
 
     def checkCollision(self, contract, connection, frame, extra = ExtraInfo()):
@@ -193,7 +242,7 @@ class AssumeGuaranteeContract(ABC):
         prefix = self.name + " and " + contract.name + " collision-freedom: "
         px, py, pz = symbols('inFpX inFpY inFpZ')
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX,
                           py >= spec.conf.minY, py <= spec.conf.maxY,
                           pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
         connectionCstrs = S.true
@@ -239,6 +288,7 @@ class AssumeGuaranteeContract(ABC):
                    extra.post,
                    extra.always)
         vcs.append( VC(prefix + "post", [post]) )
+        # error case is included in inv check
         return vcs
 
     # obstacles do not have contracts so we have a separate method to check the collision
@@ -246,7 +296,7 @@ class AssumeGuaranteeContract(ABC):
         prefix = self.name + " and " + obstacle.name() + " collision-freedom: "
         px, py, pz = symbols('inFpX inFpY inFpZ')
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+        pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX,
                           py >= spec.conf.minY, py <= spec.conf.maxY,
                           pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
         vcs = []
@@ -279,6 +329,7 @@ class AssumeGuaranteeContract(ABC):
                    extra.post,
                    extra.always)
         vcs.append( VC(prefix + "post", [post]) )
+        # error case is included in inv check
         return vcs
 
 
@@ -300,7 +351,7 @@ class ComposedContract(AssumeGuaranteeContract):
         for v1, v2 in connection.items():
             assert( (v1 in contract1.outputVariables() and v2 in contract2.inputVariables()) or
                     (v1 in contract2.outputVariables() and v2 in contract1.inputVariables()) )
-    
+
     def components(self):
         c1 = self._contract1.components()
         c2 = self._contract2.components()
@@ -312,7 +363,7 @@ class ComposedContract(AssumeGuaranteeContract):
         i1 = self._contract1.inputs() - self._contract2.outputs()
         i2 = self._contract2.inputs() - self._contract1.outputs()
         return i1 | i2
-    
+
     def outputs(self):
         o1 = self._contract1.outputs()
         o2 = self._contract2.outputs()
@@ -368,6 +419,18 @@ class ComposedContract(AssumeGuaranteeContract):
         fp2 = self._contract2.postFP(point)
         return Or(fp1, fp2)
 
+    def postErrA(self):
+        #TODO errors does not propagate as the normal case and there are special checks to errors
+        return None
+
+    def postErrG(self):
+        #TODO errors does not propagate as the normal case and there are special checks to errors
+        return None
+
+    def postErrFP(self, point):
+        #TODO errors does not propagate as the normal case and there are special checks to errors
+        return None
+
     def wellFormed(self, extra = ExtraInfo()):
         # this assumes that the children are well formed!
         vcs = super().wellFormed(extra)
@@ -379,7 +442,7 @@ class ComposedContract(AssumeGuaranteeContract):
 
 class FpContract(AssumeGuaranteeContract):
     """A contract with only the FP specified, the rest is true"""
-    
+
     def __init__(self, name, components, frame,
                  x, y, z, fp, #symbols for x, y, z, and an expression
                  duration = DurationSpec(1, 1, False)):
@@ -394,16 +457,16 @@ class FpContract(AssumeGuaranteeContract):
 
     def components(self):
         return self._components
-    
+
     def frame(self):
         return self._frame
-    
+
     def duration(self):
         return self._duration
 
     def preG(self):
         return S.true
-    
+
     def fp(self, point):
         (x,y,z) = point.express_coordinates(self.frame())
         localizedFp = self._fp.subs([(self._x, x), (self._y, y), (self._z, z)])
@@ -411,13 +474,13 @@ class FpContract(AssumeGuaranteeContract):
 
     def preFP(self, point):
         return self.fp(point)
-    
+
     def invFP(self, point):
         return self.fp(point) #TODO timify!
-    
+
     def postFP(self, point):
         return self.fp(point)
-    
+
     def __str__(self):
         return self.name + "{ (" + str(self._x) + ", " +  str(self._y) + ", " + str(self._z) + ") : " + str(self._fp) + " }"
 
@@ -434,16 +497,16 @@ class StaticContract(FpContract):
 
     def preA(self):
         return self._assumption
-    
+
     def preG(self):
         return self._guarantee
-    
+
     def invA(self):
         return self._assumption #TODO timify!
-    
+
     def invG(self):
         return self._guarantee #TODO timify!
-    
+
     def postA(self):
         return self._assumption
 
@@ -457,6 +520,6 @@ class GContract(StaticContract):
         super().__init__("GContract", {component}, S.true, expr, fp, duration)
 
 class AContract(StaticContract):
-    
+
     def __init__(self, component, expr, fp, duration = DurationSpec(1, 1, False)):
         super().__init__("AContract", {component}, expr, S.true, fp, duration)

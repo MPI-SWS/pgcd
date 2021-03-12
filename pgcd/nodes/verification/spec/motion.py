@@ -52,7 +52,7 @@ class MotionPrimitive(AssumeGuaranteeContract):
             px, py, pz = symbols('inFpX inFpY inFpZ')
             frame = self.frame()
             point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-            pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX, 
+            pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX,
                               py >= spec.conf.minY, py <= spec.conf.maxY,
                               pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
             #pre
@@ -87,4 +87,15 @@ class MotionPrimitive(AssumeGuaranteeContract):
                        extra.always)
             vcs.append( VC(prefix + "post", [And(post, self._component.abstractResources(point)),
                                              And(post, self._component.ownResources(point))]) )
+            # post_err
+            if self.postErrFP != None:
+                post_err = And(pointDomain,
+                               self._component.invariantG(),
+                               self.postErrA(),
+                               self.postErrG(),
+                               Not(self.postErrFP(point)),
+                               #extra.post, # extra.post_err ?
+                               extra.always)
+                vcs.append( VC(prefix + "post", [And(post_err, self._component.abstractResources(point)),
+                                                 And(post_err, self._component.ownResources(point))]) )
         return vcs

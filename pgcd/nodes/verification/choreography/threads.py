@@ -95,8 +95,6 @@ class ComputeThreads(FixedPointDataflowAnalysis):
         #tracker.seen_mp = False
         return self._goesTo(tracker, pred, succ)
 
-    #TODO checkpoint at the top level only ...
-
 
 class ThreadChecks():
 
@@ -136,6 +134,10 @@ class ThreadChecks():
                 t = node_to_trackers[state]
                 assert t.stack == [], "ending in the middle of a fork: " + str(node) + " " + str(t)
                 assert t.processes == cp.getProcesses(), "not all the processes got joined " + str(node) + " " + str(t)
+            if isinstance(node, Checkpoint):
+                t = node_to_trackers[state]
+                assert t.stack == [], "only top level checkpoints allowed: " + str(node) + " " + str(t)
+                assert t.processes == cp.getProcesses(), "checkpoints without all the processes " + str(node) + " " + str(t)
             elif isinstance(node, Merge):
                 t = node_to_trackers[state]
                 preds = getPreds(node)
