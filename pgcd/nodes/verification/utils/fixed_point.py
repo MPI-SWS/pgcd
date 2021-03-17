@@ -15,7 +15,6 @@ class FixedPointDataflowAnalysis(ABC):
         else:
             self.processes = set(processes)
         self.state_to_element = {}
-        self._mergeMap = {}
         self.forward = forward
         self.done = False
 
@@ -25,7 +24,7 @@ class FixedPointDataflowAnalysis(ABC):
     ## a forward analysis.          ##
     ##################################
 
-    # the element must provide a `copy`, `equals`, `merge`, and `join` methods
+    # the element must provide a `copy`, `__eq__`, `merge`, and `join` methods
 
     @abstractmethod
     def initialValue(self, state, node):
@@ -104,7 +103,7 @@ class FixedPointDataflowAnalysis(ABC):
         elif not self.forward and isinstance(node, Fork):
             tracker.join(trackerOld)
         self.state_to_element[state] = tracker
-        res = not trackerOld.equals(tracker)
+        res = not trackerOld == tracker
         if log.isEnabledFor(logging.DEBUG) and res:
             log.debug("changed %s %s to %s", state, node, tracker)
         return res

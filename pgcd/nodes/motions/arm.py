@@ -35,7 +35,7 @@ class arm():
         self.stepsTurnTable = 0
         self.stepsCantilever = 0
         self.stepsAnchorpoint = 0
-        
+
         self.angleTurnTable = 0
         self.angleCantilever = 0
         self.angleAnchorpoint = 0
@@ -45,7 +45,7 @@ class arm():
 
     def __updateAngleRos__( self, angleName, angle, maxAngle, timePerRev ):
         """
-        Continuously updates the angles s.t. ros can turn the coordinate 
+        Continuously updates the angles s.t. ros can turn the coordinate
         systems in real time.
         """
         #now = time()
@@ -80,7 +80,7 @@ class arm():
             self._stepTurntable(delta)
         self.stepsTurnTable = steps
         self.__updateAngleRos__( "angleTurnTable", angle, 270, 10 )
-    
+
     def setAngleTurntable( self, angle ):
         self._setAngleTurntable(angle, self.motionOnSeparateThread)
 
@@ -111,7 +111,7 @@ class arm():
             self._stepCantilever(delta)
         self.stepsCantilever = steps
         self.__updateAngleRos__( "angleCantilever", angle, 270, 10 )
-    
+
     def setAngleCantilever( self, angle ):
         self._setAngleCantilever(angle, self.motionOnSeparateThread)
 
@@ -197,17 +197,17 @@ class arm():
 
     def idle( self ):
         time.sleep(0.1)
-    
+
     # Simple Positioning of the arm
 
     def moveToFront( self ):
         self.setAngleTurntable( 180 )
-    
+
     def moveToLeft( self ):
         self.setAngleTurntable( 270 )
-    
+
     def moveToRight( self ):
         self.setAngleTurntable( 60 )
-    
+
     def moveToBack( self ):
         self.setAngleTurntable( 0 )

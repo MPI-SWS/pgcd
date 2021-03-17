@@ -29,6 +29,14 @@ class DurationSpec():
     def __str__(self):
         return "DurationSpec(" + str(self.min) + ", " + str(self.max) + ", " + str(self.interruptible) + ")"
 
+    def __eq__(self, other):
+        if isinstance(other, DurationSpec):
+            return self.min == other.min and \
+                   self.max == other.max and \
+                   self.interruptible == other.interruptible
+        else:
+            return False
+
     def copy(self):
         return DurationSpec(self.min, self.max, self.interruptible)
 

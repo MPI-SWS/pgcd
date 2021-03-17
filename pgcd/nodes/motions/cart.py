@@ -8,19 +8,19 @@ from multiprocessing import Process
 class cart():
     """
     Measurements of the cart:
-                     
+
             _o__      angle: 0/360
            /    \
           /      \
          o\______/o   angle: 60/360
-    
+
     Radius Wheels: 33.5mm
     Radius Cart (Center to wheel bracket): 215mm
-    Radius to wheel: 
+    Radius to wheel:
 
     """
     def __init__( self ):
-    
+
         self.motors = steppers.Steppers( 3, [11,13,16], [12,15,18], [3,3,3] )
 
         GPIO.setmode(GPIO.BOARD)
@@ -28,13 +28,13 @@ class cart():
         self.pinMS1 = 5
         self.pinMS2 = 24
         self.pinMS3 = 26
-        
-        
+
+
         GPIO.setup( self.pinEnable, GPIO.OUT )
         GPIO.setup( self.pinMS1, GPIO.OUT )
         GPIO.setup( self.pinMS2, GPIO.OUT )
         GPIO.setup( self.pinMS3, GPIO.OUT )
-        
+
         #self.offset = sp.Matrix( [[1,0,0,63], [0,1,0,0], [0,0,1,0], [0,0,0,1] ] )
         self.offset = 63
 
@@ -67,17 +67,17 @@ class cart():
         steps = []
         direction = []
 
-        if steps_motor1 > 0: 
+        if steps_motor1 > 0:
             direction.append( 1 )
         else:
             direction.append( 0 )
 
-        if steps_motor2 > 0: 
+        if steps_motor2 > 0:
             direction.append( 1 )
         else:
             direction.append( 0 )
-        
-        if steps_motor3 > 0: 
+
+        if steps_motor3 > 0:
             direction.append( 1 )
         else:
             direction.append( 0 )
@@ -108,7 +108,7 @@ class cart():
         assert( steps == 16 )
         #setStepping = {
         #        1: self.__setMSPins__( 0, 0, 0 ),
-        #        2: self.__setMSPins__( 1, 0, 0 ), 
+        #        2: self.__setMSPins__( 1, 0, 0 ),
         #        4: self.__setMSPins__( 0, 1, 0 ),
         #        8: self.__setMSPins__( 1, 1, 0 ),
         #        16: self.__setMSPins__( 1, 1, 1 )
@@ -116,7 +116,7 @@ class cart():
         GPIO.output( self.pinMS1, GPIO.HIGH )
         GPIO.output( self.pinMS2, GPIO.HIGH )
         GPIO.output( self.pinMS3, GPIO.HIGH )
-        
+
         return steps
 
 
@@ -129,7 +129,7 @@ class cart():
         assert( 0<=angle and angle<=360 )
 
         steps = (angle/360)*200*6.42*6.5*self.microstepping
-        
+
         #print( "angle %d steps" %(steps) )
         if steps > self.stepsCart:
             direction = [0,0,0]
@@ -154,7 +154,7 @@ class cart():
         ##self.__compute_steps__( 0,0, steps-self.stepsCart )
         self.stepsCart = steps
         self.angleCart = angle
-        
+
         self.__motors_shutdown__()
 
 
@@ -166,11 +166,11 @@ class cart():
         #steps = (angle/360)*200*6.42*2.15*self.microstepping
         angle = self.angleCart/(200*6.42*self.microstepping)*360
         #(angle/360)*200*6.42*2.15*self.microstepping
-        
+
 
         dx = sp.cos(angle)*distance
         dy = sp.sin(angle)*distance
-        
+
         if steps < 0:
             self.x = self.x-dx
             self.y = self.y-dy

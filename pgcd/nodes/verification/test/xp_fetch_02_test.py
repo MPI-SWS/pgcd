@@ -48,15 +48,19 @@ def choreo_new():
            ] prepare0
     '''
 
+def contracts():
+    return [GContract, AContract]
+
+
 class XpFetch02Test(XpTestHarness):
 
     def test_fetch_oopsla(self):
         ch = choreo_new()
         w = cartAndArmWorld()
-        contracts = [GContract, AContract]
+        ct = contracts()
         progs = { "A": progFetchA(),
                   "C": progFetchC() }
-        self.check(ch, w, contracts, progs)
+        self.check(ch, w, ct, progs)
 
 
 if __name__ == '__main__':

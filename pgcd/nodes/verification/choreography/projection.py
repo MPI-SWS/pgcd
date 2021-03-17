@@ -27,7 +27,7 @@ class Projection:
         self.artificial_nodes_counter += 1
         return '__x__' + str(self.artificial_nodes_counter)
 
-    def execute(self, code, env = None):
+    def parse(self, code, env = None):
         if isinstance(env, Component):
             env = Env(env)
         parser = ChoreographyParser(env)

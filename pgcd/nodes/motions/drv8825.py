@@ -1,13 +1,13 @@
 """
 drv8826 driver
-                                                                   
-2017 marcus@pirron.org                                             
-                                                                   
-This class implements the control of stepper motors using the      
+
+2017 marcus@pirron.org
+
+This class implements the control of stepper motors using the
 drv8825 board from pololu:
 https://www.pololu.com/product/2133
-                                                                   
-"""                                                                   
+
+"""
 
 import RPi.GPIO as GPIO
 from time import sleep
@@ -21,8 +21,8 @@ class drv8825():
     Pin Description:
     STEP:   Make one step
     DIR:    Change direction ( True / False ) of Step - can be omitted
-    
-    SLEEP:  
+
+    SLEEP:
     FAULT:  low if H-Bridge FETs are disabled( over current protection, thermal shutdown )
     RESET:
     ENABLE: Enable the driver (default)
@@ -40,13 +40,13 @@ class drv8825():
         self.pinReset = pinReset
         self.pinFault = pinFault
         self.pinEnable = pinEnable
-        
+
         self.revolutions = revolutions
 
         self.pinM0 = pinM0
         self.pinM1 = pinM1
         self.pinM2 = pinM2
-        
+
         self.waitingTime = waitingTime
         self.angle=0
 
@@ -64,10 +64,10 @@ class drv8825():
         GPIO.setup( self.pinStep, GPIO.OUT)
         #GPIO.setup( self.pinSleep, GPIO.OUT)
 
-        
+
     def __repr__(self):
         return '%s> angle %s, steps: %s, %s' %( self.name, self.angle, self.position, self.position)
- 
+
 # Methods  Microstepping
 
     def __toggle_M_pins__( self, listOfStates ):
@@ -109,18 +109,18 @@ class drv8825():
 
     def disable( self ):
         """Disable Motor (set SLEEP to low)"""
-        return GPIO.output( self.pinEnable, GPIO.LOW )    
-    
+        return GPIO.output( self.pinEnable, GPIO.LOW )
+
     def enable( self ):
         """Enable Motor (set SLEEP to high)"""
         return GPIO.output( self.pinEnable, GPIO.HIGH )
-    
+
     def isEnabled( self ):
-        """Return status: 0 if disabled, 1 if enabled""" 
+        """Return status: 0 if disabled, 1 if enabled"""
         if GPIO.input( self.pinSleep ) == GPIO.HIGH:
             return False
         else:
-            return True    
+            return True
 
 
     def doStep( self, numberSteps, direction=1 ):
@@ -129,15 +129,15 @@ class drv8825():
             GPIO.output( self.pinDir, self.PUSH )
         else:
             GPIO.output( self.pinDir, self.PULL )
-        
+
         for i in range( 0, int( numberSteps ) ):
-            GPIO.output( self.pinStep, GPIO.HIGH )        
+            GPIO.output( self.pinStep, GPIO.HIGH )
             GPIO.output( self.pinStep, GPIO.LOW )
             sleep( self.waitingTime )
             if direction:
                 self.position += 1
                 self.angle = self.angle + 6.2831/self.microsteps
-            else:    
+            else:
                 self.position -= 1
                 self.angle = self.angle - 6.2831/self.microsteps
 
@@ -149,9 +149,9 @@ class drv8825():
 
     def getAngle( self ):
         return self.angle
-    
+
     def rotate( self, angle ):
-        """ 
+        """
         Rotate motor to a specific angle.
         Angle is given in rad [0, 2pi)
         """

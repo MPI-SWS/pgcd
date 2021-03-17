@@ -2,7 +2,7 @@ import franka_robot_arm
 import time
 
 class franka():
-    
+
     def __init__( self, ip = "139.19.176.236"):
         self.f = franka_robot_arm.franke_robot_arm()
         self.f.start(ip)
@@ -28,7 +28,7 @@ class franka():
 
     def idle(self):
         time.sleep(0.1)
-    
+
     def homePos(self):
         prog = ["homePos()"]
         self.a_cur = self.a_ref
@@ -66,7 +66,7 @@ class franka():
         prog = ["grasp("+str(dist)+")"]
         self.f.run(prog)
         time.sleep(1)
-    
+
     def open(self, dist = 0.03):
         prog = ["open()"]
         self.f.run(prog)
@@ -78,7 +78,7 @@ class franka():
     def getPos(self, dist = 0.03):
         prog = ["getPos()"]
         self.f.run(prog)
-    
+
     def testRun(self):
         prog = ["homePos()",
                 "grasp(0.03)",

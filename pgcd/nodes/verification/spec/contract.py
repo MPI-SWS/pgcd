@@ -176,7 +176,7 @@ class AssumeGuaranteeContract(ABC):
                       self.deTimifyFormula(extra.inv))
             post_err = And(self.postErrA(),
                            self.postErrG(),
-                           Not(self.postErrFP(point)) #extra.post_err ?
+                           Not(self.postErrFP(point))) #extra.post_err ?
             vcs.append( VC(prefix + "postErrFP ⊆ invFP",  [And(inv, post_err, extra.always)], False) )
         return vcs
 

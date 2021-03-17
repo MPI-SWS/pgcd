@@ -15,17 +15,7 @@ import numpy as np
 from sympy.core.numbers import Float, Zero, One, NegativeOne
 
 from interpreter.parser import *
-
-class Termination(Exception):
-    def __init__(self, value):
-        self.value = value
-
-class InterpreterStatus(Enum):
-    IDLE = 1
-    RUNNING = 2
-    INTERRUPTED = 3
-    ERROR = 4
-    TERMINATED = 5
+from interpreter.status import *
 
 class Interpreter:
 
@@ -94,6 +84,8 @@ class Interpreter:
                 pass
             elif node.tip == Type.exit:
                 pass
+            elif node.tip == Type.checkpoint:
+                pass
             else:
                 assert False, "no visitor for " + node.tip
         visit(self.program)
@@ -126,6 +118,8 @@ class Interpreter:
             elif node.tip == Type.motion:
                 pass
             elif node.tip == Type.exit:
+                pass
+            elif node.tip == Type.checkpoint:
                 pass
             else:
                 assert False, "no visitor for " + node.tip
@@ -188,11 +182,12 @@ class Interpreter:
             #TODO we got notified of failure
             pass
         elif self.status == ERROR:
-            #TODO a motion failed
+            #TODO a motion failed, wait for everybody to stop and start the recovery
+            self.recovery.failure()
             pass
         else:
             assert False, "status is " + self.status
-            
+
 
     def visit_statement(self, node):
         # print('\n'.join(str(c) for c in node.children))
@@ -299,17 +294,18 @@ class Interpreter:
                 getattr(self.robot, node.value)(*args)
             except Exception as e:
                 rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.ERROR)
+                self.status = ERROR
 
     def visit_print(self, node):
         if isinstance(node.arg, str):
             rclpy.logging._root_logger.log("print: " + str(node.arg), LoggingSeverity.INFO)
         else:
             rclpy.logging._root_logger.log("print: " + ','.join(str(self.calculate_sympy_exp(x)) for x in node.arg), LoggingSeverity.INFO)
-    
+
     def visit_exit(self, node):
         res = self.calculate_sympy_exp(node.expr)
         raise Termination(res)
-    
+
     def visit_checkpoint(self, node):
         self.last_checkpoint = node
         self.robot.stack.clear()

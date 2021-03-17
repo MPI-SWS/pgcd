@@ -112,8 +112,7 @@ class XpTestHarness(unittest.TestCase):
         start0 = start
         env = Env(w, contracts)
         visitor = Projection()
-        visitor.execute(ch, env)
-        chor = visitor.choreography
+        chor = visitor.parse(ch, env)
         log.debug("parsed\n%s", chor)
         vectorize(chor, w)
         end = time.time()

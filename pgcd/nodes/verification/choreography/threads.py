@@ -47,8 +47,11 @@ class ThreadTracker:
         self.processes = self.processes | tracker.processes
         self.seen_mp = self.seen_mp or tracker.seen_mp #TODO better
 
-    def equals(self, tracker):
-        return self.stack == tracker.stack and self.processes == tracker.processes and self.seen_mp == tracker.seen_mp
+    def __eq__(self, tracker):
+        if isinstance(tracker, ThreadTracker):
+            return self.stack == tracker.stack and self.processes == tracker.processes and self.seen_mp == tracker.seen_mp
+        else:
+            return False
 
     def __str__(self):
         return "ThreadTracker: " + str(self.stack) + ", " + str(self.processes) + ", " + str(self.seen_mp)
@@ -98,9 +101,9 @@ class ComputeThreads(FixedPointDataflowAnalysis):
 
 class ThreadChecks():
 
-    def __init__(self, chor, processes):
+    def __init__(self, chor, env):
         self.chor = chor
-        self.processes = processes
+        self.processes = env.allProcesses()
 
     def fillBackward(self, node_to_trackers, state_to_node):
         log.debug("fillBackward")
@@ -134,14 +137,14 @@ class ThreadChecks():
                 t = node_to_trackers[state]
                 assert t.stack == [], "ending in the middle of a fork: " + str(node) + " " + str(t)
                 assert t.processes == cp.getProcesses(), "not all the processes got joined " + str(node) + " " + str(t)
-            if isinstance(node, Checkpoint):
+            elif isinstance(node, Checkpoint):
                 t = node_to_trackers[state]
                 assert t.stack == [], "only top level checkpoints allowed: " + str(node) + " " + str(t)
                 assert t.processes == cp.getProcesses(), "checkpoints without all the processes " + str(node) + " " + str(t)
             elif isinstance(node, Merge):
                 t = node_to_trackers[state]
                 preds = getPreds(node)
-                assert all( p.equals(t) for p in preds ), "merge " + str(t) + " with processes: " + ",".join(map(str, preds))
+                assert all( p == t for p in preds ), "merge " + str(t) + " with processes: " + ",".join(map(str, preds))
             elif isinstance(node, Join):
                 preds = getPreds(node)
                 rep = preds[0]

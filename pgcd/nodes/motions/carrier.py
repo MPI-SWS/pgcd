@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Meccanum cart 
+Meccanum cart
 """
 
 import steppers
@@ -23,12 +23,12 @@ class carrier():
         self.pinMS1 = 5
         self.pinMS2 = 24
         self.pinMS3 = 26
-        
+
         GPIO.setup( self.pinEnable, GPIO.OUT )
         GPIO.setup( self.pinMS1, GPIO.OUT )
         GPIO.setup( self.pinMS2, GPIO.OUT )
         GPIO.setup( self.pinMS3, GPIO.OUT )
-        
+
         self.offset = 15.4
 
         self.stepsCart = 0 # angle in steps
@@ -54,32 +54,32 @@ class carrier():
         coeff_straight=1
         coeff_side=2
         coeff_rotate=1
-    
+
         steps_motor1 = coeff_straight * straight + coeff_side * side - coeff_rotate * rotate;
         steps_motor2 = coeff_straight * straight - coeff_side * side - coeff_rotate * rotate;
         steps_motor3 = coeff_straight * straight - coeff_side * side + coeff_rotate * rotate;
         steps_motor4 = coeff_straight * straight + coeff_side * side + coeff_rotate * rotate;
-    
+
         steps = []
         direction = []
 
-        if steps_motor1 > 0: 
+        if steps_motor1 > 0:
             direction.append( 1 )
         else:
             direction.append( 0 )
 
-        if steps_motor2 > 0: 
+        if steps_motor2 > 0:
             direction.append( 1 )
         else:
             direction.append( 0 )
-        
-        if steps_motor3 > 0: 
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
-        
 
-        if steps_motor4 > 0: 
+        if steps_motor3 > 0:
+            direction.append( 1 )
+        else:
+            direction.append( 0 )
+
+
+        if steps_motor4 > 0:
             direction.append( 1 )
         else:
             direction.append( 0 )
@@ -117,7 +117,7 @@ class carrier():
         GPIO.output( self.pinMS1, GPIO.HIGH )
         GPIO.output( self.pinMS2, GPIO.HIGH )
         GPIO.output( self.pinMS3, GPIO.HIGH )
-        
+
         return steps
 
 
@@ -172,9 +172,9 @@ class carrier():
         self.stepsCart = steps
         self.angleCart = angle
         self.__motors_shutdown__()
-        
 
-    
+
+
     def moveCart( self, distance ):
         """
         Distance in mm
@@ -182,7 +182,7 @@ class carrier():
         """
 
         self.__motors_start__()
-        
+
         steps = distance/157.075*3200+(distance/2000)*3200
         self.__compute_steps__( steps, 0, 0 )
 
@@ -192,12 +192,12 @@ class carrier():
         #
         dx = sp.N( sp.cos(self.angleCart)*distance )
         dy = sp.N( sp.sin(self.angleCart)*distance )
-        
+
         print( "x, y, dx, dy", self.x, self.y, dx, dy )
         self.x += dx
         self.y += dy
         #self.__updateDistanceRos__( "x", "y", self.angleCart, distance, 6.4 )
-        
+
 
         self.__motors_shutdown__()
 
@@ -207,9 +207,9 @@ class carrier():
 
     def getConfigurationMatrixCart( self ):
         angle = sp.rad( self.angleCart  )
-        M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, sp.N(self.x)], [sp.sin(angle), sp.cos(angle), 0, sp.N(self.y)], [0, 0, 1, self.offset], [0, 0, 0, 1] ] )         
-        print( "caa cart>>", M) 
-        return M 
+        M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, sp.N(self.x)], [sp.sin(angle), sp.cos(angle), 0, sp.N(self.y)], [0, 0, 1, self.offset], [0, 0, 0, 1] ] )
+        print( "caa cart>>", M)
+        return M
 
 
 
@@ -226,5 +226,5 @@ if __name__ == "__main__":
     c.setAngleCart( 0 )
     print( c.getConfigurationMatrixCart() )
     c.moveCart( 200 )
-    
+
     c.__motors_shutdown__()

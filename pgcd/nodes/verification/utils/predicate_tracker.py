@@ -79,7 +79,9 @@ class ProcessPredicatesTracker:
                 return False
         return True
 
-    def equals(self, tracker):
+    def __eq__(self, tracker):
+        if isinstance(tracker, ProcessPredicatesTracker):
+            return False
         return self.contains(tracker) and tracker.contains(self)
 
     def __str__(self):
@@ -174,8 +176,10 @@ class ProcessesPredicatesTracker:
     def contains(self, tracker):
         return all([ self._process_to_pred[p].contains(tracker._process_to_pred[p]) for p in self._process_set])
 
-    def equals(self, tracker):
-        return all([ self._process_to_pred[p].equals(tracker._process_to_pred[p]) for p in self._process_set])
+    def __eq__(self, tracker):
+        if isinstance(tracker, ProcessesPredicatesTracker):
+            return False
+        return all([ self._process_to_pred[p] == tracker._process_to_pred[p] for p in self._process_set])
 
     def restrictTo(self, process_set):
         names = { p.name() for p in self._process_set }

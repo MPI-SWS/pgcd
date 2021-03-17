@@ -9,6 +9,9 @@ from sympy import *
 import mpmath
 from check_chor import *
 
+from spec.component import Component
+from spec.env import Env
+
 import os
 
 class ChoreographyParser:
@@ -25,12 +28,15 @@ class ChoreographyParser:
         self.lexer = clexer.ChoreographyLexer()
         self.tokens = self.lexer.tokens
         self.parser = yacc.yacc(module=self)
+        if isinstance(env, Component):
+            env = Env(env)
         self.env = env
 
-    def parse(self, text):
+    def parse(self, text, check = True):
         choreography = self.parser.parse(text, self.lexer.lexer)
         choreography.world = self.env.world
-        self.check_well_formedness(choreography)
+        if check:
+            self.check_well_formedness(choreography)
         return choreography
 
     def check_well_formedness(self, chor):
