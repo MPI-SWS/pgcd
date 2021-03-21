@@ -200,8 +200,8 @@ class ChoreographyParser:
         p[0] = End([p[1]])
     
     def p_checkpoint(self, p):
-        ''' checkpoint : ID EQUALS CHECKPOINT ID '''
-        p[0] = Checkpoint([p[1]],[p[4]])
+        ''' checkpoint : ID EQUALS CHECKPOINT LPAREN ICONST RPAREN SEMI ID '''
+        p[0] = Checkpoint([p[1]],[p[8]],int(p[5]))
 
     # ------------------------------------EXPRESSIONS--------------------------------------
     # TODO better handling of priority

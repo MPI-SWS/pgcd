@@ -20,12 +20,12 @@ class SynchronizabilityTests(unittest.TestCase):
         threads = { n:t.processes for (n,t) in node_to_tracker.items() }
         cm = UniqueMinimalSender(c, env, threads)
         node_to_tracker = cm.check()
+        # TODO the min sender comes after the send
         minSender = dict()
         for (n,t) in node_to_tracker.items():
-            if len(t.minimalSender) == 1:
-                minSender[n] = t.minimalSender.pop()
-            else:
-                minSender[n] = None
+            minSender[n] = None
+            for p in t.minimalSender:
+                minSender[n] = p
         cs = Synchronizability(c, env, threads, minSender)
         state_to_tracker = cs.check()
         for (n,t) in state_to_tracker.items():

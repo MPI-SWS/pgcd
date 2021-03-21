@@ -1,5 +1,5 @@
 from enum import Enum
-import sympy as sp 
+import sympy as sp
 from spec.contract import *
 
 
@@ -308,11 +308,12 @@ class End(DistributedStateNode):
 
 class Checkpoint(DistributedStateNode):
 
-    def __init__(self, start_state, end_state):
+    def __init__(self, start_state, end_state, id):
         DistributedStateNode.__init__(self, Type.checkpoint, start_state, end_state)
+        self.id = id
 
     def __str__(self):
-        return ''.join(self.start_state) + ' = checkpoint.' + ''.join(self.end_state)
+        return ''.join(self.start_state) + ' = checkpoint('+str(self.id)+').' + ''.join(self.end_state)
 
     def accept(self, visitor):
         visitor.visit(self)

@@ -108,8 +108,9 @@ class Parser:
         p[0] = Exit(p[3])
     
     def p_exit_function(self, p):
-        'checkpoint : CHECKPOINT'
-        p[0] = Checkpoint()
+        'checkpoint : CHECKPOINT LPAREN args RPAREN'
+        ids = { int(i) for i in p[3] }
+        p[0] = Checkpoint(ids)
     
     def p_labelled(self, p):
         'labelled : ID COLON statement'

@@ -264,8 +264,9 @@ class Exit(Node):
 
 class Checkpoint(Node):
 
-    def __init__(self):
+    def __init__(self, ids):
         Node.__init__(self, Type.checkpoint)
+        self.ids = ids
 
     def __str__(self):
         return 'checkpoint'

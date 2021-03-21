@@ -27,7 +27,11 @@ class Interpreter:
         self.variables = {}
         self.program = Skip()
         self.status = IDLE
-        self.last_checkpoint = None
+        # stack keeps:
+        # - checkpoint: ID, snapshot of logical state
+        # - motion: name and args
+        # - message: type and args
+        self.stack = []
         # messages
         self.msg_types = {}
         self.send_to = {}
@@ -47,6 +51,9 @@ class Interpreter:
     def execute(self):
         try:
             self.status = RUNNING
+            # start of program is a default checkpoint
+            is len(self.stack) == 0:
+                self.stack.push(ActionType.CHECKPOINT, -1, [])
             retval = self.visit(self.program)
             self.status = TERMINATED
             return retval
@@ -218,6 +225,8 @@ class Interpreter:
         #
         pub = self.send_to[component][node.msg_type]
         pub.publish(message)
+        # record the message on the stack
+        self.stack.push((ActionType.MESSAGE,node.msg_type,values))
         rclpy.logging._root_logger.log("sent to " + component + " " + str(message), LoggingSeverity.INFO)
         ack = self.receive_from[component].get()
         assert type(ack) == std_msgs.msg.String, "not an ack!?!"
@@ -290,7 +299,7 @@ class Interpreter:
                 args = list(self.calculate_sympy_exp(x) for x in node.exps)
                 # push on stack if needed
                 if (push)
-                    self.robot.stack.push((node.value,args))
+                    self.stack.push((ActionType.MOTION,node.value,args))
                 getattr(self.robot, node.value)(*args)
             except Exception as e:
                 rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.ERROR)
@@ -307,5 +316,7 @@ class Interpreter:
         raise Termination(res)
 
     def visit_checkpoint(self, node):
-        self.last_checkpoint = node
-        self.robot.stack.clear()
+        self.stack.clear()
+        snapshot = [] # TODO save logical state of robot
+        checkpoint_id = node # TODO better
+        self.stack.push(ActionType.CHECKPOINT, checkpoint_id, snapshot)

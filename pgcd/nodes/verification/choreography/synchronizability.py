@@ -10,18 +10,18 @@ log = logging.getLogger("Synchronizability")
 
 class SyncTracker:
 
-    def __init__(self, stack, process_set, sender):
+    def __init__(self, stack, process_set):
         self.undef = True
         self.processes = process_set
         self.stack = stack
-        self.sender = sender
         self.popAfterMessage = False
         self.duration = dict()
+        self.hasSender = False
         for p in self.processes:
             self.duration[p] = DurationSpec(0, 0, False)
 
     def copy(self):
-        cpy = SyncTracker(copy(self.stack), self.processes, self.sender)
+        cpy = SyncTracker(copy(self.stack), self.processes)
         cpy.undef = self.undef
         cpy.duration = copy(self.duration)
         return cpy
@@ -64,7 +64,6 @@ class SyncTracker:
         if self.undef:
             self.undef = oldDestTracker.undef
             self.stack = copy(oldDestTracker.stack)
-            self.sender = oldDestTracker.sender
             self.popAfterMessage = oldDestTracker.popAfterMessage
             self.duration = copy(oldDestTracker.duration)
         elif not oldDestTracker.undef:
@@ -73,7 +72,6 @@ class SyncTracker:
                 self.duration[p].max = max(oldDestTracker.duration[p].max, self.duration[p].max)
             self.stack[-1].min = min(oldDestTracker.stack[-1].min, self.stack[-1].min)
             self.stack[-1].max = max(oldDestTracker.stack[-1].max, self.stack[-1].max)
-            self.sender = oldDestTracker.sender
 
     def join(self, oldDestTracker):
         assert(self.processes.issubset(oldDestTracker.processes))
@@ -82,13 +80,13 @@ class SyncTracker:
             self.undef = oldDestTracker.undef
             self.processes = oldDestTracker.processes
             self.stack = copy(oldDestTracker.stack)
-            self.sender = oldDestTracker.sender
             self.duration = copy(oldDestTracker.duration)
         else:
-            self.sender = oldDestTracker.sender
-            # get next sender, if has next sender then the sender branch takes over ...
-            if self.sender not in self.processes:
+            if self.hasSender:
                 self.stack = oldDestTracker.stack
+            else:
+                # TODO we should keep the other stack to do a proper sync check !!
+                pass
             for p in oldDestTracker.processes:
                 if p not in self.processes:
                     self.duration[p] = oldDestTracker.duration[p].copy()
@@ -99,7 +97,6 @@ class SyncTracker:
             return self.undef == tracker.undef and \
                    self.processes == tracker.processes and \
                    self.stack == tracker.stack and \
-                   self.sender == tracker.sender and \
                    self.popAfterMessage == tracker.popAfterMessage and \
                    all(self.duration[p] == tracker.duration[p] for p in self.processes)
         else:
@@ -109,9 +106,10 @@ class SyncTracker:
         if self.undef:
             return "SyncTracker: -"
         else:
-            acc = "SyncTracker: " + ', '.join(str(e) for e in self.stack)
+            acc = "SyncTracker:\n  stack: " + ', '.join(str(e) for e in self.stack)
             for p in self.processes:
                 acc = acc + "\n  " + p + " -> " + str(self.duration[p])
+            acc = acc + "\n  popAfterMessage: " + str(self.popAfterMessage)
             return acc
 
 class Synchronizability(FixedPointDataflowAnalysis):
@@ -153,8 +151,7 @@ class Synchronizability(FixedPointDataflowAnalysis):
     def initialValue(self, state, node):
         stack = [DurationSpec(0,0,False)]
         procs = self.nodeToProcesses[state]
-        sender = self.nodeToMinSender[state] 
-        t = SyncTracker(stack, procs, sender)
+        t = SyncTracker(stack, procs)
         if state == self.chor.start_state:
             t.undef = False
         return t
@@ -167,7 +164,6 @@ class Synchronizability(FixedPointDataflowAnalysis):
         return tracker
 
     def message(self, tracker, node):
-        print(tracker)
         if not tracker.undef:
             tracker.stack[-1] = tracker.stack[-1].concat(tracker.duration[node.sender])
             tracker.duration[node.sender] = DurationSpec(0,0,False)
@@ -175,7 +171,6 @@ class Synchronizability(FixedPointDataflowAnalysis):
             if tracker.popAfterMessage == True:
                 tracker.pop()
                 tracker.popAfterMessage == False
-        print(tracker)
         return tracker
 
     def _merge(self, pred, succ):
@@ -195,6 +190,38 @@ class Synchronizability(FixedPointDataflowAnalysis):
         tracker.restrict(trackerDst.processes)
         return self._goesTo(tracker, pred, succ)
 
+    def isMinSender(self, state):
+        # a bit weird but the min sender analysis comes after sending
+        if self.nodeToMinSender[state] == None:
+            node = self.state_to_node[state]
+            s2 = node.end_state[0]
+            return node.sender == self.nodeToMinSender[s2]
+        else:
+            return False
+
+    def hasNextMinSender(self, state):
+        node = self.state_to_node[state]
+        if isinstance(node, Message):
+            return self.isMinSender(state)
+        else:
+            return self.hasNextMinSender(node.end_state[0])
+
+    def _goesTo(self, tracker, pred, succ):
+        assert self.forward
+        node = self.state_to_node[pred]
+        if isinstance(node, Join):
+            if self.hasNextMinSender(pred):
+                tracker.hasNextMinSender = True
+            trackerOld = self.state_to_element[succ]
+            tracker.join(trackerOld)
+            self.state_to_element[succ] = tracker
+            res = not trackerOld == tracker
+            if log.isEnabledFor(logging.DEBUG) and res:
+                log.debug("changed %s %s to %s", state, node, tracker)
+            return res
+        else:
+            super()._goesTo(tracker, pred, succ)
+
     def check(self):
         log.debug("unique minimal sender")
         self.perform()
@@ -207,6 +234,28 @@ class Synchronizability(FixedPointDataflowAnalysis):
                 # checkpoints, motion, fork occurs only when the processes are in sync
                 t = node_to_tracker[state]
                 assert t.inSync, "process not in sync: " + str(node) + " " + str(t)
-            # check that the minimal sender is the non-interruptible process
-            # todo for each node, we should tag the minimal sender: for motion it is the next sender, for messages None for subsequent messages
+            elif isinstance(node, Message):
+                # print("===================")
+                # print(node)
+                # print("-------------------")
+                # print(t)
+                # print("-------------------")
+                # print(node_to_tracker[node.end_state[0]])
+                # print("-------------------")
+                # sender should be uninterruptible
+                assert not t.duration[node.sender].interruptible, "interruptible process sending: " + str(node) + " " + str(t)
+                # check that the minimal sender is the non-interruptible process, all the other muse be interruptible
+                if self.isMinSender(state):
+                    for p in t.processes:
+                        if p != node.sender:
+                            # special case: processes start in sync
+                            assert t.duration[p] == DurationSpec(0,0,False) or \
+                                   t.duration[p].interruptible, \
+                                   "more than one uninterruptible process: " + str(node) + " " + str(t)
+                        # check that the timing are compatible
+                        assert t.duration[p].min <= t.duration[node.sender].min, "incompatible durations: " + str(node) + " " + str(t)
+                        assert t.duration[p].max >= t.duration[node.sender].max, "incompatible durations: " + str(node) + " " + str(t)
+            elif isinstance(node, Join):
+                #TODO the two stack must match
+                pass
         return node_to_tracker
