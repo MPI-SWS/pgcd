@@ -1,4 +1,5 @@
 import verification.choreography.ast_chor as ast_chor
+from verification.spec.time import DurationSpec
 import sympy as sp
 import logging
 from copy import copy
@@ -17,6 +18,7 @@ class Recovery:
         self.choreography = choreography
         self.error_topic = pass #TODO
         self.compensation_topic = pass #TODO
+        sellf.names = dict()
 
     def start(self, robots):
         # start a thread to listen to the error topic
@@ -49,6 +51,21 @@ class Recovery:
         #TODO gather the compensations from all the robots
         pass
 
+    # getting fresh names
+    def fresh(self, name):
+        if name in names:
+            i = names[name]
+            names[name] = i+1
+            return name + "_" + str(i)
+        else:
+            names[name] = 1
+            return name + "_0"
+    def last(name):
+        if name in names:
+            return name + "_" + str(names[name]-1)
+        else:
+            return name + "_0"
+
     def getCheckpoint(self, comp_info):
         # bottom element is a checkpoint get the ids
         chkpts = [ set(s[0][2]) for (p,s) in comp_info.items ]
@@ -68,21 +85,6 @@ class Recovery:
         stacks = dict()
         for p in procs:
             stacks[p] = comp_info[p][1:] # remove the checkpoint
-        # getting fresh names
-        names = dict()
-        def fresh(name):
-            if name in names:
-                i = names[name]
-                names[name] = i+1
-                return name + "_" + str(i)
-            else:
-                names[name] = 1
-                return name + "_0"
-        def last(name):
-            if name in names:
-                return name + "_" + str(names[name]-1)
-            else:
-                return name + "_0"
         # lookahead to figure out which branch was taken (1st message sent)
         def isBranchPossible(self, state):
             node = state_to_node(state)
@@ -98,7 +100,7 @@ class Recovery:
             node = state_to_node(state)
             if isinstance(node, ast_chor.Fork):
                 s = node.end_state
-                s2 = [ fresh(n) for n in s ]
+                s2 = [ self.fresh(n) for n in s ]
                 nodes.append(ast_chor.Fork([new_name],node.footprints,s2))
                 ends = { traverse(n2, n) for (n2,n) in zip(s2,s) }
                 ns = [ n for n in nodes if n.start_state[0] in ends ]
@@ -108,7 +110,7 @@ class Recovery:
                 join_name = 'join'
                 if len(joins) > 0:
                     join_name = joins[0].end_state[0]
-                new_join_name = fresh(join_name)
+                new_join_name = self.fresh(join_name)
                 nodes.append(ast_chor.Join(ends,[new_join_name]))
                 if len(joins) == len(ends):
                     return traverse(new_join_name, join_name)
@@ -125,12 +127,12 @@ class Recovery:
                 if len(possible) > 1:
                     log.warning("more than 1 possible branch")
                 n = possible[0]
-                n2 = fresh(n)
+                n2 = self.fresh(n)
                 nodes.append(ast_chor.GuardedChoice([new_name],[GuardArg(sp.true,n2)]))
                 return traverse(n2, n)
             elif isinstance(node, ast_chor.Merge):
                 n = node.end_state[0]
-                n2 = fresh(n)
+                n2 = self.fresh(n)
                 nodes.append(ast_chor.Merge([new_name],[n2]))
                 return traverse(n2, n)
             elif isinstance(node, ast_chor.Motion):
@@ -146,7 +148,7 @@ class Recovery:
                     ms.append(ast_chor.MotionArg(m.id, action[1], action[2]))
                     stacks[m.id] = stack[1:]
                 n = node.end_state[0]
-                n2 = fresh(n)
+                n2 = self.fresh(n)
                 nodes.append(ast_chor.Motion([new_name],ms,[n2]))
                 # if done then insert "End"
                 if done:
@@ -161,7 +163,7 @@ class Recovery:
                 assert(action[0] == ActionType.MESSAGE and action[1] == node.msg_type)
                 stacks[node.sender] = stack[1:]
                 n = node.end_state[0]
-                n2 = fresh(n)
+                n2 = self.fresh(n)
                 nodes.append(ast_chor.Message([new_name],node.sender,node.receiver,node.msg_type,node.expressions,[n2]))
                 return traverse(n2, n)
             else:
@@ -170,17 +172,17 @@ class Recovery:
                 node2 = copy(node)
                 node2.start_state = [new_name]
                 n = node.end_state[0]
-                n2 = fresh(n)
+                n2 = self.fresh(n)
                 node2.end_state = [n2]
                 return traverse(n2, n)
-        first = fresh(chkpt)
+        first = self.fresh(chkpt)
         last = traverse(first, chkpt)
         c2 = ast_chor.Choreography("recovery_"+self.choreography.id, nodes, sp.true, first)
         c2.world = self.choreography.world
         return c2
 
     def stripPath(self, path):
-        start_state = path.mk_state_to_node()
+        state_to_node = path.mk_state_to_node()
         toRemove = []
         for node in path.statements:
             # keep only Fork, Join, Motion, and End
@@ -223,9 +225,60 @@ class Recovery:
         return c2
 
     def synchronize(self, comp):
-        # TODO
-        # get a process order
-        pass
+        #TODO run the thread analysis to get the processes at each state
+        state_to_node = path.mk_state_to_node()
+        state_to_duration = dict()
+        state_to_duration[comp.start_state] = DurationSpec(0, 0, False)
+        def needSync(node):
+            # a node need to be synced if it is followed by a fork or a motion
+            if node.start_state[0] == comp.start_state or \
+               isinstance(node, ast_chor.Fork) or \
+               isinstance(node, ast_chor.Motion):
+                return True
+            else:
+                return False
+        # modify the last motion executed by proc before state
+        def modifyLastMotion(state, proc, addWait = -1, addIdle = False):
+            pass #TODO
+        # insert sync _before_ state
+        # traverse like a topological sort
+        to_process = copy(comp.statements)
+        processed = set()
+        frontier = { comp.start_state }
+        durations = { p.name:{comp.start_state:DurationSpec(0,0,False)} for p in comp.allProcesses() }
+        def timeToLastSync(node):
+            # TODO return a maps from process to duration
+            pass
+        while len(to_process) > 0:
+            assert len(frontier) > 0
+            state = frontier.pop()
+            node = state_to_node[state]
+            # START bookkeeping about what to process
+            processed.add(state)
+            to_process.remove(node)
+            for s in node.end_state:
+                assert not s in processed
+                n = state_to_node[s]
+                if all(pred in processed for pred in n.state_to_node):
+                    frontier.add(s)
+            # END bookkeeping
+            if needSync(node):
+                # get the duration for each process in the thread
+                procs = state_to_procs[state]
+                ds = timeToLastSync(node)
+                # normalise the durations (make all uninteruptible)
+                ds2 = dict()
+                for (p,d) in ds.items():
+                    if d.interruptible:
+                        ds2[p] = DurationSpec(d.min,d.min,False)
+                    else:
+                        ds2[p] = d
+                # find the best sender: minimize |d.max-d.min| and use name as tie breaker
+                receivers = list(procs).sort(key = lambda x: (ds2[x].max - ds2[x].min, d.name))
+                sender = receivers.pop()
+                # TODO insert message
+                # TODO modifyLastMotion if needed
+                pass
 
     def computeRecoveryChoreo(self, comp_info):
         chkpt = self.getCheckpoint(comp_info)
