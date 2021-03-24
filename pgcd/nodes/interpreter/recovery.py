@@ -1,4 +1,6 @@
 import verification.choreography.ast_chor as ast_chor
+from verification.choreography.threads as ThreadChecks
+from verification.choreography.synchronizability as SyncTracker
 from verification.spec.time import DurationSpec
 import sympy as sp
 import logging
@@ -18,7 +20,7 @@ class Recovery:
         self.choreography = choreography
         self.error_topic = pass #TODO
         self.compensation_topic = pass #TODO
-        sellf.names = dict()
+        self.names = dict()
 
     def start(self, robots):
         # start a thread to listen to the error topic
@@ -225,10 +227,15 @@ class Recovery:
         return c2
 
     def synchronize(self, comp):
-        #TODO run the thread analysis to get the processes at each state
-        state_to_node = path.mk_state_to_node()
-        state_to_duration = dict()
-        state_to_duration[comp.start_state] = DurationSpec(0, 0, False)
+        # run the thread analysis to get the processes at each state
+        tc = ThreadChecks(comp, comp.world)
+        state_to_procs = { s:t.processes for (s,t) in tc.perform().items() }
+        state_to_node = comp.mk_state_to_node()
+        # extra info to synchronize
+        state_to_duration = { comp.start_state:SyncTracker([DurationSpec(0,0,False)],comp.allProcesses()) }
+        def timeToLastSync(node):
+            # TODO return a maps from process to duration
+            pass
         def needSync(node):
             # a node need to be synced if it is followed by a fork or a motion
             if node.start_state[0] == comp.start_state or \
@@ -238,17 +245,27 @@ class Recovery:
             else:
                 return False
         # modify the last motion executed by proc before state
+        # FIXME this is a crude hack
         def modifyLastMotion(state, proc, addWait = -1, addIdle = False):
-            pass #TODO
+            assert proc in state_to_procs[state]
+            node = state_to_node[state]
+            if isinstance(node, ast_chor.Motion):
+                for m in node.mostions:
+                    if addWait > 0:
+                        m.mp_name = m.mp_name + "_wait(" + str(addWait) + ")"
+                    elif addIdle:
+                        m.mp_name = m.mp_name + "_idle"
+                assert False, "?!?"
+            else:
+                for pred in node.start_state:
+                    if proc in state_to_procs[pred]:
+                        return modifyLastMotion(pred, proc, addWait, addIdle)
+                assert False, "!?!"
         # insert sync _before_ state
         # traverse like a topological sort
         to_process = copy(comp.statements)
         processed = set()
         frontier = { comp.start_state }
-        durations = { p.name:{comp.start_state:DurationSpec(0,0,False)} for p in comp.allProcesses() }
-        def timeToLastSync(node):
-            # TODO return a maps from process to duration
-            pass
         while len(to_process) > 0:
             assert len(frontier) > 0
             state = frontier.pop()
@@ -274,21 +291,40 @@ class Recovery:
                     else:
                         ds2[p] = d
                 # find the best sender: minimize |d.max-d.min| and use name as tie breaker
+                # FIXME not the optimal strategy but it will do
                 receivers = list(procs).sort(key = lambda x: (ds2[x].max - ds2[x].min, d.name))
                 sender = receivers.pop()
-                # TODO insert message
-                # TODO modifyLastMotion if needed
-                pass
+                # insert messages
+                start_state = state
+                for r in receivers:
+                    end_state = start_state
+                    start_state = fresh("sync")
+                    msg = ast_chor.Message([start_state], sender, r, OK, [], [end_state])
+                    comp.statements.append(msg)
+                    # insert into aux lookup maps
+                    state_to_node[start_state] = msg
+                    state_to_procs[start_state] = state_to_procs[end_state]
+                    state_to_duration[start_state] = state_to_duration[end_state].copy() # XXX
+                if node.start_state[0] == comp.start_state:
+                    comp.start_state = start_state
+                else:
+                    for n2 in comp.statements:  #find pred and rename
+                        if n2.end_state[0] == node.start_state[0]:
+                            n2.end_state = [start_state]
+                # modifyLastMotion if needed
+                max_duration = ds2[sender].max
+                for r in receivers:
+                    max_duration = max(max_duration, ds2[r].max)
+                if ds2[sender].min < max_duration:
+                    modifyLastMotion(state, sender, addWait = max_duration - ds2[sender].min)
+                for r in receivers:
+                    if ds2[r].max < max_duration:
+                        modifyLastMotion(state, r, addIdle = True)
 
     def computeRecoveryChoreo(self, comp_info):
         chkpt = self.getCheckpoint(comp_info)
         path = self.getCheckpoint(comp_info, chkpt)
         self.stripPath(path)
-        unsynced = self.reversePath(path)
-        synced = self.synchronize(unsynced)
-        return synced
-
-# find which path was taken in the recovery
-# - intersection of all checkpoints IDs should be a singleton
-# - follows the messages to get the path and find the fork/joins
-# - compute a synchronization of the compensations (be deterministic)
+        comp = self.reversePath(path)
+        self.synchronize(comp)
+        return comp #ready to be projected and run

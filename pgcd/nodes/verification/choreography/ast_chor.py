@@ -81,6 +81,10 @@ class Choreography():
 
     def hasParallel(self):
         return any( isinstance(node, Fork) for node in self.statements )
+    
+    def getMotion(self, ProcessName, motionName, motionArgs):
+        p = self.getProcess(process)
+        return p.motionPrimitive(motionName, *motionArgs)
 
 
 class DistributedStateNode():

@@ -60,6 +60,21 @@ class SyncTracker:
             else:
                 self.stack[-1].max = float('inf')
 
+    def message(self, sender, receiver):
+        if not self.undef:
+            self.stack[-1] = self.stack[-1].concat(self.duration[sender])
+            self.duration[sender] = DurationSpec(0,0,False)
+            self.duration[receiver] = DurationSpec(0,0,False)
+            if self.popAfterMessage == True:
+                self.pop()
+                self.popAfterMessage == False
+    
+    def motion(self, motion_durations):
+        if not self.undef:
+            for p in self.processes:
+                d = motion_durations[p]
+                self.duration[m.id] = self.duration[m.id].concat(d)
+
     def merge(self, oldDestTracker):
         if self.undef:
             self.undef = oldDestTracker.undef
@@ -128,9 +143,8 @@ class Synchronizability(FixedPointDataflowAnalysis):
         self.nodeToMinSender = minSender
         self.s2n = self.chor.mk_state_to_node()
 
-    def getMotionDuration(self, process, motionName, motionArgs):
-        p = self.chor.getProcess(process)
-        mp = p.motionPrimitive(motionName, *motionArgs)
+    def getMotionDuration(self, m):
+        mp = self.chor.getMotion(m.id, m.mp_name, m.mp_args)
         return mp.duration()
 
     def canReach(self, state1, state2):
@@ -158,19 +172,12 @@ class Synchronizability(FixedPointDataflowAnalysis):
 
     def motion(self, tracker, motions):
         if not tracker.undef:
-            for m in motions:
-                d = self.getMotionDuration(m.id, m.mp_name, m.mp_args)
-                tracker.duration[m.id] = tracker.duration[m.id].concat(d)
+            durations = { m.id : self.getMotionDuration(m) for m in motions }
+            tracker.motion(durations)
         return tracker
 
     def message(self, tracker, node):
-        if not tracker.undef:
-            tracker.stack[-1] = tracker.stack[-1].concat(tracker.duration[node.sender])
-            tracker.duration[node.sender] = DurationSpec(0,0,False)
-            tracker.duration[node.receiver] = DurationSpec(0,0,False)
-            if tracker.popAfterMessage == True:
-                tracker.pop()
-                tracker.popAfterMessage == False
+        tracker.message(node.sender, node.receiver)
         return tracker
 
     def _merge(self, pred, succ):
