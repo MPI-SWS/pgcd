@@ -156,7 +156,7 @@ class Wait(MotionPrimitiveFactory):
         elif len(args) == 2:
             return StaticWait(self.name(), self._component, args[0], args[1])
         else:
-            assert Fasle, "wrong args " + str(args)
+            assert False, "wrong args " + str(args)
 
 class StaticWait(MotionPrimitive):
 

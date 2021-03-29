@@ -150,7 +150,7 @@ class ChoreographyParser:
                     | ID '''
         if len(p) > 2:
             p[0] = (p[1], p[2])
-        elif len(p) > 2:
+        else:
             p[0] = (None, p[1])
 
     def p_fargs(self, p):

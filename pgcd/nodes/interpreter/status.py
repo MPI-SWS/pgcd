@@ -1,3 +1,4 @@
+from enum import Enum
 
 class Termination(Exception):
     def __init__(self, value):

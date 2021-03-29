@@ -81,10 +81,13 @@ class Choreography():
 
     def hasParallel(self):
         return any( isinstance(node, Fork) for node in self.statements )
-    
-    def getMotion(self, ProcessName, motionName, motionArgs):
-        p = self.getProcess(process)
+
+    def getMotion(self, processName, motionName, motionArgs):
+        p = self.getProcess(processName)
         return p.motionPrimitive(motionName, *motionArgs)
+
+    def getPred(self, state):
+        return [ s for s in self.statements if state in s.end_state ]
 
 
 class DistributedStateNode():
@@ -96,6 +99,30 @@ class DistributedStateNode():
 
     def __str__(self):
         return Node.__str__(self) + ": " + str(self.start_state) + " -> " + str(self.end_state)
+
+    def isMessage(self):
+        return self.tip == Type.message
+
+    def isMotion(self):
+        return self.tip == Type.motion
+
+    def isChoice(self):
+        return self.tip == Type.guard
+
+    def isMerge(self):
+        return self.tip == Type.merge
+
+    def isFork(self):
+        return self.tip == Type.fork
+
+    def isJoin(self):
+        return self.tip == Type.join
+
+    def isEnd(self):
+        return self.tip == Type.end
+
+    def isCheckpoint(self):
+        return self.tip == Type.checkpoint
 
 
 class Message(DistributedStateNode):

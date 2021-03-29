@@ -9,9 +9,9 @@ from utils.geometry import *
 from cart import *
 from arm import *
 from mpmath import mp
-from compatibility import *
-from refinement import *
-from vectorize import *
+from choreography.compatibility import *
+from choreography.refinement import *
+from choreography.vectorize import *
 from copy import deepcopy
 from choreography.projection import Projection
 import interpreter.parser as parser

@@ -68,12 +68,12 @@ class SyncTracker:
             if self.popAfterMessage == True:
                 self.pop()
                 self.popAfterMessage == False
-    
+
     def motion(self, motion_durations):
         if not self.undef:
             for p in self.processes:
                 d = motion_durations[p]
-                self.duration[m.id] = self.duration[m.id].concat(d)
+                self.duration[p] = self.duration[p].concat(d)
 
     def merge(self, oldDestTracker):
         if self.undef:
@@ -106,6 +106,16 @@ class SyncTracker:
                 if p not in self.processes:
                     self.duration[p] = oldDestTracker.duration[p].copy()
             self.processes = oldDestTracker.processes
+
+    def sameStack(self, tracker, ignoreTop = 0):
+        nbrSame = len(self.stack) - ignoreTop
+        if len(tracker.stack) < nbrSame:
+            return False
+        else:
+            for i in range(0, nbrSame):
+                if tracker.stack[i] != self.stack[i]:
+                    return False
+            return True
 
     def __eq__(self, tracker):
         if isinstance(tracker, SyncTracker):
