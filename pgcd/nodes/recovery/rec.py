@@ -36,19 +36,51 @@ class Recovery:
         pub = self.error_topic
         pub.publish(message)
 
-    def send_comp(self):
-        #TODO
-        # - get the history from the robot
-        # - apply inverse
-        # - serialize
-        # - send
-        # the compensation info are
-        # - checkpoint with (-,ID list)
-        # - message with (msg type, msg args)
-        # - motions with (name, args)
-        pass
+    def prepareCompEntry(self, entry):
+        e = CompensationEntry()
+        if entry[0] == ActionType.MESSAGE:
+            e.kind = 1
+            e.description = entry[1]
+            e.parameters = entry[2]
+        elif entry[0] == ActionType.MOTION:
+            motion, args = self.interpreter.robot.inverse(entry[1], entry[2])
+            e.kind = 2
+            e.description = motion
+            e.parameters = args
+        else:
+            assert False, "unexpected entry: " + str(entry)
+        return e
 
-    def wait_for_comp_info(self):
+    def prepareComp(self):
+        msg = CompensationStamped()
+        msg.header.frame_id = self.interpreter.id
+        checkPt = self.interpreter.stack[0]
+        assert checkPt[0] == ActionType.CHECKPOINT
+        msg.compensation.checkpoint = checkPt[2]
+        msg.compensation.entries = [ self.prepareCompEntry(e) for e in self.interpreter.stack[1:] ]
+        return msg
+
+    def sendComp(self):
+        comp = self.prepareComp()
+        self.compensation_topic.publish(comp)
+
+    def parseCompEntry(self, entry):
+        if entry.kind == 1:
+            return (ActionType.MESSAGE, entry.description, entry.parameters)
+        elif entry.kind == 2:
+            return (ActionType.MOTION, entry.description, entry.parameters)
+        else:
+            assert False, "unexpected entry: " + str(entry)
+
+    def parseComp(self, msg):
+        process = msg.header.frame_id
+        c = msg.compensation
+        checkpts = set(c.checkpoint)
+        stack = [ self.parseCompEntry(e) for e in c.entries ]
+        stack.insert(0, (ActionType.CHECKPOINT, None, checkpts))
+        return (process, stack)
+
+    def waitComp(self):
         #TODO gather the compensations from all the robots
         pass
 

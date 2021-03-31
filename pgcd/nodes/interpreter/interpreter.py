@@ -318,5 +318,4 @@ class Interpreter:
     def visit_checkpoint(self, node):
         self.stack.clear()
         snapshot = [] # TODO save logical state of robot
-        checkpoint_id = node # TODO better
-        self.stack.push(ActionType.CHECKPOINT, checkpoint_id, snapshot)
+        self.stack.push(ActionType.CHECKPOINT, snapshot, node.ids)
