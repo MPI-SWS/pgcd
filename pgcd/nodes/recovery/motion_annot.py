@@ -33,3 +33,11 @@ def decompose(m):
         return (False, m.mp_args[-1])
     else:
         return (False, -1)
+
+def decomposeExtraOnly(m):
+    if m.mp_name.endswith("_idle"):
+        return (m.mp_name[:-len("_idle")], True, -1)
+    elif m.mp_name.endswith("_wait"):
+        return (m.mp_name[:-len("_wait")], False, m.mp_args[-1])
+    else:
+        return (m.mp_name, False, -1)

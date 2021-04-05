@@ -68,7 +68,8 @@ class Projection:
                             node2 = state_to_node[n2]
                             if isinstance(node1, Motion) and isinstance(node2, Motion):
                                 raise Exception("ambiguous external choice for motion: " + str(node1) + ", " + str(node2))
-                            if isinstance(node1, ReceiveMessage) and isinstance(node2, ReceiveMessage) and node1.msg_type == node2.msg_type:
+                            if isinstance(node1, ReceiveMessage) and isinstance(node2, ReceiveMessage) and \
+                               node1.sender == node2.sender and node1.msg_type == node2.msg_type:
                                 raise Exception("ambiguous external choice for message: " + str(node1) + ", " + str(node2))
 
 

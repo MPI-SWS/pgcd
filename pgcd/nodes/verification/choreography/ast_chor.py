@@ -103,6 +103,12 @@ class DistributedStateNode():
     def isMessage(self):
         return self.tip == Type.message
 
+    def isSendMessage(self):
+        return self.tip == Type.send_message
+
+    def isReceiveMessage(self):
+        return self.tip == Type.receive_message
+
     def isMotion(self):
         return self.tip == Type.motion
 

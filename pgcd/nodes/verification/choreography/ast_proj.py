@@ -18,7 +18,7 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
                 node2 = SendMessage(node.start_state, node.receiver, node.msg_type, node.expressions, node.end_state)
                 chor_proj.statements.append(node2)
             elif node.receiver == process.name():
-                node2 = ReceiveMessage(node.start_state, node.msg_type, node.expressions, node.end_state)
+                node2 = ReceiveMessage(node.start_state, node.sender, node.msg_type, node.expressions, node.end_state)
                 chor_proj.statements.append(node2)
             else:
                 chor_proj.statements.append(Indirection(node.start_state, node.end_state))
@@ -104,13 +104,14 @@ class SendMessage(DistributedStateNode):
 
 class ReceiveMessage(DistributedStateNode):
 
-    def __init__(self, start_state, msg_type, expressions, continue_state):
+    def __init__(self, start_state, sender, msg_type, expressions, continue_state):
         DistributedStateNode.__init__(self, Type.receive_message, start_state, continue_state)
+        self.sender = sender
         self.msg_type = msg_type
         self.expressions = expressions
 
     def __str__(self):
-        string = self.start_state[0] + ' = ?' + self.msg_type + '('
+        string = self.start_state[0] + ' = ' + self.sender + ' ?' + self.msg_type + '('
         string += ', '.join([str(x) for x in self.expressions])
         string += '); ' + self.end_state[0]
         return string
