@@ -186,11 +186,10 @@ class Interpreter:
             else:
                 assert False, "no visitor for " + node.tip
         elif self.status == INTERRUPTED:
-            #TODO we got notified of failure
+            # we got notified of failure
             pass
         elif self.status == ERROR:
-            #TODO a motion failed, wait for everybody to stop and start the recovery
-            self.recovery.failure()
+            # a motion failed, wait for everybody to stop and start the recovery
             pass
         else:
             assert False, "status is " + self.status

@@ -18,8 +18,10 @@ from geometry_msgs.msg import Pose, Vector3, Point, Wrench
 #from geometry_msgs.msg import PoseStamped, Vector3Stamped, PointStamped, WrenchStamped
 from std_msgs.msg import String
 # our
+from tf_updater import TFUpdater
 from interpreter.interpreter import Interpreter
-from tf_updater import TFUpdater 
+from recovery.recovery_manager import RecoveryManager
+from choreography.parser_chor import ChoreographyParser
 
 class Component(Node,Interpreter,TFUpdater):
 
@@ -42,6 +44,12 @@ class Component(Node,Interpreter,TFUpdater):
         self.tf2_listener = tf2_ros.TransformListener(self.tfBuffer, self)
         self.tf2_setup(self.robot)
         #self.tfBuffer.registration.print_me()
+        # recovery
+        false = rclpy.parameter.Parameter('recovery',rclpy.parameter.Parameter.Type.BOOL, False)
+        if self.get_parameter_or('recovery', false).value:
+            self.choreo_path = self.get_parameter('choreography_location')._value
+        else:
+            self.choreo_path = None
 
     def message_callback(self, msg):
         # make sure there is an header, get the sender (frame), convert to local frame, put in queue
@@ -63,13 +71,13 @@ class Component(Node,Interpreter,TFUpdater):
             self.receive_from[msg.header.frame_id].put_nowait(msg)
         except queue.Full:
             self.get_logger().warning('dropping message due to full queue')
-    
+
     def ack_callback(self, msg):
         try:
             self.receive_from[msg.data].put_nowait(msg)
         except queue.Full:
             self.get_logger().warning('dropping message due to full queue')
-    
+
     def setup_communication(self):
         ack = set()
         topics = set()
@@ -104,13 +112,48 @@ class Component(Node,Interpreter,TFUpdater):
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.tf2_timer_callback)
 
+
+    def getEnv(self):
+        # TODO get the environement (spec of processes) so we could compute the recovery
+        pass
+
+    def setup_recovery(self):
+        # create recovery manager
+        with open(self.prog_path, 'r') as content_file:
+            choreo_src = content_file.read()
+        env = self.getEnv()
+        choreo = ChoreographyParser(env).parse(choreo_src, check = False)
+        self.recoveryMgr = RecoveryManager(self, choreo)
+        # create publishers
+        self.recoveryMgr.error_pub = self.create_publisher(pgcd.msg.ErrorStamped, "/pgcd/error", 1)
+        self.recoveryMgr.compensation_pub = self.create_publisher(pgcd.msg.CompensationStamped, "/pgcd/compensation", 1)
+        # set callback for failure and compensation
+        self.create_subscription(pgcd.msg.ErrorStamped, "/pgcd/error", self.recoveryMgr.failure_callback, 1)
+        self.create_subscription(pgcd.msg.CompensationStamped, "/pgcd/compensation", self.recoveryMgr.comp_callback,  len(env.allProcesses()))
+
     def execute_prog(self):
         with open(self.prog_path, 'r') as content_file:
             program = content_file.read()
         self.parse(program)
         self.setup_communication()
-        self.execute()
-        rclpy.logging._root_logger.log("PGCD done executing " + self.id, LoggingSeverity.INFO)
+        if self.choreo_path != None:
+            self.setup_recovery()
+        while self.status != InterpreterStatus.TERMINATED:
+            self.execute()
+            if self.status == InterpreterStatus.ERROR:
+                # notify the others
+                rclpy.logging._root_logger.log("PGCD got failure " + self.id, LoggingSeverity.INFO)
+                self.recoveryMgr.failure()
+                # start recovery
+                rclpy.logging._root_logger.log("PGCD start recovery " + self.id, LoggingSeverity.INFO)
+                self.recoveryMgr.startRecovery()
+            elif self.status == InterpreterStatus.INTERRUPTED:
+                # start recovery
+                rclpy.logging._root_logger.log("PGCD start recovery " + self.id, LoggingSeverity.INFO)
+                self.recoveryMgr.startRecovery()
+            else:
+                rclpy.logging._root_logger.log("PGCD terminated " + self.id + " with " + str(self.status), LoggingSeverity.INFO)
+                assert self.status == InterpreterStatus.TERMINATED
         self.evt.set()
 
     def run(self, executor=None):

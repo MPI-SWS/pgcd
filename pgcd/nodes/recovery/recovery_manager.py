@@ -1,8 +1,10 @@
 from interpreter.status import *
 import verification.choreography.ast_chor as ast_chor
 from recovery.motion_annot import *
+import pgcd.msg
 import sympy as sp
 import logging
+import threading
 from copy import copy
 
 log = logging.getLogger("Recovery")
@@ -12,32 +14,45 @@ log = logging.getLogger("Recovery")
 # needs to know:
 #   the participants (how many messages to receive)
 
-class Recovery:
+class RecoveryManager:
 
     def __init__(self, interpreter, choreography):
         self.interpreter = interpreter
         self.choreography = choreography
-        self.error_topic = None #TODO
-        self.compensation_topic = None #TODO
         self.names = dict()
+        self.nProcesses = len(self.choreography.allProcesses())
+        self.comps = dict()
+        self.gotInfo = threading.Event()
+        self.error_pub = None # filled by the Component
+        self.compensation_pub = None # filled by the Component
 
-    def start(self, robots):
-        # start a thread to listen to the error topic
-        # after the error topic, is should listen to the compensation_topic
-        pass
+    def failure_callback(self, msg):
+        log.warning("received error")
+        self.interpreter.status = InterpreterStatus.INTERRUPTED #TODO sync
 
-    def stop(self):
+    def comp_callback(self, msg):
+        (process, stack) = self.parseComp(msg)
+        # TODO sync
+        self.comps[process] = stack
+        if len(self.comps) == self.nProcesses:
+            # TODO we are ready to start the recovery
+            self.gotInfo.set()
+            pass
+
+    def startRecovery(self):
+        self.sendComp()
+        self.gotInfo.wait()
+        # TODO compute recovery, put the result in the interperter and start
         pass
 
     def failure(self):
-        message = error_message() # TODO
+        message = pgcd.msg.ErrorStamped() # TODO
         message.header.frame_id = self.interpreter.id
         # message.header.stamp = rclpy.Time.now()
-        pub = self.error_topic
-        pub.publish(message)
+        self.error_pub.publish(message)
 
     def prepareCompEntry(self, entry):
-        e = CompensationEntry()
+        e = pgcd.msg.CompensationEntry()
         if entry[0] == ActionType.MESSAGE:
             e.kind = 1
             e.description = entry[1]
@@ -52,7 +67,7 @@ class Recovery:
         return e
 
     def prepareComp(self):
-        msg = CompensationStamped()
+        msg = pgcd.msg.CompensationStamped()
         msg.header.frame_id = self.interpreter.id
         checkPt = self.interpreter.stack[0]
         assert checkPt[0] == ActionType.CHECKPOINT
@@ -79,10 +94,6 @@ class Recovery:
         stack = [ self.parseCompEntry(e) for e in c.entries ]
         stack.insert(0, (ActionType.CHECKPOINT, None, checkpts))
         return (process, stack)
-
-    def waitComp(self):
-        #TODO gather the compensations from all the robots
-        pass
 
     def getCheckpoint(self, comp_info):
         # bottom element is a checkpoint get the ids
