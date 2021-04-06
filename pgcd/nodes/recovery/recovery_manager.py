@@ -5,6 +5,7 @@ import pgcd.msg
 import sympy as sp
 import logging
 import threading
+import time
 from copy import copy
 
 log = logging.getLogger("Recovery")
@@ -25,6 +26,9 @@ class RecoveryManager:
         self.gotInfo = threading.Event()
         self.error_pub = None # filled by the Component
         self.compensation_pub = None # filled by the Component
+        self.restartFrom = None
+        self.isRecovering = False
+        self.originalProgram = None
 
     def failure_callback(self, msg):
         log.warning("received error")
@@ -35,14 +39,32 @@ class RecoveryManager:
         # TODO sync
         self.comps[process] = stack
         if len(self.comps) == self.nProcesses:
-            # TODO we are ready to start the recovery
+            # we are ready to start the recovery
             self.gotInfo.set()
-            pass
 
     def startRecovery(self):
         self.sendComp()
         self.gotInfo.wait()
-        # TODO compute recovery, put the result in the interperter and start
+        (chkpt, rec_choreo) = self.computeRecoveryChoreo(self.comp_info)
+        proc = rec_choreo.getProcess(self.interpreter.id)
+        p = Proj2Code(c, proc)
+        rec_code = p.getCode()
+        # clean-up
+        self.gotInfo.clear()
+        self.comps.clear()
+        # put the result in the interperter
+        self.restartFrom = chkpt
+        self.originalProgram = self.interperter.program
+        self.interperter.program = rec_code
+        self.interperter.status = InterpreterStatus.IDLE
+        self.isRecovering = True
+        # start (delay the 1st sender)
+        if rec_code.children[0].isSend:
+            time.sleep(1)
+
+    def restoreProgram(self):
+        assert self.isRecovering == True
+        # TODO ...
         pass
 
     def failure(self):
@@ -258,5 +280,6 @@ class RecoveryManager:
         path = self.getCheckpoint(comp_info, chkpt)
         self.stripPath(path)
         comp = self.reversePath(path)
-        self.synchronize(comp)
-        return comp #ready to be projected and run
+        s = Synchronizer(comp)
+        s.synchronize()
+        return (chkpt, comp) #ready to be projected and run

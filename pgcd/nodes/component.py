@@ -154,6 +154,8 @@ class Component(Node,Interpreter,TFUpdater):
             else:
                 rclpy.logging._root_logger.log("PGCD terminated " + self.id + " with " + str(self.status), LoggingSeverity.INFO)
                 assert self.status == InterpreterStatus.TERMINATED
+                if self.recoveryMgr.isRecovering:
+                    self.recoveryMgr.restoreProgram()
         self.evt.set()
 
     def run(self, executor=None):

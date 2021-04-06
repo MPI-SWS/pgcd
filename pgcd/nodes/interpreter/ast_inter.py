@@ -46,6 +46,24 @@ class Node:
 
     def label(self, label_to_node):
         label_to_node[self.get_label()] = self
+    
+    def isMotion(self):
+        return self.tip == Type.motion
+
+    def isChoice(self):
+        return self.tip == Type._if or self.tip == Type._while
+
+    def isSend(self):
+        return self.tip == Type.send
+
+    def isReceive(self):
+        return self.tip == Type.receive
+
+    def isExit(self):
+        return self.tip == Type.exit
+
+    def isCheckpoint(self):
+        return self.tip == Type.checkpoint
 
 
 class Statement(Node):
