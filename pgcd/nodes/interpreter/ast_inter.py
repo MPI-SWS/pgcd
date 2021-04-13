@@ -2,7 +2,7 @@ from enum import Enum
 from sympy import *
 
 class Type(Enum):
-    statement = 1
+    statement = 1 # TODO rename as block
     skip = 2
     send = 3
     receive = 4
@@ -47,11 +47,20 @@ class Node:
     def label(self, label_to_node):
         label_to_node[self.get_label()] = self
     
+    def isBlock(self):
+        return self.tip == Type.statement
+    
     def isMotion(self):
         return self.tip == Type.motion
-
+    
     def isChoice(self):
         return self.tip == Type._if or self.tip == Type._while
+
+    def isIf(self):
+        return self.tip == Type._if
+
+    def isWhile(self):
+        return self.tip == Type._while
 
     def isSend(self):
         return self.tip == Type.send
@@ -64,6 +73,9 @@ class Node:
 
     def isCheckpoint(self):
         return self.tip == Type.checkpoint
+
+    def contains(self, node):
+        return self == node
 
 
 class Statement(Node):
@@ -84,6 +96,9 @@ class Statement(Node):
         super().label(label_to_node)
         for c in self.children:
             c.label(label_to_node)
+    
+    def contains(self, node):
+        return self == node or any(c.contains(node) for c in self.children)
 
 class Skip(Node):
 
@@ -146,6 +161,9 @@ class Receive(Node):
         self.motion.label(label_to_node)
         for c in self.actions:
             c.label(label_to_node)
+    
+    def contains(self, node):
+        return self == node or self.motion.contains(node) or any(c.contains(node) for c in self.actions)
 
 
 class Action(Node):
@@ -168,6 +186,9 @@ class Action(Node):
     def label(self, label_to_node):
         super().label(label_to_node)
         self.program.label(label_to_node)
+    
+    def contains(self, node):
+        return self == node or self.program.contains(node)
 
 class If(Node):
 
@@ -200,6 +221,8 @@ class If(Node):
                 ifs.append(IfComponent(cond, prog))
             return ifs
 
+    def contains(self, node):
+        return self == node or any(i.contains(node) for i in self.if_list)
 
 
 class IfComponent(Node):
@@ -220,6 +243,9 @@ class IfComponent(Node):
         super().label(label_to_node)
         self.program.label(label_to_node)
 
+    def contains(self, node):
+        return self == node or self.program.contains(node)
+
 class While(Node):
 
     def __init__(self, condition, program):
@@ -237,6 +263,9 @@ class While(Node):
     def label(self, label_to_node):
         super().label(label_to_node)
         self.program.label(label_to_node)
+
+    def contains(self, node):
+        return self == node or self.program.contains(node)
 
 class Assign(Node):
 

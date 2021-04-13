@@ -3,7 +3,7 @@ from recovery.synchronization import *
 import unittest
 
 class SynchronizerTests(unittest.TestCase):
-    
+
     def test_01(self):
         e = env(1)
         raw_c = '''Recovery =

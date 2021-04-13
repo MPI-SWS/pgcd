@@ -1,6 +1,4 @@
 import inspect
-#import threading
-#import _thread
 
 import pgcd.msg
 import rclpy

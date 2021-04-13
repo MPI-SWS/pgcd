@@ -1,6 +1,7 @@
 from interpreter.status import *
 import verification.choreography.ast_chor as ast_chor
 from recovery.motion_annot import *
+from recovery.partial_program import *
 import pgcd.msg
 import sympy as sp
 import logging
@@ -29,6 +30,7 @@ class RecoveryManager:
         self.restartFrom = None
         self.isRecovering = False
         self.originalProgram = None
+        self.lock = threading.Lock()
 
     def failure_callback(self, msg):
         log.warning("received error")
@@ -36,11 +38,11 @@ class RecoveryManager:
 
     def comp_callback(self, msg):
         (process, stack) = self.parseComp(msg)
-        # TODO sync
-        self.comps[process] = stack
-        if len(self.comps) == self.nProcesses:
-            # we are ready to start the recovery
-            self.gotInfo.set()
+        with self.lock:
+            self.comps[process] = stack
+            if len(self.comps) == self.nProcesses:
+                # we are ready to start the recovery
+                self.gotInfo.set()
 
     def startRecovery(self):
         self.sendComp()
@@ -63,12 +65,14 @@ class RecoveryManager:
             time.sleep(1)
 
     def restoreProgram(self):
-        assert self.isRecovering == True
-        # TODO ...
-        pass
+        assert self.isRecovering
+        sefl.isRecovering == False
+        new_prog = resumeAt(self.originalProgram, self.restartFrom)
+        self.interperter.program = new_prog
+        self.interperter.status = InterpreterStatus.IDLE
 
     def failure(self):
-        message = pgcd.msg.ErrorStamped() # TODO
+        message = pgcd.msg.ErrorStamped()
         message.header.frame_id = self.interpreter.id
         # message.header.stamp = rclpy.Time.now()
         self.error_pub.publish(message)

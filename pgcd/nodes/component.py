@@ -6,6 +6,7 @@ import importlib
 import queue
 import threading
 import time
+import inspect
 # ros
 import rclpy
 from rclpy.node import Node
@@ -114,8 +115,18 @@ class Component(Node,Interpreter,TFUpdater):
 
 
     def getEnv(self):
-        # TODO get the environement (spec of processes) so we could compute the recovery
-        pass
+        # get the environement (spec of processes) so we could compute the recovery
+        processesIDs = self.get_parameter('env_processes_ids')._value
+        processesSpecs = self.get_parameter('env_processes_specs')._value
+        w = pgcd.verification.spec.World()
+        for (name,spec) in zip(processesIDs, processesSpecs):
+            try 
+                obj = inspect.getmembers(pgcd.verification.test)[spec] #TODO path as an option
+                assert inspect.isclass(obj)
+                obj(name, w) # create the spec, add to the world
+            except KeyError as e:
+                rclpy.logging._root_logger.log("PGCD could not find spec " + spec + " of " + name, LoggingSeverity.ERROR)
+        return pgcd.verification.spec.End(w, [])
 
     def setup_recovery(self):
         # create recovery manager
