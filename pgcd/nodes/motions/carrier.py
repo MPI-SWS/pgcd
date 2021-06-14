@@ -16,7 +16,8 @@ from multiprocessing import Process
 
 class carrier():
     def __init__( self ):
-        self.motors = steppers.Steppers( 4, [11,13,16,22], [12,15,18,7], [3,3,3,3] )
+        self.pinInterrupt = 40
+        self.motors = steppers.Steppers( 4, [11,13,16,22], [12,15,18,7], [3,3,3,3], pinInterrupt = self.pinInterrupt)
 
         GPIO.setmode(GPIO.BOARD)
         self.pinEnable = 3
@@ -33,7 +34,7 @@ class carrier():
 
         self.stepsCart = 0 # angle in steps
         self.angleCart = 0 # angle in deg
-        self.microstepping = 16 
+        self.microstepping = 16
         self.__microstepping__( 16 )
         print( self.microstepping )
 
@@ -168,9 +169,9 @@ class carrier():
         assert( 0<=angle and angle<=360 )
         self.__motors_start__()
         steps = (angle/360)*14720*1.6
-        self.__compute_steps__( 0,0, steps-self.stepsCart )
-        self.stepsCart = steps
-        self.angleCart = angle
+        (ok, fraction) = self.__compute_steps__( 0,0, steps-self.stepsCart)
+        self.stepsCart = fraction*steps
+        self.angleCart = fraction*angle
         self.__motors_shutdown__()
 
 
@@ -184,14 +185,14 @@ class carrier():
         self.__motors_start__()
 
         steps = distance/157.075*3200+(distance/2000)*3200
-        self.__compute_steps__( steps, 0, 0 )
+        (ok, fraction) = self.__compute_steps__( steps, 0, 0 )
 
         ##steps = (angle/360)*200*6.42*2.15*self.microstepping
         #angle = steps/(200*6.42*2.15*self.microstepping)*360
         #(angle/360)*200*6.42*2.15*self.microstepping
         #
-        dx = sp.N( sp.cos(self.angleCart)*distance )
-        dy = sp.N( sp.sin(self.angleCart)*distance )
+        dx = sp.N( sp.cos(self.angleCart)*distance*fraction )
+        dy = sp.N( sp.sin(self.angleCart)*distance*fraction )
 
         print( "x, y, dx, dy", self.x, self.y, dx, dy )
         self.x += dx
