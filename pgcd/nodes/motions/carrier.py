@@ -10,9 +10,6 @@ from time import sleep, time
 
 import sympy as sp
 
-from multiprocessing import Process
-
-
 
 class carrier():
     def __init__( self ):
