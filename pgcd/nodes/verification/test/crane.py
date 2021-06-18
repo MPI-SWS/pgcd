@@ -10,7 +10,7 @@ import utils.transition
 
 # model for a 3-axis cartesian motion platform
 class Crane(Process):
-    
+
     def __init__(self, name, parent, index = 0):
         super().__init__(name, parent, index)
         # variables
@@ -18,15 +18,19 @@ class Crane(Process):
         self._y = symbols(name + '_y')
         self._z = symbols(name + '_z')
         #TODO physical dimension for footprints
-        self.maxX = ???
-        self.maxY = ???
-        self.maxZ = ???
+        self.maxX = 0.2
+        self.maxY = 0.2
+        self.maxZ = 0.2
+        self.baseHeigth = 0.3
+        self.yOffset = 0.05
+        self.zOffset = 0.05
+        self.xOffset = 0.05
         # frame and stuff
         self._frame = parent.mountingPoint(index)
-        self._base = self._frame.locate_new(name + '_base', ??? )
-        self._upper = self._base.locate_new(name + '_upper', ??? )
-        self._lower = self._upper.locate_new(name + '_lower', ??? )
-        self._effector = self._lower.locate_new(name + '_effector', ??? )
+        self._yAxis = self._frame.locate_new(name + '_yAxis', self.baseHeigth * self._frame.k )
+        self._zAxis = self._yAxis.locate_new(name + '_zAxis', (self._y + self.yOffset) * self._yAxis.j )
+        self._xAxis = self._zAxis.locate_new(name + '_xAxis', -0.05 * self._zAxis.i - (self.zOffset + self._z) * self._zAxis.k )
+        self._effector = self._xAxis.locate_new(name + '_effector', (self._x + self.xOffset) * self._xAxis.i )
         # motion primitives
         Home(self)
         MoveTo(self)
@@ -40,20 +44,28 @@ class Crane(Process):
         Idle(self)
         Wait(self)
         MoveObject(self)
-    
+
 
     def internalVariables(self):
         return [self._x, self._y, self._z, Symbol(self._name + '_dummy')]
 
     def ownResources(self, point, maxError = 0.0):
-        baseFP = ???
-        upperFP = ???
-        lowerFP = ???
-        return Or(baseFP, upperFP, lowerFP)
+        m = maxError
+        f = self._frame
+        supportFP = cube(f, -0.05 * f.i - 0.05 * f.j, 0.05 * f.i + 0.05 * f.j + self.baseHeigth * f.k, m, m, m)
+        y = self._yAxis
+        yAxisFP = cube(y, -0.05 * y.i - 0.05 * y.k, 0.05 * y.i + 0.05 * y.k + (self.maxY + self.yOffset) * y.j, m, m, m)
+        z = self._zAxis
+        zAxisFP = cube(y, -0.05 * z.i - 0.05 * z.j - (self.maxZ + self.zOffset) * z.k, 0.05 * z.i + 0.05 * z.k, m, m, m)
+        x = self._xAxis
+        xAxisFP = cube(z, -0.05 * x.j - 0.05 * x.k, 0.05 * x.j + 0.05 * x.k + (self.xOffset + self.maxX) * x.i, m, m, m)
+        e = self.effector
+        effectorFP = cube(e, -0.025 * e.i - 0.025 * e.j - 0.05 * e.k, 0.025 * e.i + 0.025 * e.j, m, m, m)
+        return Or(supportFP, yAxisFP, zAxisFP, xAxisFP, effectorFP)
 
     def abstractResources(self, point, delta = 0.0):
-        f = self.frame()
-        pass
+        #TODO more abstract
+        return self.ownResources(point, delta)
 
     def mountingPoint(self, index):
         assert(index == 0)
