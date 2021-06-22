@@ -85,7 +85,7 @@ class cart():
         step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3] ) )
         max_steps = max( step_list )
         stepspertime = 3.2
-        self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
+        return self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
 
 
     def __setMSPins__( self, MS1, MS2, MS3 ):

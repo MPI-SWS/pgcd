@@ -85,7 +85,7 @@ class carrier():
         step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3, steps_motor4] ) )
         max_steps = max( step_list )
         stepspertime = 1.6
-        self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
+        return self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
 
 
     def __setMSPins__( self, MS1, MS2, MS3 ):
