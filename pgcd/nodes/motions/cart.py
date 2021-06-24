@@ -2,6 +2,7 @@
 
 import steppers
 import RPi.GPIO as GPIO
+import sympy as sp
 from time import sleep, time
 import math
 
@@ -121,6 +122,13 @@ class cart():
         self.angleCart = angle
         self.__motors_shutdown__()
 
+    def rotate( self, angle ):
+        self.__motors_start__()
+        steps = (angle/360)*200*6.42*6.5*self.microstepping
+        self.__compute_steps__( 0,0, steps)
+        self.stepsCart += steps
+        self.angleCart += angle
+        self.__motors_shutdown__()
 
     def moveCart( self, distance ):
         self.__motors_start__()
@@ -128,6 +136,14 @@ class cart():
         self.__compute_steps__( steps, 0, 0 )
         self.x += math.cos(math.radians(self.angleCart))*distance
         self.y += math.sin(math.radians(self.angleCart))*distance
+        self.__motors_shutdown__()
+    
+    def strafeCart( self, distance ):
+        self.__motors_start__()
+        steps = distance / 410 * 200 * 6 * self.microstepping
+        self.__compute_steps__( 0, steps, 0 )
+        self.x += math.sin(math.radians(self.angleCart))*distance
+        self.y -= math.cos(math.radians(self.angleCart))*distance
         self.__motors_shutdown__()
 
     def idle( self ):
@@ -141,6 +157,17 @@ class cart():
         M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, 0], [sp.sin(angle), sp.cos(angle), 0, 0], [0, 0, 1, self.offset], [0, 0, 0, 1] ] )
         #print( "caa cart>>", M)
         return M
+
+    def inverse(self, mpName, arg):
+        if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":
+            assert len(arg) == 1
+            return mpName, [-arg[0]]
+        elif mpName == "setAngleCart":
+            raise ValueError('cannot invert absolute motion without the pre state', mpName)
+        elif mpName == "idle" or mpName == "wait":
+            return mpName, arg
+        else:
+            raise ValueError('unkown motion primitive', mpName)
 
 if __name__ == "__main__":
     c = cart()

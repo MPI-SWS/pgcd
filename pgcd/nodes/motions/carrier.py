@@ -170,6 +170,15 @@ class carrier():
         self.angleCart = self.angleCart + fraction*(angle-self.angleCart)
         self.__motors_shutdown__()
 
+    def rotate( self, angle ):
+        assert( 0<=angle and angle<=360 )
+        self.__motors_start__()
+        steps = (angle/360)*14720*1.6
+        (ok, fraction) = self.__compute_steps__( 0,0, steps)
+        self.stepsCart += self.stepsCart + fraction*(steps-self.stepsCart)
+        self.angleCart += self.angleCart + fraction*(angle-self.angleCart)
+        self.__motors_shutdown__()
+
     def moveCart( self, distance ):
         """
         Distance in mm
@@ -186,7 +195,7 @@ class carrier():
         steps = distance/157.075*3200+(distance/2000)*3200
         (ok, fraction) = self.__compute_steps__( 0, steps, 0 )
         self.x += math.sin(math.radians(self.angleCart))*distance*fraction
-        self.y += -math.cos(math.radians(self.angleCart))*distance*fraction
+        self.y -= math.cos(math.radians(self.angleCart))*distance*fraction
         self.__motors_shutdown__()
 
     # TODO angle is incremental
@@ -219,11 +228,18 @@ class carrier():
         return M
 
     def inverse(self, mpName, arg):
-        if mpName == "moveCart":
-            pass
+        if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":
+            assert len(arg) == 1
+            return mpName, [-arg[0]]
         elif mpName == "setAngleCart":
-            pass
-        elif mpName == "s":
+            raise ValueError('cannot invert absolute motion without the pre state', mpName)
+        elif mpName == "twist":
+            assert len(arg) == 2
+            return mpName, [arg[0], -arg[1]]
+        elif mpName == "idle" or mpName == "wait":
+            return mpName, arg
+        else:
+            raise ValueError('unkown motion primitive', mpName)
 
 
 

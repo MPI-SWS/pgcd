@@ -11,6 +11,7 @@ class Crane():
 
     def __init__(self, port = "/dev/ttyUSB0", baud = 250000) #115200
         self.chan = serial.Serial(port, baud)
+        self.processCommand("G90")
 
     def send(self, command):
         self.chan.write(command)
@@ -82,3 +83,5 @@ class Crane():
         self.openGripper()
         self.moveToZ(0)
 
+
+    #TODO inverse

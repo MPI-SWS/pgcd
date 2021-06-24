@@ -82,7 +82,7 @@ class arm():
         #print( "caa cant>>", M)
         return M
 
-    def _setAngleAnchorPoint( self, angle ):
+    def setAngleAnchorPoint( self, angle ):
         assert( angle >= -30 and angle <= 270 )
         steps = 5400/270*angle*5
         delta = steps-self.stepsAnchorpoint
@@ -152,6 +152,25 @@ class arm():
 
     def wait(self, time):
         time.sleep(time)
+    
+    def inverse(self, mpName, arg):
+        if mpName == "grip":
+            assert len(arg) == 1
+            middle = (5 + 12.5) / 2
+            delta = arg[0] - middle
+            return mpName, [middle - delta]
+        elif mpName == "move":
+            assert len(arg) == 3
+            return mpName, [-i for i in args]
+        elif mpName == "retractArm" or
+             mpName == "setAngleTurntable" or
+             mpName == "setAngleCantilever" or
+             mpName == "setAngleAnchorPoint" or :
+            raise ValueError('cannot invert absolute motion without the pre state', mpName)
+        elif mpName == "idle" or mpName == "wait":
+            return mpName, arg
+        else:
+            raise ValueError('unkown motion primitive', mpName)
 
 if __name__ == "__main__":
     a = arm()
