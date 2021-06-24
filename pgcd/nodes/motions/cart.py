@@ -2,8 +2,8 @@
 
 import steppers
 import RPi.GPIO as GPIO
-import sympy as sp
-from multiprocessing import Process
+from time import sleep, time
+import math
 
 class cart():
     """
@@ -20,37 +20,26 @@ class cart():
 
     """
     def __init__( self ):
-
+        GPIO.setwarnings(False)
         self.motors = steppers.Steppers( 3, [11,13,16], [12,15,18], [3,3,3] )
-
         GPIO.setmode(GPIO.BOARD)
         self.pinEnable = 3
         self.pinMS1 = 5
         self.pinMS2 = 24
         self.pinMS3 = 26
-
-
-        GPIO.setup( self.pinEnable, GPIO.OUT )
+        #GPIO.setup( self.pinEnable, GPIO.OUT )
         GPIO.setup( self.pinMS1, GPIO.OUT )
         GPIO.setup( self.pinMS2, GPIO.OUT )
         GPIO.setup( self.pinMS3, GPIO.OUT )
-
-        #self.offset = sp.Matrix( [[1,0,0,63], [0,1,0,0], [0,0,1,0], [0,0,0,1] ] )
         self.offset = 63
-
         self.stepsCart = 0
         self.angleCart = 0
         self.microstepping = 16
         self.__microstepping__( 16 )
         #print( self.microstepping )
-
         self.x = 0
         self.y = 0
 
-        print( "inititalized cart" )
-
-
-    # Methods concerning moving the cart
     def __motors_start__( self ):
         GPIO.output( self.pinEnable, GPIO.LOW )
 
@@ -126,35 +115,10 @@ class cart():
 
     def setAngleCart( self, angle ):
         self.__motors_start__()
-        assert( 0<=angle and angle<=360 )
-
         steps = (angle/360)*200*6.42*6.5*self.microstepping
-
-        #print( "angle %d steps" %(steps) )
-        if steps > self.stepsCart:
-            direction = [0,0,0]
-        else:
-            direction = [1,1,1]
-        delta = abs(steps-self.stepsCart)
-        step_list = [delta, delta, delta]
-        #print( "step_list", step_list )
-        stepspertime = 3.2
-        self.motors.doSteps( int(delta/stepspertime), step_list, direction )
-
-        #now = time()
-        #future = now+angle/360*41.024
-        #print( "now, future, angle ", now, future, angle )
-        #cutoff = now
-        #while now-cutoff < future-cutoff:
-        #    #print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
-        #    self.angleCart = sp.rad(sp.N((now-cutoff)/(future-cutoff)*angle))
-        #    now = time()
-        #    #print( "loop", self.angleCart )
-        ##print( "set angle cart to angle:", self.angleCart, angle )
-        ##self.__compute_steps__( 0,0, steps-self.stepsCart )
+        self.__compute_steps__( 0,0, steps-self.stepsCart)
         self.stepsCart = steps
         self.angleCart = angle
-
         self.__motors_shutdown__()
 
 
@@ -162,25 +126,15 @@ class cart():
         self.__motors_start__()
         steps = distance / 410 * 200 * 6 * self.microstepping
         self.__compute_steps__( steps, 0, 0 )
-
-        #steps = (angle/360)*200*6.42*2.15*self.microstepping
-        angle = self.angleCart/(200*6.42*self.microstepping)*360
-        #(angle/360)*200*6.42*2.15*self.microstepping
-
-
-        dx = sp.cos(angle)*distance
-        dy = sp.sin(angle)*distance
-
-        if steps < 0:
-            self.x = self.x-dx
-            self.y = self.y-dy
-        else:
-            self.x = self.x+dx
-            self.y = self.y+dy
+        self.x += math.cos(math.radians(self.angleCart))*distance
+        self.y += math.sin(math.radians(self.angleCart))*distance
         self.__motors_shutdown__()
 
     def idle( self ):
-        sleep( 0.1 )
+        time.sleep(0.1)
+    
+    def wait(self, time):
+        time.sleep(time)
 
     def getConfigurationMatrixCart( self ):
         angle = self.angleCart
@@ -188,3 +142,9 @@ class cart():
         #print( "caa cart>>", M)
         return M
 
+if __name__ == "__main__":
+    c = cart()
+    c.setAngleCart( 45 )
+    c.setAngleCart( 0 )
+    c.moveCart( 50 )
+    c.moveCart(-50 )

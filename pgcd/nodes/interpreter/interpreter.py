@@ -154,7 +154,6 @@ class Interpreter:
             return evaluated
 
     def visit(self, node):
-        #TODO check for interruption
         # catch error in motion
         if self.status == RUNNING:
             if node.tip == Type.statement:

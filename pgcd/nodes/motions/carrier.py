@@ -7,12 +7,14 @@ Meccanum cart
 import steppers
 import RPi.GPIO as GPIO
 from time import sleep, time
+import math
 
 import sympy as sp
 
 
 class carrier():
     def __init__( self ):
+        GPIO.setwarnings(False)
         self.pinInterrupt = 40
         self.motors = steppers.Steppers( 4, [11,13,16,22], [12,15,18,7], [3,3,3,3], pinInterrupt = self.pinInterrupt)
 
@@ -33,7 +35,6 @@ class carrier():
         self.angleCart = 0 # angle in deg
         self.microstepping = 16
         self.__microstepping__( 16 )
-        print( self.microstepping )
 
         self.x = 0
         self.y = 0
@@ -84,7 +85,7 @@ class carrier():
 
         step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3, steps_motor4] ) )
         max_steps = max( step_list )
-        stepspertime = 1.6
+        stepspertime = 2.0 # 1.6
         return self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
 
 
@@ -147,13 +148,11 @@ class carrier():
         #    print( now-cutoff, future-cutoff, now-cutoff < future-cutoff )
         #    setattr( self, xName, sp.N( sp.cos( sp.rad(angle))* (now-cutoff)/(future-cutoff)*distance) )
         #    setattr( self, yName, sp.N( sp.sin( sp.rad(angle))* (now-cutoff)/(future-cutoff)*distance) )
-
         #    print( "getAttr", getattr( self, xName ) )
         #    print( "getAttr", getattr( self, yName ) )
         #    print( "------>", sp.N( sp.cos( sp.rad(angle))* (now-cutoff)/(future-cutoff)*distance) )
         #    print( "------>", sp.N( sp.sin( sp.rad(angle))* (now-cutoff)/(future-cutoff)*distance) )
         #    rclpy.sleep(0.1)
-
         #    now = time()
         setattr( self, xName, sp.N( sp.cos( sp.rad(angle))*distance) )
         setattr( self, yName, sp.N( sp.sin( sp.rad(angle))*distance) )
@@ -167,41 +166,51 @@ class carrier():
         self.__motors_start__()
         steps = (angle/360)*14720*1.6
         (ok, fraction) = self.__compute_steps__( 0,0, steps-self.stepsCart)
-        self.stepsCart = fraction*steps
-        self.angleCart = fraction*angle
+        self.stepsCart = self.stepsCart + fraction*(steps-self.stepsCart)
+        self.angleCart = self.angleCart + fraction*(angle-self.angleCart)
         self.__motors_shutdown__()
-
-
 
     def moveCart( self, distance ):
         """
         Distance in mm
-        wheel radius = 50mm
         """
-
         self.__motors_start__()
-
         steps = distance/157.075*3200+(distance/2000)*3200
         (ok, fraction) = self.__compute_steps__( steps, 0, 0 )
-
-        ##steps = (angle/360)*200*6.42*2.15*self.microstepping
-        #angle = steps/(200*6.42*2.15*self.microstepping)*360
-        #(angle/360)*200*6.42*2.15*self.microstepping
-        #
-        dx = sp.N( sp.cos(self.angleCart)*distance*fraction )
-        dy = sp.N( sp.sin(self.angleCart)*distance*fraction )
-
-        print( "x, y, dx, dy", self.x, self.y, dx, dy )
-        self.x += dx
-        self.y += dy
-        #self.__updateDistanceRos__( "x", "y", self.angleCart, distance, 6.4 )
-
-
+        self.x += math.cos(math.radians(self.angleCart))*distance*fraction
+        self.y += math.sin(math.radians(self.angleCart))*distance*fraction
         self.__motors_shutdown__()
+
+    def strafeCart( self, distance ):
+        self.__motors_start__()
+        steps = distance/157.075*3200+(distance/2000)*3200
+        (ok, fraction) = self.__compute_steps__( 0, steps, 0 )
+        self.x += math.sin(math.radians(self.angleCart))*distance*fraction
+        self.y += -math.cos(math.radians(self.angleCart))*distance*fraction
+        self.__motors_shutdown__()
+
+    # TODO angle is incremental
+    def twist( self, radius, angle):
+        distanceSide = radius * (angle*2*3.14159/360)
+        stepsSide = distanceSide/157.075*3200+(distanceSide/2000)*3200
+        stepsAngle = (angle/360)*14720*1.6 * 1.1
+        self.__motors_start__()
+        (ok, fraction) = self.__compute_steps__( 0, stepsSide, stepsAngle )
+        self.__motors_shutdown__()
+        #update position
+        dx = 0 #TODO update the position
+        dy = 0 #TODO update the position
+        self.x += fraction*dx
+        self.y += fraction*dy
+        #update angle
+        self.stepsCart = self.stepsCart + fraction*(stepsAngle-self.stepsCart)
+        self.angleCart = self.angleCart + fraction*(angle-self.angleCart)
 
     def idle(self):
         time.sleep(0.1)
 
+    def wait(self, time):
+        time.sleep(time)
 
     def getConfigurationMatrixCart( self ):
         angle = sp.rad( self.angleCart  )
@@ -209,20 +218,19 @@ class carrier():
         print( "caa cart>>", M)
         return M
 
+    def inverse(self, mpName, arg):
+        if mpName == "moveCart":
+            pass
+        elif mpName == "setAngleCart":
+            pass
+        elif mpName == "s":
+
 
 
 if __name__ == "__main__":
     c = carrier()
-    c.__motors_start__()
-    print( c.getConfigurationMatrixCart() )
     c.setAngleCart( 45 )
-    print( c.getConfigurationMatrixCart() )
     c.setAngleCart( 90 )
-    print( c.getConfigurationMatrixCart() )
     c.setAngleCart( 180 )
-    print( c.getConfigurationMatrixCart() )
     c.setAngleCart( 0 )
-    print( c.getConfigurationMatrixCart() )
     c.moveCart( 200 )
-
-    c.__motors_shutdown__()
