@@ -169,6 +169,8 @@ class carrier():
         self.stepsCart = self.stepsCart + fraction*(steps-self.stepsCart)
         self.angleCart = self.angleCart + fraction*(angle-self.angleCart)
         self.__motors_shutdown__()
+        if not ok:
+            raise RuntimeError(fraction)
 
     def rotate( self, angle ):
         assert( 0<=angle and angle<=360 )
@@ -178,6 +180,8 @@ class carrier():
         self.stepsCart += self.stepsCart + fraction*(steps-self.stepsCart)
         self.angleCart += self.angleCart + fraction*(angle-self.angleCart)
         self.__motors_shutdown__()
+        if not ok:
+            raise RuntimeError(fraction)
 
     def moveCart( self, distance ):
         """
@@ -189,6 +193,8 @@ class carrier():
         self.x += math.cos(math.radians(self.angleCart))*distance*fraction
         self.y += math.sin(math.radians(self.angleCart))*distance*fraction
         self.__motors_shutdown__()
+        if not ok:
+            raise RuntimeError(fraction)
 
     def strafeCart( self, distance ):
         self.__motors_start__()
@@ -197,6 +203,8 @@ class carrier():
         self.x += math.sin(math.radians(self.angleCart))*distance*fraction
         self.y -= math.cos(math.radians(self.angleCart))*distance*fraction
         self.__motors_shutdown__()
+        if not ok:
+            raise RuntimeError(fraction)
 
     # TODO angle is incremental
     def twist( self, radius, angle):
@@ -214,6 +222,8 @@ class carrier():
         #update angle
         self.stepsCart = self.stepsCart + fraction*(stepsAngle-self.stepsCart)
         self.angleCart = self.angleCart + fraction*(angle-self.angleCart)
+        if not ok:
+            raise RuntimeError(fraction)
 
     def idle(self):
         time.sleep(0.1)
@@ -227,15 +237,23 @@ class carrier():
         print( "caa cart>>", M)
         return M
 
-    def inverse(self, mpName, arg):
+    def inverse(self, mpName, arg, error = None):
         if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":
             assert len(arg) == 1
-            return mpName, [-arg[0]]
+            if error == None:
+                return mpName, [-arg[0]]
+            else
+                fraction = error.args[g0]
+                return mpName, [-fraction * arg[0]]
         elif mpName == "setAngleCart":
             raise ValueError('cannot invert absolute motion without the pre state', mpName)
         elif mpName == "twist":
             assert len(arg) == 2
-            return mpName, [arg[0], -arg[1]]
+            if error == None:
+                return mpName, [arg[0], -arg[1]]
+            else
+                fraction = error.args[g0]
+                return mpName, [arg[0], -fraction * arg[1]]
         elif mpName == "idle" or mpName == "wait":
             return mpName, arg
         else:

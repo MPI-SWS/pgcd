@@ -158,10 +158,14 @@ class cart():
         #print( "caa cart>>", M)
         return M
 
-    def inverse(self, mpName, arg):
+    def inverse(self, mpName, arg, error = None):
         if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":
             assert len(arg) == 1
-            return mpName, [-arg[0]]
+            if error == None:
+                return mpName, [-arg[0]]
+            else
+                fraction = float(error)
+                return mpName, [-fraction * arg[0]]
         elif mpName == "setAngleCart":
             raise ValueError('cannot invert absolute motion without the pre state', mpName)
         elif mpName == "idle" or mpName == "wait":

@@ -89,19 +89,19 @@ class CartSquare(Cart):
 
 
 class CartMotionPrimitive(MotionPrimitive):
-    
+
     def __init__(self, name, component):
         super().__init__(name, component)
         self.err = 0.005
         self._maxErrorPre = 0.005
         self._maxErrorPost = 0.005
-        
+
     def _locAsVec(self, loc):
         return loc.position_wrt(self._frame)
 
     def _onGroundVec(self, vec):
         return Eq(self._component.frame().k.dot(vec) , 0)
-    
+
     def _onGround(self, loc):
         return Eq(self._component.frame().k.dot(self._locAsVec(loc)) , 0)
 
@@ -124,7 +124,7 @@ class MoveFromTo(MotionPrimitiveFactory):
         super().__init__(component)
 
     def parameters(self):
-        return ['source', 'target', '[oritentation]']
+        return ['source', 'target', '[orientation]']
 
     def setParameters(self, args):
         assert(len(args) in {2,3})
@@ -156,7 +156,7 @@ class CartMove(CartMotionPrimitive):
             return Eq(self._component._theta, self._theta)
         else:
             return S.true
-    
+
     def duration(self):
         return DurationSpec(0, 1, False) #TODO upper as function of the distance and speed
 
@@ -195,9 +195,9 @@ class CartIdle(CartMotionPrimitive):
 
     def modifies(self):
         return []
-    
+
     def duration(self):
-        return DurationSpec(0, float('inf'), True) 
+        return DurationSpec(0, float('inf'), True)
 
     def preG(self):
         return S.true
@@ -241,7 +241,7 @@ class CartSetAngle(CartMotionPrimitive):
 
     def modifies(self):
         return [self.var]
-    
+
     def duration(self):
         return DurationSpec(self._dMin, self._dMax, False) #TODO upper as function of the angle and angular speed
 
@@ -250,7 +250,7 @@ class CartSetAngle(CartMotionPrimitive):
             return And(self.var - self.err <= self.af, self.var <= self.af + self.err)
         else:
             return S.true
-    
+
     def invG(self):
         if self.af != None:
             t = timeSymbol()
@@ -281,6 +281,7 @@ class MoveCart(MotionPrimitiveFactory):
         else:
             return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy, args[4])
 
+
 class StrafeCart(MotionPrimitiveFactory):
 
     def __init__(self, component):
@@ -297,7 +298,7 @@ class StrafeCart(MotionPrimitiveFactory):
         return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy)
 
 class CartMoveDirection(CartMotionPrimitive):
-    
+
     def __init__(self, name, component, x, y, t, x1, y1, dt = None):
         super().__init__(name, component)
         self._frame = self._component.frame()
@@ -320,10 +321,10 @@ class CartMoveDirection(CartMotionPrimitive):
 
     def _dstFrame(self):
         return self._frame.locate_new("dst", self._frame.i * self.x1 + self._frame.j * self.y1)
-    
+
     def modifies(self):
         return [self._component._x, self._component._y]
-    
+
     def duration(self):
         return DurationSpec(self._dMin, self._dMax, False) #TODO upper as function of the distance+angle and speed
 
@@ -361,7 +362,7 @@ class Swipe(MotionPrimitiveFactory):
             return CartSwipe(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], DurationSpec(args[5], args[5], False))
 
 class CartSwipe(CartMotionPrimitive):
-    
+
     def __init__(self, name, component, x, y, t, radius, angle, time = DurationSpec(0, 1, False)):
         super().__init__(name, component)
         self._frame = self._component.frame()
@@ -371,13 +372,13 @@ class CartSwipe(CartMotionPrimitive):
         self.r = radius
         self.a = angle
         self.d = time
-    
+
     def modifies(self):
         return [self._component._x, self._component._y, self._component._theta]
 
     def _src(self):
         return self._frame.locate_new("src", self._frame.i * self.x + self._frame.j * self.y).origin
-    
+
     def centerOfRotation(self):
         f = self._frame
         f2 = f.orient_new_axis("CoR_tmp", self.t, f.k, location = self._src().position_wrt(f.origin))
@@ -392,7 +393,7 @@ class CartSwipe(CartMotionPrimitive):
         angleMin = min(self.t + self.a, self.t)
         angleMax = max(self.t + self.a, self.t)
         return And(self._component._theta >= angleMin, self._component._theta <= angleMax)
-    
+
     def duration(self):
         return self.d
 

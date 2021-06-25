@@ -13,7 +13,7 @@ delta = 0.001 # dreal δ-sat
 
 class PointProcess(Process):
 
-    def __init__(self, name, x, y, z, parent = None, index = 0):
+    def __init__(self, name, x = 0, y = 0, z = 0, parent = None, index = 0):
         super().__init__(name, parent, index)
         self.x = x
         self.y = y

@@ -135,6 +135,11 @@ class arm():
         stepsCantilever = 5400/270*cantilever
         stepsAnchorpoint = 5400/270*anchorpoint*5
         self.steps(stepsTurnTable, stepsCantilever, stepsAnchorpoint)
+    
+    def rotate( self,
+                turntable0, cantilever0, anchorpoint0,
+                turntable1, cantilever1, anchorpoint1 ):
+        self.move(turntable1-turntable0, cantilever1-cantilever0, anchorpoint1-anchorpoint0)
 
     def retractArm( self ):
         self.moveTo(0, 0, 0)
@@ -153,12 +158,16 @@ class arm():
     def wait(self, time):
         time.sleep(time)
     
-    def inverse(self, mpName, arg):
+    def inverse(self, mpName, arg, error = None):
+        assert error == None #TODO
         if mpName == "grip":
             assert len(arg) == 1
             middle = (5 + 12.5) / 2
             delta = arg[0] - middle
             return mpName, [middle - delta]
+        elif mpName == "rotate":
+            assert len(arg) == 6
+            return mpName, [arg[3], arg[4], arg[5], arg[0], arg[1], arg[2]]
         elif mpName == "move":
             assert len(arg) == 3
             return mpName, [-i for i in args]

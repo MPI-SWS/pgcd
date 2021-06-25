@@ -15,3 +15,4 @@ class ActionType(Enum):
     MOTION = 1
     MESSAGE = 2
     CHECKPOINT = 3
+    FAILEDMOTION = 4

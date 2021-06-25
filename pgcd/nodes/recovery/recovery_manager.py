@@ -88,6 +88,11 @@ class RecoveryManager:
             e.kind = 2
             e.description = motion
             e.parameters = args
+        elif entry[0] == ActionType.FAILEDMOTION:
+            motion, args = self.interpreter.robot.inverse(entry[1], entry[2], entry[3])
+            e.kind = 2
+            e.description = motion
+            e.parameters = args
         else:
             assert False, "unexpected entry: " + str(entry)
         return e

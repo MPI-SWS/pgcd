@@ -21,7 +21,7 @@ class DummyRobot():
         return M
 
     def idle( self ):
-        time.sleep(0.2)
+        time.sleep(0.1)
 
     def read( self ):
         input('wait for next round ...')
@@ -35,3 +35,21 @@ class DummyRobot():
 
     def wait( self, t ):
         time.sleep(t)
+
+    def fail(self, tErr, tMax):
+        assert(tErr > 0 and tErr < tMax)
+        time.sleep(tErr)
+        raise RuntimeError('failing')
+
+    def inverse(self, mpName, arg, error = None):
+        if mpName == "fail":
+            assert len(arg) == 2
+            return "wait", [arg[1]]
+        elif mpName == "read":
+            return "wait", [1]
+        elif mpName == "setAngle":
+            raise ValueError('cannot invert absolute motion without the pre state', mpName)
+        elif mpName == "idle" or mpName == "wait":
+            return mpName, arg
+        else:
+            raise ValueError('unkown motion primitive', mpName)

@@ -14,6 +14,8 @@ from sympy.core.numbers import Float, Zero, One, NegativeOne
 
 from interpreter.parser import *
 from interpreter.status import *
+from interpreter.ast_inter import *
+
 
 class Interpreter:
 
@@ -61,75 +63,6 @@ class Interpreter:
 
     def parse(self, code):
         self.program = self.parser.parse(code)
-
-    # receiver name and message type name
-    def get_send_info(self):
-        infos = []
-        def visit(node):
-            if node.tip == Type.statement:
-                for stmt in node.children:
-                    visit(stmt)
-            elif node.tip == Type.skip:
-                pass
-            elif node.tip == Type.send:
-                infos.append((node.comp, node.msg_type))
-            elif node.tip == Type.receive:
-                for a in node.actions:
-                    visit(a.program)
-            elif node.tip == Type._if:
-                for if_stmt in node.if_list:
-                    visit(if_stmt.program)
-            elif node.tip == Type._print:
-                pass
-            elif node.tip == Type._while:
-                visit(node.program)
-            elif node.tip == Type.assign:
-                pass
-            elif node.tip == Type.motion:
-                pass
-            elif node.tip == Type.exit:
-                pass
-            elif node.tip == Type.checkpoint:
-                pass
-            else:
-                assert False, "no visitor for " + node.tip
-        visit(self.program)
-        return infos
-
-    # sender name and message type name
-    def get_receive_info(self):
-        infos = []
-        def visit(node):
-            if node.tip == Type.statement:
-                for stmt in node.children:
-                    visit(stmt)
-            elif node.tip == Type.skip:
-                pass
-            elif node.tip == Type.send:
-                pass
-            elif node.tip == Type.receive:
-                for a in node.actions:
-                    infos.append((node.sender, a.str_msg_type))
-                    visit(a.program)
-            elif node.tip == Type._if:
-                for if_stmt in node.if_list:
-                    visit(if_stmt.program)
-            elif node.tip == Type._print:
-                pass
-            elif node.tip == Type._while:
-                visit(node.program)
-            elif node.tip == Type.assign:
-                pass
-            elif node.tip == Type.motion:
-                pass
-            elif node.tip == Type.exit:
-                pass
-            elif node.tip == Type.checkpoint:
-                pass
-            else:
-                assert False, "no visitor for " + node.tip
-        visit(self.program)
-        return infos
 
     #TODO that is slow. Instead we should compile the sympy expr (https://docs.sympy.org/latest/modules/utilities/lambdify.html) and the use that function
     def calculate_sympy_exp(self, sympy_exp):
@@ -184,10 +117,10 @@ class Interpreter:
                 assert False, "no visitor for " + node.tip
         elif self.status == INTERRUPTED:
             # we got notified of failure
-            pass
+            pass # the component will handle this
         elif self.status == ERROR:
             # a motion failed, wait for everybody to stop and start the recovery
-            pass
+            pass # the component will handle this
         else:
             assert False, "status is " + self.status
 
@@ -299,6 +232,8 @@ class Interpreter:
                 getattr(self.robot, node.value)(*args)
             except Exception as e:
                 rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.ERROR)
+                (s,m,a) = self.stack.pop()
+                self.stack.push((ActionType.FAILEDMOTION,m,a,e))
                 self.status = ERROR
 
     def visit_print(self, node):

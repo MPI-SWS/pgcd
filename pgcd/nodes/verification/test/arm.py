@@ -189,7 +189,7 @@ class ArmFold(ArmMP):
         else:
             self._dMin = duration
             self._dMax = duration
-    
+
     def duration(self):
         return DurationSpec(self._dMin, self._dMax, False) #TODO function of angle and speed
 
@@ -261,7 +261,7 @@ class ArmWait(ArmMP):
 
     def modifies(self):
         return [Symbol(self._component.name() + '_dummy')]
-    
+
     def duration(self):
         return DurationSpec(self.t_min, self.t_max, False)
 
@@ -337,13 +337,13 @@ class ArmGrab(ArmMP):
         #TODO min distance
         dist = distance(self._component._upper.origin, self._target) <= maxRadius
         return self.removeParentVar(dist)
-    
+
     def preA(self):
         return self.timify(self.posCstr())
 
     def invG(self):
         return S.true
-    
+
     def postA(self):
         return self.posCstr()
 
@@ -668,15 +668,15 @@ class ArmSetAllAngles(ArmMP):
         else:
             if self.angle1a < self.angle1b:
                 f = And(f, self._component._c >= self.angle1a, self._component._c <= self.angle1b)
-            else:                                                              
+            else:
                 f = And(f, self._component._c >= self.angle1b, self._component._c <= self.angle1a)
-            if self.angle2a < self.angle2b:                                    
+            if self.angle2a < self.angle2b:
                 f = And(f, self._component._b >= self.angle2a, self._component._b <= self.angle2b)
-            else:                                                              
+            else:
                 f = And(f, self._component._b >= self.angle2b, self._component._b <= self.angle2a)
-            if self.angle3a < self.angle3b:                                    
+            if self.angle3a < self.angle3b:
                 f = And(f, self._component._a >= self.angle3a, self._component._a <= self.angle3b)
-            else:                                                              
+            else:
                 f = And(f, self._component._a >= self.angle3b, self._component._a <= self.angle3a)
         return self.timify(f)
 

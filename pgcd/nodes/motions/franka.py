@@ -91,6 +91,9 @@ class franka():
         self.f.run(prog)
         self.stop()
 
+    def inverse(self, mpName, arg, error = None):
+        # TODO
+        pass
 
 if __name__ == "__main__":
     f = franka()

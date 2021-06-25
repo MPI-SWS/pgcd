@@ -21,6 +21,7 @@ from std_msgs.msg import String
 # our
 from tf_updater import TFUpdater
 from interpreter.interpreter import Interpreter
+from interpreter.communication_utils import *
 from recovery.recovery_manager import RecoveryManager
 from choreography.parser_chor import ChoreographyParser
 
@@ -85,7 +86,7 @@ class Component(Node,Interpreter,TFUpdater):
         # subscriptions
         rclpy.logging._root_logger.log("PGCD sub /" + self.id + "/Ack", LoggingSeverity.INFO)
         self.create_subscription(String, "/" + self.id + "/Ack", self.ack_callback, 1)
-        for name, msg_name in self.get_receive_info():
+        for name, msg_name in get_receive_info(self.program):
             topic = "/" + self.id + "/" + msg_name
             if not topic in topics:
                 topics.add(topic)
@@ -98,7 +99,7 @@ class Component(Node,Interpreter,TFUpdater):
                 self.send_to[name]["Ack"] = self.create_publisher(String, "/" + name + "/Ack", 1) #to emulate synchronous communication
                 ack.add(name)
         # publishers
-        for name, msg_name in self.get_send_info():
+        for name, msg_name in get_send_info(self.program):
             if name not in self.send_to:
                 self.send_to[name] = {}
             if name not in ack:
@@ -129,6 +130,7 @@ class Component(Node,Interpreter,TFUpdater):
         return pgcd.verification.spec.End(w, [])
 
     def setup_recovery(self):
+        rclpy.logging._root_logger.log("PGCD setup for recovery" + self.id, LoggingSeverity.INFO)
         # create recovery manager
         with open(self.prog_path, 'r') as content_file:
             choreo_src = content_file.read()
