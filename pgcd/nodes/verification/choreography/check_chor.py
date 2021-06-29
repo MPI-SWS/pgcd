@@ -1,9 +1,9 @@
-from ast_chor import *
-from compatibility import choiceAt
-from utils.causality_tracker import *
-from threads import *
-from spec.time import DurationSpec
-from propagate_footprints import *
+from verification.choreography.ast_chor import *
+from verification.choreography.compatibility import choiceAt
+from verification.utils.causality_tracker import *
+from verification.choreography.threads import *
+from verification.spec.time import DurationSpec
+from verification.choreography.propagate_footprints import *
 import logging
 
 log = logging.getLogger("ChoreographyCheck")
@@ -32,7 +32,7 @@ class ChoreographyCheck:
     def check_well_formedness(self):
         self.syntacic_checks()
         self.thread_checks()
-        log.debug("causality, local choice, connectedness, and ... checks")
+        log.debug("connectedness")
         self.traverse_graph(self.chor.start_state, set(), self.chor.start_state, self.causality)
         log.debug("propagate footprint")
         fill_fp = PropagateFootprint(self.chor)

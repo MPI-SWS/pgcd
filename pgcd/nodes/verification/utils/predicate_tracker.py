@@ -1,7 +1,7 @@
 
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
-from utils.vc import *
+from verification.utils.vc import *
 import copy
 
 class ProcessPredicatesTracker:

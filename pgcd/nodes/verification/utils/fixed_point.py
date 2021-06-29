@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ast_chor import *
+from verification.choreography.ast_chor import *
 from typing import List
 import logging
 

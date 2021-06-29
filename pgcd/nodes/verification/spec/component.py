@@ -2,8 +2,8 @@ from sympy import *
 from sympy.vector import CoordSys3D
 import functools
 from abc import ABC, abstractmethod
-from utils.geometry import cube
-import spec.conf
+from verification.utils.geometry import cube
+import verification.spec.conf
 
 
 class Component(ABC):
@@ -30,7 +30,7 @@ class Component(ABC):
         if self._parent != None:
             return self._parent.mountingPoint(self._index)
         else:
-            return spec.conf.worldFrame
+            return verification.spec.conf.worldFrame
 
     @abstractmethod
     def mountingPoint(self, index):
@@ -186,3 +186,23 @@ class Cube(Obstacle):
         f = self.frame()
         cf = f.orient_new_axis(self.name(), self.theta, f.k, location = self.x * f.i + self.y * f.j + self.z * f.k)
         return cube(cf, cf.origin, cf.origin.locate_new(self.name() + "_top", self.dx * cf.i + self.dy * cf.j + self.dz * cf.k) , point)
+
+# world: a trivial componenent (with optional mounting points as args)
+class World(Component):
+
+    def __init__(self, *mnts):
+        super().__init__('World', None)
+        f = verification.spec.conf.worldFrame
+        self._frame = f
+        self._mountingPoints = [f.orient_new_axis('world_mount_' + str(i), t, f.k, location= x * f.i + y * f.j + z * f.k) for i, (x,y,z,t) in enumerate(mnts)]
+        self._mount = f
+
+    def frame(self):
+        return self._frame
+
+    def mountingPoint(self, index):
+        if index < len(self._mountingPoints) :
+            return self._mountingPoints[index]
+        else:
+            return self._frame
+

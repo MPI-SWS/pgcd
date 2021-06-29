@@ -22,25 +22,6 @@ import logging
 
 log = logging.getLogger("XP")
 
-# world: a trivial componenent (with optional mounting points as args)
-class World(Component):
-
-    def __init__(self, *mnts):
-        super().__init__('World', None)
-        f = spec.conf.worldFrame
-        self._frame = f
-        self._mountingPoints = [f.orient_new_axis('world_mount_' + str(i), t, f.k, location= x * f.i + y * f.j + z * f.k) for i, (x,y,z,t) in enumerate(mnts)]
-        self._mount = f
-
-    def frame(self):
-        return self._frame
-
-    def mountingPoint(self, index):
-        if index < len(self._mountingPoints) :
-            return self._mountingPoints[index]
-        else:
-            return self._frame
-
 class DummyProcess(Process):
 
     def __init__(self, name, parent, index):

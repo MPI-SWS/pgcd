@@ -41,7 +41,7 @@ class Parser:
             p[0] = [p[1]] + p[2]
         else:
             p[0] = []
-    
+
     def p_statement_program(self, p):
         ''' statement : block
                       | if
@@ -52,8 +52,8 @@ class Parser:
                       | motion SEMI
                       | print SEMI
                       | skip SEMI
-                      | exit SEMI 
-                      | checkpoint SEMI 
+                      | exit SEMI
+                      | checkpoint SEMI
                       | labelled '''
         p[0] = p[1]
 
@@ -102,16 +102,16 @@ class Parser:
     def p_skip_function(self, p):
         'skip : SKIP'
         p[0] = Skip()
-    
+
     def p_exit_function(self, p):
         'exit : EXIT LPAREN expression RPAREN'
         p[0] = Exit(p[3])
-    
-    def p_exit_function(self, p):
+
+    def p_checkpoint_function(self, p):
         'checkpoint : CHECKPOINT LPAREN args RPAREN'
         ids = { int(i) for i in p[3] }
         p[0] = Checkpoint(ids)
-    
+
     def p_labelled(self, p):
         'labelled : ID COLON statement'
         p[3].set_label(p[1])

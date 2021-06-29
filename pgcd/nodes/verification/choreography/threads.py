@@ -1,5 +1,5 @@
-from ast_chor import *
-from utils.fixed_point import *
+from verification.choreography.ast_chor import *
+from verification.utils.fixed_point import *
 import copy
 import logging
 
@@ -101,9 +101,12 @@ class ComputeThreads(FixedPointDataflowAnalysis):
 
 class ThreadChecks():
 
-    def __init__(self, chor, env):
+    def __init__(self, chor, processes):
         self.chor = chor
-        self.processes = env.allProcesses()
+        if isinstance(processes, verification.spec.component.Component) or isinstance(processes, verification.spec.env.Env):
+            self.processes = processes.allProcesses()
+        else:
+            self.processes = processes
 
     def fillBackward(self, node_to_trackers, state_to_node):
         log.debug("fillBackward")

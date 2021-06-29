@@ -1,10 +1,10 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
-from spec.component import *
-from spec.motion import *
-from spec.time import *
-from utils.geometry import *
+from verification.spec.component import *
+from verification.spec.motion import *
+from verification.spec.time import *
+from verification.utils.geometry import *
 
 # a model static things that executes code like sensors.
 # they have a footprint (after the name, e.g., a cube), execute code, but cannot move.

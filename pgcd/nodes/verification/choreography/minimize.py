@@ -1,7 +1,7 @@
 from copy import copy
-from parser_chor import *
-from ast_chor import *
-from ast_proj import *
+from verification.choreography.parser_chor import *
+from verification.choreography.ast_chor import *
+from verification.choreography.ast_proj import *
 import logging
 
 log = logging.getLogger("ChoreographyMinimization")

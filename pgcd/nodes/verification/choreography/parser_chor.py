@@ -3,14 +3,14 @@ import logging
 import ply.yacc as yacc
 import collections
 
-import lexer_chor as clexer
-from ast_chor import *
+import verification.choreography.lexer_chor as clexer
+from verification.choreography.ast_chor import *
 from sympy import *
 import mpmath
-from check_chor import *
+from verification.choreography.check_chor import *
 
-from spec.component import Component
-from spec.env import Env
+from verification.spec.component import Component
+from verification.spec.env import Env
 
 import os
 

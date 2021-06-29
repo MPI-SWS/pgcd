@@ -1,4 +1,4 @@
-from ast_chor import *
+from verification.choreography.ast_chor import *
 from sympy import *
 from copy import *
 

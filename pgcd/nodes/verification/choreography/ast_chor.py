@@ -1,6 +1,6 @@
 from enum import Enum
 import sympy as sp
-from spec.contract import *
+from verification.spec.contract import *
 
 
 class Type(Enum):
@@ -98,7 +98,7 @@ class DistributedStateNode():
         self.end_state = end_state
 
     def __str__(self):
-        return Node.__str__(self) + ": " + str(self.start_state) + " -> " + str(self.end_state)
+        return str(self.tip) + ": " + str(self.start_state) + " -> " + str(self.end_state)
 
     def isMessage(self):
         return self.tip == Type.message

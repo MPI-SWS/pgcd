@@ -26,7 +26,7 @@ class Interpreter:
         self.parser = Parser()
         self.variables = {}
         self.program = Skip()
-        self.status = IDLE
+        self.status = InterpreterStatus.IDLE
         # stack keeps:
         # - checkpoint: ID, snapshot of logical state
         # - motion: name and args
@@ -50,15 +50,16 @@ class Interpreter:
 
     def execute(self):
         try:
-            self.status = RUNNING
+            self.status = InterpreterStatus.RUNNING
             # start of program is a default checkpoint
-            is len(self.stack) == 0:
-                self.stack.push(ActionType.CHECKPOINT, -1, [])
+            if len(self.stack) == 0:
+                self.stack.append((ActionType.CHECKPOINT, "init", [-1]))
             retval = self.visit(self.program)
-            self.status = TERMINATED
+            if self.status == InterpreterStatus.RUNNING:
+                self.status = InterpreterStatus.TERMINATED
             return retval
         except Termination as t:
-            self.status = TERMINATED
+            self.status = InterpreterStatus.TERMINATED
             return t.value
 
     def parse(self, code):
@@ -66,29 +67,32 @@ class Interpreter:
 
     #TODO that is slow. Instead we should compile the sympy expr (https://docs.sympy.org/latest/modules/utilities/lambdify.html) and the use that function
     def calculate_sympy_exp(self, sympy_exp):
-        subs = {}
-        for fs in sympy_exp.free_symbols:
-            try:
-                subs[fs] = self.__getattribute__(str(fs))
-            except AttributeError:
-                subs[fs] = self.robot.__getattribute__(str(fs))
-        expr2 = sympy_exp.subs(subs)
-        if expr2 == S.true:
-            return True
-        elif expr2 == S.false:
-            return False
+        if isinstance(sympy_exp, float) or isinstance(sympy_exp, int) or isinstance(sympy_exp, bool):
+            return sympy_exp
         else:
-            evaluated = N(expr2)
-            if type(evaluated) == Float:
-                return float(evaluated)
-            elif type(evaluated) == Zero or type(evaluated) == One or type(evaluated) == NegativeOne:
-                return float(evaluated)
-                #return int(evaluated)
-            return evaluated
+            subs = {}
+            for fs in sympy_exp.free_symbols:
+                try:
+                    subs[fs] = self.__getattribute__(str(fs))
+                except AttributeError:
+                    subs[fs] = self.robot.__getattribute__(str(fs))
+            expr2 = sympy_exp.subs(subs)
+            if expr2 == S.true:
+                return True
+            elif expr2 == S.false:
+                return False
+            else:
+                evaluated = N(expr2)
+                if type(evaluated) == Float:
+                    return float(evaluated)
+                elif type(evaluated) == Zero or type(evaluated) == One or type(evaluated) == NegativeOne:
+                    return float(evaluated)
+                    #return int(evaluated)
+                return evaluated
 
     def visit(self, node):
         # catch error in motion
-        if self.status == RUNNING:
+        if self.status == InterpreterStatus.RUNNING:
             if node.tip == Type.statement:
                 self.visit_statement(node)
             elif node.tip == Type.skip:
@@ -115,10 +119,10 @@ class Interpreter:
                 self.visit_checkpoint(node)
             else:
                 assert False, "no visitor for " + node.tip
-        elif self.status == INTERRUPTED:
+        elif self.status == InterpreterStatus.INTERRUPTED:
             # we got notified of failure
             pass # the component will handle this
-        elif self.status == ERROR:
+        elif self.status == InterpreterStatus.ERROR:
             # a motion failed, wait for everybody to stop and start the recovery
             pass # the component will handle this
         else:
@@ -155,7 +159,7 @@ class Interpreter:
         pub = self.send_to[component][node.msg_type]
         pub.publish(message)
         # record the message on the stack
-        self.stack.push((ActionType.MESSAGE,node.msg_type,values))
+        self.stack.append((ActionType.MESSAGE,node.msg_type,values))
         rclpy.logging._root_logger.log("sent to " + component + " " + str(message), LoggingSeverity.INFO)
         ack = self.receive_from[component].get()
         assert type(ack) == std_msgs.msg.String, "not an ack!?!"
@@ -193,7 +197,7 @@ class Interpreter:
                     assert False, "did not find handler for " + str(msg)
             except queue.Empty:
                 #first time push on stack
-                self.visit_motion(node.motion, push)
+                self.visit_motion(node.motion, push) #TODO what if failure here !?!
                 push = False
         self.visit(next_prog)
 
@@ -227,14 +231,14 @@ class Interpreter:
             try:
                 args = list(self.calculate_sympy_exp(x) for x in node.exps)
                 # push on stack if needed
-                if (push)
-                    self.stack.push((ActionType.MOTION,node.value,args))
+                if push:
+                    self.stack.append((ActionType.MOTION,node.value,args))
                 getattr(self.robot, node.value)(*args)
             except Exception as e:
                 rclpy.logging._root_logger.log("visit_motion generated and error: " + str(e), LoggingSeverity.ERROR)
                 (s,m,a) = self.stack.pop()
-                self.stack.push((ActionType.FAILEDMOTION,m,a,e))
-                self.status = ERROR
+                self.stack.append((ActionType.FAILEDMOTION,m,a,e))
+                self.status = InterpreterStatus.ERROR
 
     def visit_print(self, node):
         if isinstance(node.arg, str):
@@ -249,4 +253,4 @@ class Interpreter:
     def visit_checkpoint(self, node):
         self.stack.clear()
         snapshot = [] # TODO save logical state of robot
-        self.stack.push(ActionType.CHECKPOINT, snapshot, node.ids)
+        self.stack.append((ActionType.CHECKPOINT, snapshot, node.ids))

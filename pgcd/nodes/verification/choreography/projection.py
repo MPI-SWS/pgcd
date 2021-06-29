@@ -6,13 +6,13 @@ import logging
 from copy import copy
 from sympy import S
 
-from parser_chor import *
-from ast_chor import *
-from ast_proj import *
-from minimize import *
-from normalization import *
-from spec.component import Component
-from spec.env import Env
+from verification.choreography.parser_chor import *
+from verification.choreography.ast_chor import *
+from verification.choreography.ast_proj import *
+from verification.choreography.minimize import *
+from verification.choreography.normalization import *
+from verification.spec.component import Component
+from verification.spec.env import Env
 
 log = logging.getLogger("Projection")
 

@@ -18,7 +18,7 @@ class Type(Enum):
 
 
 
-class Node:
+class AstNode:
 
     label_num = -1
 
@@ -35,8 +35,8 @@ class Node:
 
     def get_label(self):
         if (self._label == None):
-            Node.label_num += 1
-            self._label = 'L' + str(Node.label_num)
+            AstNode.label_num += 1
+            self._label = 'L' + str(AstNode.label_num)
         return self._label
 
     def label_as_root(self):
@@ -46,13 +46,13 @@ class Node:
 
     def label(self, label_to_node):
         label_to_node[self.get_label()] = self
-    
+
     def isBlock(self):
         return self.tip == Type.statement
-    
+
     def isMotion(self):
         return self.tip == Type.motion
-    
+
     def isChoice(self):
         return self.tip == Type._if or self.tip == Type._while
 
@@ -77,11 +77,13 @@ class Node:
     def contains(self, node):
         return self == node
 
+    def exists(self, f):
+        return f(self)
 
-class Statement(Node):
+class Statement(AstNode):
 
     def __init__(self, children):
-        Node.__init__(self, Type.statement)
+        AstNode.__init__(self, Type.statement)
         self.children = children
 
     def __str__(self):
@@ -96,14 +98,17 @@ class Statement(Node):
         super().label(label_to_node)
         for c in self.children:
             c.label(label_to_node)
-    
+
     def contains(self, node):
         return self == node or any(c.contains(node) for c in self.children)
 
-class Skip(Node):
+    def exists(self, f):
+        return f(self) or any(c.exists(f) for c in self.children)
+
+class Skip(AstNode):
 
     def __init__(self):
-        Node.__init__(self, Type.skip)
+        AstNode.__init__(self, Type.skip)
 
     def __str__(self):
         string = ''
@@ -112,10 +117,10 @@ class Skip(Node):
         string += 'Skip'
         return string
 
-class Print(Node):
+class Print(AstNode):
 
     def __init__(self, arg):
-        Node.__init__(self, Type._print)
+        AstNode.__init__(self, Type._print)
         self.arg = arg
 
     def __str__(self):
@@ -125,10 +130,10 @@ class Print(Node):
         string += 'Print' + str(arg)
         return string
 
-class Send(Node):
+class Send(AstNode):
 
     def __init__(self, comp, msg_type, args):
-        Node.__init__(self, Type.send)
+        AstNode.__init__(self, Type.send)
         self.comp = comp
         self.msg_type = msg_type
         self.args = args
@@ -141,10 +146,10 @@ class Send(Node):
         return string
 
 
-class Receive(Node):
+class Receive(AstNode):
 
     def __init__(self, sender, motion, actions=None):
-        Node.__init__(self, Type.receive)
+        AstNode.__init__(self, Type.receive)
         self.sender = sender
         self.motion = motion
         self.actions = actions
@@ -161,15 +166,17 @@ class Receive(Node):
         self.motion.label(label_to_node)
         for c in self.actions:
             c.label(label_to_node)
-    
+
     def contains(self, node):
         return self == node or self.motion.contains(node) or any(c.contains(node) for c in self.actions)
 
+    def exists(self, f):
+        return f(self) or self.motion.exists(f) or any(c.exists(f) for c in self.children)
 
-class Action(Node):
+class Action(AstNode):
 
     def __init__(self, str_msg_type, data_names, program):
-        Node.__init__(self, Type.action)
+        AstNode.__init__(self, Type.action)
         self.str_msg_type = str_msg_type
         self.data_names = data_names
         self.program = program
@@ -186,14 +193,17 @@ class Action(Node):
     def label(self, label_to_node):
         super().label(label_to_node)
         self.program.label(label_to_node)
-    
+
     def contains(self, node):
         return self == node or self.program.contains(node)
 
-class If(Node):
+    def exists(self, f):
+        return f(self) or self.program.exists(f)
+
+class If(AstNode):
 
     def __init__(self, condition, ifCode, elseCode):
-        Node.__init__(self, Type._if)
+        AstNode.__init__(self, Type._if)
         self.if_list = []
         self.if_list += self.flatten(condition, ifCode)
         self.if_list += self.flatten(Not(condition), elseCode)
@@ -224,11 +234,14 @@ class If(Node):
     def contains(self, node):
         return self == node or any(i.contains(node) for i in self.if_list)
 
+    def exists(self, f):
+        return f(self) or any(c.exists(f) for c in self.if_list)
 
-class IfComponent(Node):
+
+class IfComponent(AstNode):
 
     def __init__(self, condition, program):
-        Node.__init__(self, Type._if)
+        AstNode.__init__(self, Type._if)
         self.condition = condition
         self.program = program
 
@@ -246,10 +259,13 @@ class IfComponent(Node):
     def contains(self, node):
         return self == node or self.program.contains(node)
 
-class While(Node):
+    def exists(self, f):
+        return f(self) or self.program.exists(f)
+
+class While(AstNode):
 
     def __init__(self, condition, program):
-        Node.__init__(self, Type._while)
+        AstNode.__init__(self, Type._while)
         self.condition = condition
         self.program = program
 
@@ -267,10 +283,13 @@ class While(Node):
     def contains(self, node):
         return self == node or self.program.contains(node)
 
-class Assign(Node):
+    def exists(self, f):
+        return f(self) or self.program.exists(f)
+
+class Assign(AstNode):
 
     def __init__(self, id, value):
-        Node.__init__(self, Type.assign)
+        AstNode.__init__(self, Type.assign)
         self.id = id
         self.value = value
 
@@ -282,10 +301,10 @@ class Assign(Node):
         return string
 
 
-class Motion(Node):
+class Motion(AstNode):
 
     def __init__(self, value, exps=[]):
-        Node.__init__(self, Type.motion)
+        AstNode.__init__(self, Type.motion)
         self.value = value
         self.exps = exps
 
@@ -296,10 +315,10 @@ class Motion(Node):
         string += 'm_' + self.value + '(' + ', '.join(str(e) for e in self.exps) + ')'
         return string
 
-class Exit(Node):
+class Exit(AstNode):
 
     def __init__(self, expr):
-        Node.__init__(self, Type.exit)
+        AstNode.__init__(self, Type.exit)
         self.expr = expr
 
     def __str__(self):
@@ -309,10 +328,10 @@ class Exit(Node):
         string += 'exit(' + str(self.expr) + ')'
         return string
 
-class Checkpoint(Node):
+class Checkpoint(AstNode):
 
     def __init__(self, ids):
-        Node.__init__(self, Type.checkpoint)
+        AstNode.__init__(self, Type.checkpoint)
         self.ids = ids
 
     def __str__(self):

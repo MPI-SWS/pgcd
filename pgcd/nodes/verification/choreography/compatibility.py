@@ -1,11 +1,11 @@
-from spec.time import deTimifyFormula
-import spec.conf
-from ast_chor import *
+from verification.spec.time import deTimifyFormula
+import verification.spec.conf
+from verification.choreography.ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
-from utils.vc import *
-from utils.fixed_point import *
-from utils.predicate_tracker import *
+from verification.utils.vc import *
+from verification.utils.fixed_point import *
+from verification.utils.predicate_tracker import *
 import copy
 import logging
 import functools

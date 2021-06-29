@@ -30,6 +30,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DoneStamped.msg"
   "msg/RedStamped.msg"
   "msg/GreenStamped.msg"
+  "msg/CompensationEntry.msg"
+  "msg/Compensation.msg"
+  "msg/CompensationStamped.msg"
+  "msg/Error.msg"
+  "msg/ErrorStamped.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

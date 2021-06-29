@@ -1,5 +1,5 @@
 import interpreter.ast_inter as ast_inter
-from choreography.projection import Projection
+from verification.choreography.projection import Projection
 from recovery.motion_annot import *
 import sympy as sp
 import logging

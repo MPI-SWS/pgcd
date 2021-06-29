@@ -1,6 +1,6 @@
-from ast_chor import *
-from utils.fixed_point import *
-from spec.time import DurationSpec
+from verification.choreography.ast_chor import *
+from verification.utils.fixed_point import *
+from verification.spec.time import DurationSpec
 from copy import copy
 import logging
 

@@ -1,12 +1,10 @@
 dummy:
     ros__parameters:
-        program_location: "experiments/recovery_test/"
+        program_location: "experiments/recovery_test_01/"
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
         recovery: true
-        choreography_location: "experiments/recovery_test/dummy.choreo"
-        spec_module_name: "src.pgcd.nodes.verification.test.id"
-        spec_class_name: "id"
+        choreography_location: "experiments/recovery_test_01/dummy.choreo"
         env_processes_ids:
             - "dummy"
         env_processes_module:

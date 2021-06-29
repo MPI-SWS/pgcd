@@ -1,7 +1,7 @@
-from utils.DrealInterface import DrealInterface
+from verification.utils.DrealInterface import DrealInterface
 from sympy import *
 from sympy.logic.boolalg import to_nnf
-import spec.conf
+import verification.spec.conf
 import logging
 
 log = logging.getLogger("VC")
@@ -75,7 +75,7 @@ class VC:
     def modelStr(self):
         return "\n".join( str(k) + " = " + str (v) for k,v in self.model.items() )
 
-    def discharge(self, timeout = spec.conf.dRealTimeout):
+    def discharge(self, timeout = verification.spec.conf.dRealTimeout):
         log.debug("VC: %s (%s)", self.title, "sat" if self.sat else "unsat")
         for f in self.formulas:
             #f2 = to_cnf(f)

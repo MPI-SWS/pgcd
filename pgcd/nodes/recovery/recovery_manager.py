@@ -1,7 +1,9 @@
 from interpreter.status import *
 import verification.choreography.ast_chor as ast_chor
 from recovery.motion_annot import *
-from recovery.partial_program import *
+from recovery.partial_program import resumeAt
+from recovery.synchronization import Synchronizer
+from recovery.proj_to_code import Proj2Code
 import pgcd.msg
 import sympy as sp
 import logging
@@ -22,7 +24,7 @@ class RecoveryManager:
         self.interpreter = interpreter
         self.choreography = choreography
         self.names = dict()
-        self.nProcesses = len(self.choreography.allProcesses())
+        self.nProcesses = len(self.choreography.world.allProcesses())
         self.comps = dict()
         self.gotInfo = threading.Event()
         self.error_pub = None # filled by the Component
@@ -47,18 +49,18 @@ class RecoveryManager:
     def startRecovery(self):
         self.sendComp()
         self.gotInfo.wait()
-        (chkpt, rec_choreo) = self.computeRecoveryChoreo(self.comp_info)
+        (chkpt, rec_choreo) = self.computeRecoveryChoreo(self.comps)
         proc = rec_choreo.getProcess(self.interpreter.id)
-        p = Proj2Code(c, proc)
+        p = Proj2Code(rec_choreo, proc)
         rec_code = p.getCode()
         # clean-up
         self.gotInfo.clear()
         self.comps.clear()
-        # put the result in the interperter
+        # put the result in the interpreter
         self.restartFrom = chkpt
-        self.originalProgram = self.interperter.program
-        self.interperter.program = rec_code
-        self.interperter.status = InterpreterStatus.IDLE
+        self.originalProgram = self.interpreter.program
+        self.interpreter.program = rec_code
+        self.interpreter.status = InterpreterStatus.IDLE
         self.isRecovering = True
         # start (delay the 1st sender)
         if rec_code.children[0].isSend:
@@ -66,10 +68,10 @@ class RecoveryManager:
 
     def restoreProgram(self):
         assert self.isRecovering
-        sefl.isRecovering == False
+        self.isRecovering == False
         new_prog = resumeAt(self.originalProgram, self.restartFrom)
-        self.interperter.program = new_prog
-        self.interperter.status = InterpreterStatus.IDLE
+        self.interpreter.program = new_prog
+        self.interpreter.status = InterpreterStatus.IDLE
 
     def failure(self):
         message = pgcd.msg.ErrorStamped()
@@ -108,7 +110,7 @@ class RecoveryManager:
 
     def sendComp(self):
         comp = self.prepareComp()
-        self.compensation_topic.publish(comp)
+        self.compensation_pub.publish(comp)
 
     def parseCompEntry(self, entry):
         if entry.kind == 1:
@@ -126,28 +128,47 @@ class RecoveryManager:
         stack.insert(0, (ActionType.CHECKPOINT, None, checkpts))
         return (process, stack)
 
-    def getCheckpoint(self, comp_info):
+    def getCheckpointId(self, comp_info):
         # bottom element is a checkpoint get the ids
-        chkpts = [ set(s[0][2]) for (p,s) in comp_info.items ]
+        chkpts = [ set(s[0][2]) for (p,s) in comp_info.items() ]
         chkpt = chkpts.pop()
         for pt in chkpts:
             chkpt &= pt
-        assert len(chkpt) == 1
+        assert len(chkpt) == 1, "checkpoint " + str(chkpt)
         c = chkpt.pop()
-        for node in self.choreography.statements:
-            if isinstance(node, ast_chor.Checkpoint) and node.id == c:
-                return node.end_state[0]
-        assert False, "checkpoint " + str(c) + " not found."
+        if c == -1:
+            return None
+        else:
+            return c
+
+    def getCheckpoint(self, cid):
+        if cid == None:
+            return self.choreography.start_state
+        else:
+            for node in self.choreography.statements:
+                if isinstance(node, ast_chor.Checkpoint) and node.id == cid:
+                    return node.end_state[0]
+            assert False, "checkpoint " + str(c) + " not found."
+
+    # getting fresh names
+    def fresh(self, name):
+        if name in self.names:
+            i = self.names[name]
+            self.names[name] = i+1
+            return name + "_" + str(i)
+        else:
+            self.names[name] = 1
+            return name + "_0"
 
     def getPath(self, comp_info, chkpt):
-        procs = self.choreography.allProcesses()
+        procs = { p.name() for p in self.choreography.world.allProcesses() }
         state_to_node = self.choreography.mk_state_to_node()
         stacks = dict()
         for p in procs:
             stacks[p] = comp_info[p][1:] # remove the checkpoint
         # lookahead to figure out which branch was taken (1st message sent)
         def isBranchPossible(self, state):
-            node = state_to_node(state)
+            node = state_to_node[state]
             if isinstance(node, ast_chor.Message):
                 stack = stacks[node.sender]
                 action = stack[0]
@@ -157,7 +178,7 @@ class RecoveryManager:
         # return a choice less choreography
         nodes = [] # accumulate nodes for the new choreo
         def traverse(new_name, state):
-            node = state_to_node(state)
+            node = state_to_node[state]
             if isinstance(node, ast_chor.Fork):
                 s = node.end_state
                 s2 = [ self.fresh(n) for n in s ]
@@ -201,8 +222,8 @@ class RecoveryManager:
                 done = False
                 for m in node.motions:
                     stack = stacks[m.id]
-                    assert (not done) or len(stack == 1) # if one is done then all are done
-                    done = len(stack == 1)
+                    assert (not done) or len(stack) == 1 # if one is done then all are done
+                    done = (len(stack) == 1)
                     action = stack[0]
                     assert(action[0] == ActionType.MOTION)
                     ms.append(ast_chor.MotionArg(m.id, action[1], action[2]))
@@ -285,10 +306,11 @@ class RecoveryManager:
         return c2
 
     def computeRecoveryChoreo(self, comp_info):
-        chkpt = self.getCheckpoint(comp_info)
-        path = self.getCheckpoint(comp_info, chkpt)
+        chkptId = self.getCheckpointId(comp_info)
+        chkpt = self.getCheckpoint(chkptId)
+        path = self.getPath(comp_info, chkpt)
         self.stripPath(path)
         comp = self.reversePath(path)
         s = Synchronizer(comp)
         s.synchronize()
-        return (chkpt, comp) #ready to be projected and run
+        return (chkptId, comp) #ready to be projected and run

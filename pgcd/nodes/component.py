@@ -21,16 +21,18 @@ from std_msgs.msg import String
 # our
 from tf_updater import TFUpdater
 from interpreter.interpreter import Interpreter
+from interpreter.status import InterpreterStatus
 from interpreter.communication_utils import *
 from recovery.recovery_manager import RecoveryManager
-from choreography.parser_chor import ChoreographyParser
+from verification.choreography.parser_chor import ChoreographyParser
+from verification.spec.component import World
+from verification.spec.env import Env
+from pgcd.msg import ErrorStamped, CompensationStamped
 
 class Component(Node,Interpreter,TFUpdater):
 
     def __init__(self):
-        Node.__init__(self, "pgcd_comp",
-                allow_undeclared_parameters = True,
-                automatically_declare_parameters_from_overrides = True)
+        Node.__init__(self, "pgcd_comp", allow_undeclared_parameters = True, automatically_declare_parameters_from_overrides = True)
         Interpreter.__init__(self, self.get_name())
         TFUpdater.__init__(self)
         # program
@@ -118,31 +120,39 @@ class Component(Node,Interpreter,TFUpdater):
     def getEnv(self):
         # get the environement (spec of processes) so we could compute the recovery
         processesIDs = self.get_parameter('env_processes_ids')._value
-        processesSpecs = self.get_parameter('env_processes_specs')._value
-        w = pgcd.verification.spec.World()
-        for (name,spec) in zip(processesIDs, processesSpecs):
-            try 
-                obj = inspect.getmembers(pgcd.verification.test)[spec] #TODO path as an option
+        processesModule = self.get_parameter('env_processes_module')._value
+        processesClasses = self.get_parameter('env_processes_class')._value
+        w = World()
+        i = 0 # index for the world
+        for (name,mod,cls) in zip(processesIDs, processesModule, processesClasses):
+            try:
+                rclpy.logging._root_logger.log("PGCD getting module " + str(mod), LoggingSeverity.INFO)
+                m = importlib.import_module(mod)
+                assert inspect.ismodule(m)
+                #rclpy.logging._root_logger.log("PGCD got module " + str(inspect.getmembers(m)), LoggingSeverity.INFO)
+                rclpy.logging._root_logger.log("PGCD getting class " + str(cls), LoggingSeverity.INFO)
+                obj = getattr(m, cls)
                 assert inspect.isclass(obj)
-                obj(name, w) # create the spec, add to the world
+                obj(name, parent = w, index = i) # create the spec, add to the world
+                i += 1
             except KeyError as e:
-                rclpy.logging._root_logger.log("PGCD could not find spec " + spec + " of " + name, LoggingSeverity.ERROR)
-        return pgcd.verification.spec.End(w, [])
+                rclpy.logging._root_logger.log("PGCD could not find spec " + cls + " of " + name, LoggingSeverity.ERROR)
+        return Env(w, [])
 
     def setup_recovery(self):
         rclpy.logging._root_logger.log("PGCD setup for recovery" + self.id, LoggingSeverity.INFO)
         # create recovery manager
-        with open(self.prog_path, 'r') as content_file:
+        with open(self.choreo_path, 'r') as content_file:
             choreo_src = content_file.read()
         env = self.getEnv()
         choreo = ChoreographyParser(env).parse(choreo_src, check = False)
         self.recoveryMgr = RecoveryManager(self, choreo)
         # create publishers
-        self.recoveryMgr.error_pub = self.create_publisher(pgcd.msg.ErrorStamped, "/pgcd/error", 1)
-        self.recoveryMgr.compensation_pub = self.create_publisher(pgcd.msg.CompensationStamped, "/pgcd/compensation", 1)
+        self.recoveryMgr.error_pub = self.create_publisher(ErrorStamped, "/pgcd/error", 1)
+        self.recoveryMgr.compensation_pub = self.create_publisher(CompensationStamped, "/pgcd/compensation", 1)
         # set callback for failure and compensation
-        self.create_subscription(pgcd.msg.ErrorStamped, "/pgcd/error", self.recoveryMgr.failure_callback, 1)
-        self.create_subscription(pgcd.msg.CompensationStamped, "/pgcd/compensation", self.recoveryMgr.comp_callback,  len(env.allProcesses()))
+        self.create_subscription(ErrorStamped, "/pgcd/error", self.recoveryMgr.failure_callback, 1)
+        self.create_subscription(CompensationStamped, "/pgcd/compensation", self.recoveryMgr.comp_callback,  len(env.allProcesses()))
 
     def execute_prog(self):
         with open(self.prog_path, 'r') as content_file:

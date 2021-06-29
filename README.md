@@ -51,7 +51,7 @@ The current workaround is to manually implement the appropriate transform and ma
     To run the example you need to:
     ```bash
     cd ~/ros2_ws
-    export PYTHONPATH=$PYTHONPATH:.
+    export PYTHONPATH=$PYTHONPATH:`pwd`:.
     ros2 launch pgcd simple_example.launch.py
     ```
 

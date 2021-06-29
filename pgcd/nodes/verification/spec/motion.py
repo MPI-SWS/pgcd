@@ -1,8 +1,8 @@
 from sympy import *
 from abc import ABC, abstractmethod
-from spec.time import timifyVar
-from spec.contract import *
-import spec.conf
+from verification.spec.time import timifyVar
+from verification.spec.contract import *
+import verification.spec.conf
 
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.
