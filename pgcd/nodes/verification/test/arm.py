@@ -40,20 +40,20 @@ class Arm(Process):
         self._lower = self._upper.orient_new_axis(name + '_lower',  self._a + self.a_ref, self._upper.j, location= self.upperArmLength * self._upper.k)
         self._effector = self._lower.locate_new(name + '_effector', self.lowerArmLength * self._lower.k)
         # motion primitives
-        Fold(self)
-        Idle(self)
-        Wait(self)
+        retractArm(self)
+        idle(self)
+        wait(self)
+        rotate(self)
+        openGripper(self)
+        closeGripper(self)
+        setAngleTurntable(self)
+        setAngleCantilever(self)
+        setAngleAnchorPoint(self)
         Grab(self)
         PutInBin(self)
         MoveTo(self)
-        OpenGripper(self)
-        CloseGripper(self)
         Grip(self)
-        SetAngleTurntable(self)
-        SetAngleCantilever(self)
-        SetAngleAnchorPoint(self)
-        RetractArm(self)
-        Rotate(self)
+        Fold(self)
         RotateAndGrab(self)
         RotateAndPut(self)
         PutOnCart(self)
@@ -155,7 +155,7 @@ class Fold(MotionPrimitiveFactory):
                                    0, self._component.minAngleAB, self._component.maxAngleAB,
                                    dt = DurationSpec(args[3],args[3],False))
 
-class RetractArm(MotionPrimitiveFactory):
+class retractArm(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -205,7 +205,7 @@ class ArmFold(ArmMP):
     def invG(self):
         return S.true
 
-class Idle(MotionPrimitiveFactory):
+class idle(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -237,7 +237,7 @@ class ArmIdle(ArmMP):
     def invG(self):
         return S.true
 
-class Wait(MotionPrimitiveFactory):
+class wait(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -426,7 +426,7 @@ class ArmPutInBin(ArmMP):
         return self.timify(And(withoutGamma, gMin, gMax))
 
 # since we don't precisely model the gripper, it is like idle
-class CloseGripper(MotionPrimitiveFactory):
+class closeGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -439,7 +439,7 @@ class CloseGripper(MotionPrimitiveFactory):
         return ArmWait(self.name(), self._component, 2)
 
 # since we don't precisely model the gripper, it is like waiting
-class OpenGripper(MotionPrimitiveFactory):
+class openGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -501,7 +501,7 @@ class ArmMoveTo(ArmMP):
         #return self.timify(pos <= dist)
         return S.true
 
-class SetAngleTurntable(MotionPrimitiveFactory):
+class setAngleTurntable(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -516,7 +516,7 @@ class SetAngleTurntable(MotionPrimitiveFactory):
         else:
             return ArmSetAngle(self.name(), self._component, self._component._c, args[0], args[1], args[2])
 
-class SetAngleCantilever(MotionPrimitiveFactory):
+class setAngleCantilever(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -531,7 +531,7 @@ class SetAngleCantilever(MotionPrimitiveFactory):
         else:
             return ArmSetAngle(self.name(), self._component, self._component._b, args[0], args[1], args[2])
 
-class SetAngleAnchorPoint(MotionPrimitiveFactory):
+class setAngleAnchorPoint(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -606,7 +606,7 @@ class RotateAndPut(MotionPrimitiveFactory):
         else:
             return ArmSetAllAngles(self.name(), self._component, args[0], args[1], args[2], args[3], args[4], args[5], 0.35, DurationSpec(args[6], args[6], False))
 
-class Rotate(MotionPrimitiveFactory):
+class rotate(MotionPrimitiveFactory):
 
     def parameters(self):
         return ["source turntable", "source cantilever", "source anchor",

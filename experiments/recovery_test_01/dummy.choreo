@@ -1,5 +1,5 @@
 Test =
-def x0 = (dummy: Wait(1)); x1
-    x1 = (dummy: Fail(1,2)); x2
+def x0 = (dummy: wait(1)); x1
+    x1 = (dummy: fail(1,2)); x2
     x2 = end
 in [ True ] x0

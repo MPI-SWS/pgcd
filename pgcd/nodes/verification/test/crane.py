@@ -32,18 +32,18 @@ class Crane(Process):
         self._xAxis = self._zAxis.locate_new(name + '_xAxis', -0.05 * self._zAxis.i - (self.zOffset + self._z) * self._zAxis.k )
         self._effector = self._xAxis.locate_new(name + '_effector', (self._x + self.xOffset) * self._xAxis.i )
         # motion primitives
-        Home(self)
-        MoveTo(self)
-        MoveToX(self)
-        MoveToY(self)
-        MoveToZ(self)
-        MoveToXY(self)
-        OpenGripper(self)
-        CloseGripper(self)
-        Grip(self)
-        Idle(self)
-        Wait(self)
-        MoveObject(self)
+        home(self)
+        moveTo(self)
+        moveToX(self)
+        moveToY(self)
+        moveToZ(self)
+        moveToXY(self)
+        openGripper(self)
+        closeGripper(self)
+        grip(self)
+        idle(self)
+        wait(self)
+        moveObject(self)
 
 
     def internalVariables(self):
@@ -51,7 +51,7 @@ class Crane(Process):
 
     def ownResources(self, point, maxError = 0.0):
         m = maxError
-        f = self._frame
+        f = self._frame #TODO now side mounted!
         supportFP = cube(f, -0.05 * f.i - 0.05 * f.j, 0.05 * f.i + 0.05 * f.j + self.baseHeigth * f.k, m, m, m)
         y = self._yAxis
         yAxisFP = cube(y, -0.05 * y.i - 0.05 * y.k, 0.05 * y.i + 0.05 * y.k + (self.maxY + self.yOffset) * y.j, m, m, m)
@@ -98,7 +98,7 @@ class CraneMP(MotionPrimitive):
         return self.timify(i)
 
 
-class Idle(MotionPrimitiveFactory):
+class idle(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -116,10 +116,10 @@ class CraneIdle(CraneMP):
         super().__init__(name, component)
 
     def modifies(self):
-        return [Symbol(self._component.name() + '_dummy')]
+        return []
 
     def duration(self):
-        return DurationSpec(0, float('inf'), True) 
+        return DurationSpec(0, float('inf'), True)
 
     def preG(self):
         return S.true
@@ -131,7 +131,7 @@ class CraneIdle(CraneMP):
         return S.true
 
 
-class Wait(MotionPrimitiveFactory):
+class wait(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -154,8 +154,8 @@ class CraneWait(CraneMP):
             self.t_max = t_max
 
     def modifies(self):
-        return [Symbol(self._component.name() + '_dummy')]
-    
+        return []
+
     def duration(self):
         return DurationSpec(self.t_min, self.t_max, False)
 
@@ -169,7 +169,7 @@ class CraneWait(CraneMP):
         return S.true
 
 
-class Home(MotionPrimitiveFactory):
+class home(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -178,7 +178,7 @@ class Home(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 0)
+        assert(len(args) == 0) #TODO 0 or 3
         return CraneHome(self.name(), self._component)
 
 class CraneHome(CraneMP):
@@ -205,7 +205,7 @@ class CraneHome(CraneMP):
         return S.true
 
 
-class MoveTo(MotionPrimitiveFactory):
+class moveTo(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -214,7 +214,7 @@ class MoveTo(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 3)
+        assert(len(args) == 3) #TODO 3 or 6
         return CraneMoveTo(self.name(), self._component, args[0], args[1], args[2])
 
 class CraneMoveTo(CraneMP):
@@ -244,7 +244,7 @@ class CraneMoveTo(CraneMP):
         return S.true
 
 
-class MoveToX(MotionPrimitiveFactory):
+class moveToX(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -253,7 +253,7 @@ class MoveToX(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 1)
+        assert(len(args) == 1) #TODO 1 or 2
         return CraneMoveToX(self.name(), self._component, args[0])
 
 class CraneMoveToX(CraneMP):
@@ -278,7 +278,7 @@ class CraneMoveToX(CraneMP):
         return S.true
 
 
-class MoveToY(MotionPrimitiveFactory):
+class moveToY(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -287,7 +287,7 @@ class MoveToY(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 1)
+        assert(len(args) == 1) #TODO 1 or 2
         return CraneMoveToY(self.name(), self._component, args[0])
 
 class CraneMoveToY(CraneMP):
@@ -312,7 +312,7 @@ class CraneMoveToY(CraneMP):
         return S.true
 
 
-class MoveToZ(MotionPrimitiveFactory):
+class moveToZ(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -321,7 +321,7 @@ class MoveToZ(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 1)
+        assert(len(args) == 1) #TODO 1 or 2
         return CraneMoveToZ(self.name(), self._component, args[0])
 
 class CraneMoveToZ(CraneMP):
@@ -346,7 +346,7 @@ class CraneMoveToZ(CraneMP):
         return S.true
 
 
-class MoveToXY(MotionPrimitiveFactory):
+class moveToXY(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -355,7 +355,7 @@ class MoveToXY(MotionPrimitiveFactory):
         return []
 
     def setParameters(self, args):
-        assert(len(args) == 2)
+        assert(len(args) == 2) #TODO 2 or 4
         return CraneMoveToZ(self.name(), self._component, args[0], args[1])
 
 class CraneMoveToXY(CraneMP):
@@ -382,7 +382,7 @@ class CraneMoveToXY(CraneMP):
     def invG(self):
         return S.true
 
-class OpenGripper(MotionPrimitiveFactory):
+class openGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -394,7 +394,7 @@ class OpenGripper(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return CraneWait(self.name(), self._component, 1)
 
-class CloseGripper(MotionPrimitiveFactory):
+class closeGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -406,7 +406,7 @@ class CloseGripper(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return CraneWait(self.name(), self._component, 1)
 
-class Grip(MotionPrimitiveFactory):
+class grip(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -419,7 +419,7 @@ class Grip(MotionPrimitiveFactory):
         return CraneWait(self.name(), self._component, 1)
 
 
-class MoveObject(MotionPrimitiveFactory)
+class moveObject(MotionPrimitiveFactory)
 
     def __init__(self, component):
         super().__init__(component)
@@ -449,11 +449,15 @@ class CraneMoveObject(CraneMP):
         return DurationSpec(0, 5, False)
 
     def preG(self):
+        x = Eq(self._component._x, 0)
+        y = Eq(self._component._y, 0)
+        z = Eq(self._component._z, 0)
+        return And(x, y, z)
         return S.true
 
     def postG(self):
-        x = Eq(self._component._x, self.x1)
-        y = Eq(self._component._y, self.y1)
+        x = Eq(self._component._x, 0)
+        y = Eq(self._component._y, 0)
         z = Eq(self._component._z, 0)
         return And(x, y, z)
 
@@ -462,4 +466,4 @@ class CraneMoveObject(CraneMP):
         part2 = And( Eq(self._component._z, 0)) #TODO x, y
         part3 = And(Eq(self._component._x,self.x1), Eq(self._component._y,self.y1), self._component._z >= 0, self._component._z <= self.z1)
         return Or(part1, part2, part3)
-    
+

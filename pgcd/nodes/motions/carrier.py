@@ -13,6 +13,7 @@ import sympy as sp
 
 
 class carrier():
+
     def __init__( self ):
         GPIO.setwarnings(False)
         self.pinInterrupt = 40
@@ -50,43 +51,47 @@ class carrier():
     def __compute_steps__( self, straight, side, rotate ):
         """
         """
-        coeff_straight=1
-        coeff_side=2
-        coeff_rotate=1
+        try:
+            self.__motors_start__()
+            coeff_straight=1
+            coeff_side=2
+            coeff_rotate=1
 
-        steps_motor1 = coeff_straight * straight + coeff_side * side - coeff_rotate * rotate;
-        steps_motor2 = coeff_straight * straight - coeff_side * side - coeff_rotate * rotate;
-        steps_motor3 = coeff_straight * straight - coeff_side * side + coeff_rotate * rotate;
-        steps_motor4 = coeff_straight * straight + coeff_side * side + coeff_rotate * rotate;
+            steps_motor1 = coeff_straight * straight + coeff_side * side - coeff_rotate * rotate;
+            steps_motor2 = coeff_straight * straight - coeff_side * side - coeff_rotate * rotate;
+            steps_motor3 = coeff_straight * straight - coeff_side * side + coeff_rotate * rotate;
+            steps_motor4 = coeff_straight * straight + coeff_side * side + coeff_rotate * rotate;
 
-        steps = []
-        direction = []
+            steps = []
+            direction = []
 
-        if steps_motor1 > 0:
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
+            if steps_motor1 > 0:
+                direction.append( 1 )
+            else:
+                direction.append( 0 )
 
-        if steps_motor2 > 0:
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
+            if steps_motor2 > 0:
+                direction.append( 1 )
+            else:
+                direction.append( 0 )
 
-        if steps_motor3 > 0:
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
+            if steps_motor3 > 0:
+                direction.append( 1 )
+            else:
+                direction.append( 0 )
 
 
-        if steps_motor4 > 0:
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
+            if steps_motor4 > 0:
+                direction.append( 1 )
+            else:
+                direction.append( 0 )
 
-        step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3, steps_motor4] ) )
-        max_steps = max( step_list )
-        stepspertime = 2.0 # 1.6
-        return self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
+            step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3, steps_motor4] ) )
+            max_steps = max( step_list )
+            stepspertime = 2.0 # 1.6
+            return self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
+        finally:
+            self.__motors_shutdown__()
 
 
     def __setMSPins__( self, MS1, MS2, MS3 ):
@@ -161,59 +166,68 @@ class carrier():
     # Cart radius = 215mm, wheel radius = 33.5mm -> 6.41 rev. per wheel per full circle
     # 200 steps per fc * microstepping
 
-    def setAngleCart( self, angle ):
+    def setAngleCart( self, angle, x=None, y=None, t=None):
+        if x != None:
+            assert y != None and t != None
+            angle = t
         assert( 0<=angle and angle<=360 )
-        self.__motors_start__()
         steps = (angle/360)*14720*1.6
         (ok, fraction) = self.__compute_steps__( 0,0, steps-self.stepsCart)
         self.stepsCart = self.stepsCart + fraction*(steps-self.stepsCart)
         self.angleCart = self.angleCart + fraction*(angle-self.angleCart)
-        self.__motors_shutdown__()
         if not ok:
             raise RuntimeError(fraction)
 
-    def rotate( self, angle ):
+    def rotate( self, angle, x=None, y=None, t=None):
+        if x != None:
+            assert y != None and t != None
+            angle = t
         assert( 0<=angle and angle<=360 )
-        self.__motors_start__()
         steps = (angle/360)*14720*1.6
         (ok, fraction) = self.__compute_steps__( 0,0, steps)
         self.stepsCart += self.stepsCart + fraction*(steps-self.stepsCart)
         self.angleCart += self.angleCart + fraction*(angle-self.angleCart)
-        self.__motors_shutdown__()
         if not ok:
             raise RuntimeError(fraction)
 
-    def moveCart( self, distance ):
+    def moveCart( self, distance, x=None, y=None, t=None):
         """
         Distance in mm
         """
-        self.__motors_start__()
+        if x != None:
+            assert y != None and t != None
+            assert t != None
+            distance = t
         steps = distance/157.075*3200+(distance/2000)*3200
         (ok, fraction) = self.__compute_steps__( steps, 0, 0 )
         self.x += math.cos(math.radians(self.angleCart))*distance*fraction
         self.y += math.sin(math.radians(self.angleCart))*distance*fraction
-        self.__motors_shutdown__()
         if not ok:
             raise RuntimeError(fraction)
 
-    def strafeCart( self, distance ):
-        self.__motors_start__()
+    def strafeCart( self, distance, x=None, y=None, t=None ):
+        if x != None:
+            assert y != None and t != None
+            assert t != None
+            distance = t
         steps = distance/157.075*3200+(distance/2000)*3200
         (ok, fraction) = self.__compute_steps__( 0, steps, 0 )
         self.x += math.sin(math.radians(self.angleCart))*distance*fraction
         self.y -= math.cos(math.radians(self.angleCart))*distance*fraction
-        self.__motors_shutdown__()
         if not ok:
             raise RuntimeError(fraction)
 
     # TODO angle is incremental
-    def twist( self, radius, angle):
+    def swipe( self, radius, angle, x=None, y=None, t=None):
+        if x != None:
+            assert y != None and t != None
+            assert t != None
+            radius = y
+            angle = t
         distanceSide = radius * (angle*2*3.14159/360)
         stepsSide = distanceSide/157.075*3200+(distanceSide/2000)*3200
         stepsAngle = (angle/360)*14720*1.6 * 1.1
-        self.__motors_start__()
         (ok, fraction) = self.__compute_steps__( 0, stepsSide, stepsAngle )
-        self.__motors_shutdown__()
         #update position
         dx = 0 #TODO update the position
         dy = 0 #TODO update the position
@@ -239,21 +253,38 @@ class carrier():
 
     def inverse(self, mpName, arg, error = None):
         if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":
-            assert len(arg) == 1
-            if error == None:
-                return mpName, [-arg[0]]
+            if len(arg) == 1:
+                if error == None:
+                    return mpName, [-arg[0]]
+                else
+                    fraction = error.args[0]
+                    return mpName, [-fraction * arg[0]]
             else
-                fraction = error.args[g0]
-                return mpName, [-fraction * arg[0]]
+                assert len(arg) == 4
+                if error == None:
+                    return mpName, [arg[0], arg[1], arg[2], -arg[3]] #TODO args 0-2
+                else
+                    fraction = error.args[0]
+                    return mpName, [arg[0], arg[1], arg[2], -fraction * arg[3]] #TODO args 0-2
         elif mpName == "setAngleCart":
-            raise ValueError('cannot invert absolute motion without the pre state', mpName)
-        elif mpName == "twist":
-            assert len(arg) == 2
-            if error == None:
-                return mpName, [arg[0], -arg[1]]
-            else
-                fraction = error.args[g0]
-                return mpName, [arg[0], -fraction * arg[1]]
+            if len(arg) == 4:
+                return mpName, [arg[0], arg[1], arg[2], arg[2]] #TODO args 0-2
+            else:
+                raise ValueError('cannot invert absolute motion without the pre state', mpName)
+        elif mpName == "swipe":
+            if len(arg) == 1:
+                if error == None:
+                    return mpName, [arg[0], -arg[1]]
+                else
+                    fraction = error.args[0]
+                    return mpName, [arg[0], -fraction * arg[1]]
+            else:
+                assert len(arg) == 5
+                if error == None:
+                    return mpName, [arg[0], arg[1], arg[2], arg[3], -arg[4]] #TODO args 0-2
+                else
+                    fraction = error.args[0]
+                    return mpName, [arg[0], arg[1], arg[2], arg[3], -fraction * arg[4]] #TODO args 0-2
         elif mpName == "idle" or mpName == "wait":
             return mpName, arg
         else:

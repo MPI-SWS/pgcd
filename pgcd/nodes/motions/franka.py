@@ -29,6 +29,9 @@ class franka():
     def idle(self):
         time.sleep(0.1)
 
+    def wait(self, t):
+        time.sleep(t)
+
     def homePos(self):
         prog = ["homePos()"]
         self.a_cur = self.a_ref
@@ -40,7 +43,7 @@ class franka():
         self.g_cur = self.g_ref
         self.f.run(prog)
 
-    def setJoint(self, a, b, c, d, e, f, g):
+    def setJoints(self, a, b, c, d, e, f, g):
         a1 = a - self.a_cur
         b1 = b - self.b_cur
         c1 = c - self.c_cur
@@ -48,9 +51,9 @@ class franka():
         e1 = e - self.e_cur
         f1 = f - self.f_cur
         g1 = g - self.g_cur
-        self.addToJoint(a1, b1, c1, d1, e1, f1, g1)
+        self.addToJoints(a1, b1, c1, d1, e1, f1, g1)
 
-    def addToJoint(self, a,b,c,d,e,f,g):
+    def addToJoints(self, a,b,c,d,e,f,g):
         prog = ["setJointRot("+str(a)+","+str(b)+","+str(c)+","+str(d)+","+str(e)+","+str(f)+","+str(g)+")",
                 "jointMotions()"]
         self.a_cur += a
@@ -92,16 +95,33 @@ class franka():
         self.stop()
 
     def inverse(self, mpName, arg, error = None):
-        # TODO
-        pass
+        if mpName == "homePos":
+            if len(arg) == 7:
+                return "setJoints", [0,0,0,0,0,0,0] + arg
+            else:
+                raise ValueError('cannot invert absolute motion without the pre state', mpName)
+        elif mpName == "addToJoints":
+            assert len(arg) == 7:
+            return mpName, [-a for a in arg]
+        elif mpName == "setJoints":
+            assert len(arg) == 14:
+            return mpName, arg[7:14] + arg[0:7]
+        elif mpName == "openGripper":
+            return "closeGripper", arg
+        elif mpName == "closeGripper":
+            return "openGripper", arg
+        elif mpName == "idle" or mpName == "wait":
+            return mpName, arg
+        else:
+            raise ValueError('unkown motion primitive', mpName)
 
 if __name__ == "__main__":
     f = franka()
     f.homePos()
-    #f.setJoint( 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317 )
-    #f.setJoint( 0.029303,0.719571,-0.449588,-2.003304,2.698555,2.014047,1.218498 )
-    #f.setJoint(0.113141,-0.756021,1.155316,-2.205151,0.138111,2.267583,1.449022)
-    #f.setJoint(-0.462060,-1.258402,2.159037,-1.921470,0.191438,2.483492,2.613494)
+    #f.setJoints( 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317 )
+    #f.setJoints( 0.029303,0.719571,-0.449588,-2.003304,2.698555,2.014047,1.218498 )
+    #f.setJoints(0.113141,-0.756021,1.155316,-2.205151,0.138111,2.267583,1.449022)
+    #f.setJoints(-0.462060,-1.258402,2.159037,-1.921470,0.191438,2.483492,2.613494)
     #f.grasp(0.02)
     #f.homePos()
     f.getPos()

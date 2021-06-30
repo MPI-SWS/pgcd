@@ -33,23 +33,23 @@ class DummyRobot():
             time.sleep(0.1)
         self.angle = angle
 
-    def Wait( self, t ):
+    def wait( self, t ):
         time.sleep(t)
 
-    def Fail(self, tErr, tMax):
+    def fail(self, tErr, tMax):
         assert(tErr > 0 and tErr < tMax)
         time.sleep(tErr)
         raise RuntimeError('failing')
 
     def inverse(self, mpName, arg, error = None):
-        if mpName == "Fail":
+        if mpName == "fail":
             assert len(arg) == 2
-            return "Wait", [arg[1]]
+            return "wait", [arg[1]]
         elif mpName == "read":
-            return "Wait", [1]
+            return "wait", [1]
         elif mpName == "setAngle":
             raise ValueError('cannot invert absolute motion without the pre state', mpName)
-        elif mpName == "Idle" or mpName == "Wait":
+        elif mpName == "idle" or mpName == "wait":
             return mpName, arg
         else:
             raise ValueError('unkown motion primitive', mpName)

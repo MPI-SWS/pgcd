@@ -29,12 +29,13 @@ class Cart(Process):
         # mount is 11cm above the ground 
         self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + self.bedHeight * f.k)
         # motion primitives
-        MoveFromTo(self)
-        Idle(self)
-        MoveCart(self)
-        StrafeCart(self)
+        moveFromTo(self)
+        idle(self)
+        wait(self)
+        moveCart(self)
+        strafeCart(self)
         SetAngleCart(self)
-        Swipe(self)
+        swipe(self)
 
     def position(self):
         f = self.frame()
@@ -118,7 +119,7 @@ class CartMotionPrimitive(MotionPrimitive):
         i = self._component.ownResources(point, 0.0, self.err)
         return self.timify(i)
 
-class MoveFromTo(MotionPrimitiveFactory):
+class moveFromTo(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -176,7 +177,7 @@ class CartMove(CartMotionPrimitive):
         workSpace = cube(self._frame, self._src, self._dst, self._component.position().origin, self._maxErrorPost, self._maxErrorPost, 0.0)
         return self.timify(And(onGround, workSpace, self.orientation()))
 
-class Idle(MotionPrimitiveFactory):
+class idle(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -199,6 +200,44 @@ class CartIdle(CartMotionPrimitive):
     def duration(self):
         return DurationSpec(0, float('inf'), True)
 
+    def preG(self):
+        return S.true
+
+    def postG(self):
+        return S.true
+
+    def invG(self):
+        return S.true
+
+class wait(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+
+    def setParameters(self, args):
+        if len(args) == 1:
+            return CartWait(self.name(), self._component, args[0])
+        elif len(args) == 2:
+            return CartWait(self.name(), self._component, args[0], args[1])
+        else:
+            assert False, "wrong args " + str(args)
+
+class CartWait(CartMotionPrimitive):
+
+    def __init__(self, name, component, t_min, t_max = -1):
+        super().__init__(name, component)
+        self.t_min = t_min
+        if t_max < 0:
+            self.t_max = t_min
+        else:
+            self.t_max = t_max
+
+    def duration(self):
+        return DurationSpec(self.t_min, self.t_max, False)
+    
     def preG(self):
         return S.true
 
@@ -263,7 +302,7 @@ class CartSetAngle(CartMotionPrimitive):
         return Eq(self.var, self.angle)
 
 
-class MoveCart(MotionPrimitiveFactory):
+class moveCart(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -282,7 +321,7 @@ class MoveCart(MotionPrimitiveFactory):
             return CartMoveDirection(self.name(), self._component, args[0], args[1], args[2], args[0] + dx, args[1] + dy, args[4])
 
 
-class StrafeCart(MotionPrimitiveFactory):
+class strafeCart(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -346,7 +385,7 @@ class CartMoveDirection(CartMotionPrimitive):
         return And( proj >= 0, proj <= 1, (pos - traj.projection(pos)).magnitude() <= self.err)
 
 
-class Swipe(MotionPrimitiveFactory):
+class swipe(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)

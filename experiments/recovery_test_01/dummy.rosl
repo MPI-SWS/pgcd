@@ -1,2 +1,2 @@
-Wait(1);
-Fail(1,2);
+wait(1);
+fail(1,2);

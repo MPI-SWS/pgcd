@@ -51,7 +51,9 @@ class arm():
         setattr( self, angleName, sp.N(sp.rad(angle)))
 
     #17300 steps over all
-    def setAngleTurntable( self, angle):
+    def setAngleTurntable( self, angle, angleDest = None):
+        if angleDest != None:
+            angle = angleDest
         assert( angle >= 0 and angle <= 270 )
         steps = 17300/270*angle
         delta = steps-self.stepsTurnTable
@@ -67,7 +69,9 @@ class arm():
         return M
 
     #5600 steps over all
-    def setAngleCantilever( self, angle):
+    def setAngleCantilever( self, angle, angleDest = None):
+        if angleDest != None:
+            angle = angleDest
         assert( angle >= -30 and angle <= 270 )
         steps = 5400/270*angle
         delta = steps-self.stepsCantilever
@@ -82,7 +86,9 @@ class arm():
         #print( "caa cant>>", M)
         return M
 
-    def setAngleAnchorPoint( self, angle ):
+    def setAngleAnchorPoint( self, angle, angleDest = None):
+        if angleDest != None:
+            angle = angleDest
         assert( angle >= -30 and angle <= 270 )
         steps = 5400/270*angle*5
         delta = steps-self.stepsAnchorpoint
@@ -102,6 +108,12 @@ class arm():
         self.p.ChangeDutyCycle( cycle )
         time.sleep( 2 )
         #self.__updateAngleRos__( "angleGripper", -angle, 270, 10 )
+
+    def openGripper(self):
+        self.grip(5.5)
+
+    def closeGripper(self):
+        self.grip(12)
 
     def getConfigurationMatrixGripper( self ):
         #angle = sp.rad(270*self.stepsAnchorpoint/5400)
@@ -140,12 +152,20 @@ class arm():
                 turntable0, cantilever0, anchorpoint0,
                 turntable1, cantilever1, anchorpoint1 ):
         self.move(turntable1-turntable0, cantilever1-cantilever0, anchorpoint1-anchorpoint0)
+    
+    def moveTo( self, turntable, cantilever, anchorpoint ):
+        stepsTurnTable = 17300/270*turntable
+        stepsCantilever = 5400/270*cantilever
+        stepsAnchorpoint = 5400/270*anchorpoint*5
+        self.steps(self.stepsTurnTable - stepsTurnTable,
+                   self.stepsCantilever - stepsCantilever,
+                   self.stepsAnchorpoint - stepsAnchorpoint)
+        self.stepsAnchorpoint = stepsAnchorpoint
+        self.stepsTurnTable = stepsTurnTable
+        self.stepsCantilever = stepsCantilever
 
     def retractArm( self ):
         self.moveTo(0, 0, 0)
-        self.stepsAnchorpoint = 0
-        self.stepsTurnTable = 0
-        self.stepsCantilever = 0
 
     def rotateAndGrab( self, angle ):
         self.setAngleCantilever( 30 )

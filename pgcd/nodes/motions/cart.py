@@ -50,32 +50,36 @@ class cart():
     def __compute_steps__( self, straight, side, rotate ):
         """
         """
-        steps_motor1 = ( 0*straight+2*side-rotate )
-        steps_motor2 = ( 2*straight-1*side-rotate )
-        steps_motor3 = ( -2*straight-1*side-rotate )
+        try:
+            self.__motors_start__()
+            steps_motor1 = ( 0*straight+2*side-rotate )
+            steps_motor2 = ( 2*straight-1*side-rotate )
+            steps_motor3 = ( -2*straight-1*side-rotate )
 
-        steps = []
-        direction = []
+            steps = []
+            direction = []
 
-        if steps_motor1 > 0:
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
+            if steps_motor1 > 0:
+                direction.append( 1 )
+            else:
+                direction.append( 0 )
 
-        if steps_motor2 > 0:
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
+            if steps_motor2 > 0:
+                direction.append( 1 )
+            else:
+                direction.append( 0 )
 
-        if steps_motor3 > 0:
-            direction.append( 1 )
-        else:
-            direction.append( 0 )
+            if steps_motor3 > 0:
+                direction.append( 1 )
+            else:
+                direction.append( 0 )
 
-        step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3] ) )
-        max_steps = max( step_list )
-        stepspertime = 3.2
-        return self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
+            step_list = list( map( abs, [ steps_motor1, steps_motor2, steps_motor3] ) )
+            max_steps = max( step_list )
+            stepspertime = 3.2
+            return self.motors.doSteps( round(max_steps/stepspertime), step_list, direction )
+        finally:
+            self.__motors_shutdown__()
 
 
     def __setMSPins__( self, MS1, MS2, MS3 ):
@@ -114,37 +118,41 @@ class cart():
     # 200 steps per fc * microstepping
     # factor 4 for the gearbox
 
-    def setAngleCart( self, angle ):
-        self.__motors_start__()
+    def setAngleCart( self, angle, x=None, y=None, t=None ):
+        if x != None:
+            assert y != None and t != None
+            angle = t
         steps = (angle/360)*200*6.42*6.5*self.microstepping
         self.__compute_steps__( 0,0, steps-self.stepsCart)
         self.stepsCart = steps
         self.angleCart = angle
-        self.__motors_shutdown__()
 
-    def rotate( self, angle ):
-        self.__motors_start__()
+    def rotate( self, angle, x=None, y=None, t=None ):
+        if x != None:
+            assert y != None and t != None
+            angle = t
         steps = (angle/360)*200*6.42*6.5*self.microstepping
         self.__compute_steps__( 0,0, steps)
         self.stepsCart += steps
         self.angleCart += angle
-        self.__motors_shutdown__()
 
-    def moveCart( self, distance ):
-        self.__motors_start__()
+    def moveCart( self, distance, x=None, y=None, t=None ):
+        if x != None:
+            assert y != None and t != None
+            distance = t
         steps = distance / 410 * 200 * 6 * self.microstepping
         self.__compute_steps__( steps, 0, 0 )
         self.x += math.cos(math.radians(self.angleCart))*distance
         self.y += math.sin(math.radians(self.angleCart))*distance
-        self.__motors_shutdown__()
     
-    def strafeCart( self, distance ):
-        self.__motors_start__()
+    def strafeCart( self, distance, x=None, y=None, t=None ):
+        if x != None:
+            assert y != None and t != None
+            distance = t
         steps = distance / 410 * 200 * 6 * self.microstepping
         self.__compute_steps__( 0, steps, 0 )
         self.x += math.sin(math.radians(self.angleCart))*distance
         self.y -= math.cos(math.radians(self.angleCart))*distance
-        self.__motors_shutdown__()
 
     def idle( self ):
         time.sleep(0.1)
@@ -160,22 +168,25 @@ class cart():
 
     def inverse(self, mpName, arg, error = None):
         if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":
-            assert len(arg) == 1
-            if error == None:
-                return mpName, [-arg[0]]
+            if len(arg) == 1:
+                if error == None:
+                    return mpName, [-arg[0]]
+                else
+                    fraction = error.args[0]
+                    return mpName, [-fraction * arg[0]]
             else
-                fraction = float(error)
-                return mpName, [-fraction * arg[0]]
+                assert len(arg) == 4
+                if error == None:
+                    return mpName, [arg[0], arg[1], arg[2], -arg[3]] #TODO args 0-2
+                else
+                    fraction = error.args[0]
+                    return mpName, [arg[0], arg[1], arg[2], -fraction * arg[3]] #TODO args 0-2
         elif mpName == "setAngleCart":
-            raise ValueError('cannot invert absolute motion without the pre state', mpName)
+            if len(arg) == 4:
+                return mpName, [arg[0], arg[1], arg[2], arg[2]] #TODO args 0-2
+            else:
+                raise ValueError('cannot invert absolute motion without the pre state', mpName)
         elif mpName == "idle" or mpName == "wait":
             return mpName, arg
         else:
             raise ValueError('unkown motion primitive', mpName)
-
-if __name__ == "__main__":
-    c = cart()
-    c.setAngleCart( 45 )
-    c.setAngleCart( 0 )
-    c.moveCart( 50 )
-    c.moveCart(-50 )

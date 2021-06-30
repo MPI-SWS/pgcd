@@ -19,8 +19,8 @@ class PointProcess(Process):
         self.y = y
         self.z = z
         self.dummyVar = Symbol(name + '_dummy')
-        Idle(self)
-        Wait(self)
+        idle(self)
+        wait(self)
 
     def internalVariables(self):
         return [self.dummyVar]
@@ -87,8 +87,8 @@ class FpProcess(Process):
         super().__init__(name, parent, index)
         self.fp = fp #the "ownResources" function
         self.dummyVar = Symbol(name + '_dummy')
-        Idle(self)
-        Wait(self)
+        idle(self)
+        wait(self)
 
     def internalVariables(self):
         return [self.dummyVar]
@@ -106,7 +106,7 @@ class FpProcess(Process):
 # Motion primitives #
 #####################
 
-class Idle(MotionPrimitiveFactory):
+class idle(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -142,7 +142,7 @@ class StaticIdle(MotionPrimitive):
         i = self._component.abstractResources(point, delta)
         return self.timify(i)
 
-class Wait(MotionPrimitiveFactory):
+class wait(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)

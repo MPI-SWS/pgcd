@@ -96,11 +96,12 @@ class FrankaEmikaPanda(Process):
         self._ff = self._ef.orient_new_axis(    name + '_ff', self._f + self.f_ref, self._ef.j,    location= 0.384 * self._ef.k)
         self._effector = self._ff.locate_new(name + '_effector', 0.088 * self._ff.i)
         # motion primitives
-        Idle(self)
-        HomePos(self)
-        SetJoints(self)
-        Grasp(self)
-        Open(self)
+        idle(self)
+        wait(self)
+        homePos(self)
+        setJoints(self)
+        closeGripper(self)
+        openGripper(self)
     
     def frame(self):
         return self._frame
@@ -164,7 +165,7 @@ class FrankaMotionPrimitive(MotionPrimitive):
         return self.timify(i)
 
 
-class HomePos(MotionPrimitiveFactory):
+class homePos(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -194,7 +195,7 @@ class FrankaHomePos(FrankaMotionPrimitive):
 
 
 
-class Idle(MotionPrimitiveFactory):
+class idle(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -225,7 +226,7 @@ class FrankaIdle(FrankaMotionPrimitive):
 
 
 # since we don't precisely model the gripper, it is like waiting
-class Grasp(MotionPrimitiveFactory):
+class closeGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -237,10 +238,8 @@ class Grasp(MotionPrimitiveFactory):
         assert(len(args) == 1)
         return FrankaWait(self.name(), self._component)
 
-
-
 # since we don't precisely model the gripper, it is like waiting
-class Open(MotionPrimitiveFactory):
+class openGripper(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -249,16 +248,32 @@ class Open(MotionPrimitiveFactory):
         assert(len(args) == 0)
         return FrankaWait(self.name(), self._component)
 
+class wait(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+
+    def setParameters(self, args):
+        assert(len(args) == 1)
+        return FrankaWait(self.name(), self._component, args[0])
+
 class FrankaWait(FrankaMotionPrimitive):
 
-    def __init__(self, name, component):
+    def __init__(self, name, component, duration = None):
         super().__init__(name, component)
+        if duration != None:
+            self.duration = duration
+        else:
+            self.duration = 1
 
     def modifies(self):
         return []
     
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO
+        return DurationSpec(self.duration, self.duration, False)
 
     def preG(self):
         return S.true
@@ -270,7 +285,7 @@ class FrankaWait(FrankaMotionPrimitive):
         return S.true
 
 
-class SetJoints(MotionPrimitiveFactory):
+class setJoints(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
