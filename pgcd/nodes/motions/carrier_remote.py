@@ -78,9 +78,9 @@ class carrier():
 
 if __name__ == "__main__":
     c = carrier()
-    (ok, fraction) = c.__compute_steps__(int(sys.argv[1], int(sys.argv[2], int(sys.argv[3])
+    (ok, fraction) = c.__compute_steps__(float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]))
     if ok:
-        return 0
+        sys.exit(0)
     else:
         sys.stderr.write(str(fraction))
-        return -1
+        sys.exit(-1)

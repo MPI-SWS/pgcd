@@ -7,7 +7,7 @@ Calibrate arm first!
 import steppers
 import RPi.GPIO as GPIO
 import time
-import sys 
+import sys
 
 class arm():
     """
@@ -52,4 +52,4 @@ class arm():
 
 if __name__ == "__main__":
     c = arm()
-    c.steps( int(sys.argv[1]),  int(sys.argv[2]), int(sys.argv[3]))
+    c.steps( float(sys.argv[1]),  float(sys.argv[2]), float(sys.argv[3]))

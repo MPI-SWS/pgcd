@@ -63,7 +63,7 @@ class arm(Proxy):
                 turntable0, cantilever0, anchorpoint0,
                 turntable1, cantilever1, anchorpoint1 ):
         self.move(turntable1-turntable0, cantilever1-cantilever0, anchorpoint1-anchorpoint0)
-    
+
     def moveTo( self, turntable, cantilever, anchorpoint ):
         stepsTurnTable = 17300/270*turntable
         stepsCantilever = 5400/270*cantilever
@@ -88,7 +88,7 @@ class arm(Proxy):
 
     def wait(self, time):
         time.sleep(time)
-    
+
     def inverse(self, mpName, arg, error = None):
         assert error == None #TODO
         if mpName == "grip":

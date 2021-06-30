@@ -75,5 +75,5 @@ class cart():
 
 if __name__ == "__main__":
     c = cart()
-    c.__compute_steps__(int(sys.argv[1], int(sys.argv[2], int(sys.argv[3])
-    return 0
+    c.__compute_steps__(float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]))
+    sys.exit(0)

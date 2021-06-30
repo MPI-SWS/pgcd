@@ -256,14 +256,14 @@ class carrier():
             if len(arg) == 1:
                 if error == None:
                     return mpName, [-arg[0]]
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [-fraction * arg[0]]
-            else
+            else:
                 assert len(arg) == 4
                 if error == None:
                     return mpName, [arg[0], arg[1], arg[2], -arg[3]] #TODO args 0-2
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [arg[0], arg[1], arg[2], -fraction * arg[3]] #TODO args 0-2
         elif mpName == "setAngleCart":
@@ -275,14 +275,14 @@ class carrier():
             if len(arg) == 1:
                 if error == None:
                     return mpName, [arg[0], -arg[1]]
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [arg[0], -fraction * arg[1]]
             else:
                 assert len(arg) == 5
                 if error == None:
                     return mpName, [arg[0], arg[1], arg[2], arg[3], -arg[4]] #TODO args 0-2
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [arg[0], arg[1], arg[2], arg[3], -fraction * arg[4]] #TODO args 0-2
         elif mpName == "idle" or mpName == "wait":

@@ -171,10 +171,10 @@ class cart():
             if len(arg) == 1:
                 if error == None:
                     return mpName, [-arg[0]]
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [-fraction * arg[0]]
-            else
+            else:
                 assert len(arg) == 4
                 if error == None:
                     return mpName, [arg[0], arg[1], arg[2], -arg[3]] #TODO args 0-2

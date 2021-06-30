@@ -1,6 +1,8 @@
 
 from motions.proxy import Proxy
 from motions.proxy_conf import *
+import math
+from time import sleep, time
 
 class CarrierProxy(Proxy):
 
@@ -14,11 +16,11 @@ class CarrierProxy(Proxy):
 
 
     def __compute_steps__( self, straight, side, rotate ):
-        (status, out, err) = self.exec_bloquing("steps", [straight, side, rotate])
+        (status, out, err) = self.exec_bloquing("./steps", [straight, side, rotate])
         if status == 0:
-            (True, 1.0)
+            return (True, 1.0)
         else:
-            (False, float(err.read()))
+            return (False, float(err.read()))
 
 
     def setAngleCart( self, angle, x=None, y=None, t=None):
@@ -105,14 +107,14 @@ class CarrierProxy(Proxy):
             if len(arg) == 1:
                 if error == None:
                     return mpName, [-arg[0]]
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [-fraction * arg[0]]
-            else
+            else:
                 assert len(arg) == 4
                 if error == None:
                     return mpName, [arg[0], arg[1], arg[2], -arg[3]] #TODO args 0-2
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [arg[0], arg[1], arg[2], -fraction * arg[3]] #TODO args 0-2
         elif mpName == "setAngleCart":
@@ -124,14 +126,14 @@ class CarrierProxy(Proxy):
             if len(arg) == 1:
                 if error == None:
                     return mpName, [arg[0], -arg[1]]
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [arg[0], -fraction * arg[1]]
             else:
                 assert len(arg) == 5
                 if error == None:
                     return mpName, [arg[0], arg[1], arg[2], arg[3], -arg[4]] #TODO args 0-2
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [arg[0], arg[1], arg[2], arg[3], -fraction * arg[4]] #TODO args 0-2
         elif mpName == "idle" or mpName == "wait":
@@ -140,6 +142,6 @@ class CarrierProxy(Proxy):
             raise ValueError('unkown motion primitive', mpName)
 
 
-    # Cart radius = 215mm, wheel radius = 33.5mm -> 6.41 rev. per wheel per full circle
-    # 200 steps per fc * microstepping
-
+if __name__ == "__main__":
+    c = CarrierProxy()
+    c.moveCart(50)

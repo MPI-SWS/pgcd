@@ -1,5 +1,7 @@
 from motions.proxy import Proxy
 from motions.proxy_conf import *
+import math
+from time import sleep, time
 
 class CartProxy(Proxy):
 
@@ -14,9 +16,9 @@ class CartProxy(Proxy):
     def __compute_steps__( self, straight, side, rotate ):
         (status, out, err) = self.exec_bloquing("steps", [straight, side, rotate])
         if status == 0:
-            (True, 1.0)
+            return (True, 1.0)
         else:
-            (False, float(err.read()))
+            return (False, float(err.read()))
 
 
     def setAngleCart( self, angle, x=None, y=None, t=None ):
@@ -69,11 +71,11 @@ class CartProxy(Proxy):
                 else
                     fraction = error.args[0]
                     return mpName, [-fraction * arg[0]]
-            else
+            else:
                 assert len(arg) == 4
                 if error == None:
                     return mpName, [arg[0], arg[1], arg[2], -arg[3]] #TODO args 0-2
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [arg[0], arg[1], arg[2], -fraction * arg[3]] #TODO args 0-2
         elif mpName == "setAngleCart":
