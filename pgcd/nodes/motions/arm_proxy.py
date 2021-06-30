@@ -1,11 +1,13 @@
 
 from motions.proxy import Proxy
 from motions.proxy_conf import *
+import time
 
 class ArmProxy(Proxy):
 
     def __init__( self ):
         super().__init__(arm_hostname, arm_username, arm_password)
+        self.exec_bloquing("sudo", ["pigpiod"])
         self.stepsTurnTable = 0
         self.stepsCantilever = 0
         self.stepsAnchorpoint = 0
@@ -15,7 +17,8 @@ class ArmProxy(Proxy):
         self.angleGripper = 0
 
     def grip( self, cycle ):
-        self.exec_bloquing("./grip", [cycle])
+        c = (cycle - 5.5) * 1100 / 6.5 + 700 # from 700 too 1800
+        (status, out, err) = self.exec_bloquing("python3", ["grip_pigpio.py", int(c)])
 
     def steps( self, turntable, cantilever, anchorpoint ):
         self.exec_bloquing("./steps", [turntable, cantilever, anchorpoint])
@@ -102,10 +105,10 @@ class ArmProxy(Proxy):
         elif mpName == "move":
             assert len(arg) == 3
             return mpName, [-i for i in args]
-        elif mpName == "retractArm" or
-             mpName == "setAngleTurntable" or
-             mpName == "setAngleCantilever" or
-             mpName == "setAngleAnchorPoint" or :
+        elif mpName == "retractArm" or \
+             mpName == "setAngleTurntable" or \
+             mpName == "setAngleCantilever" or \
+             mpName == "setAngleAnchorPoint" :
             raise ValueError('cannot invert absolute motion without the pre state', mpName)
         elif mpName == "idle" or mpName == "wait":
             return mpName, arg

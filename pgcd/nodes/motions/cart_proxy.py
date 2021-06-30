@@ -1,7 +1,7 @@
 from motions.proxy import Proxy
 from motions.proxy_conf import *
 import math
-from time import sleep, time
+import time
 
 class CartProxy(Proxy):
 
