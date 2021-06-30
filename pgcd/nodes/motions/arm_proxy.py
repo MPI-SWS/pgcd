@@ -2,7 +2,7 @@
 from motions.proxy import Proxy
 from motions.proxy_conf import *
 
-class arm(Proxy):
+class ArmProxy(Proxy):
 
     def __init__( self ):
         super().__init__(arm_hostname, arm_username, arm_password)
@@ -58,7 +58,7 @@ class arm(Proxy):
         stepsCantilever = 5400/270*cantilever
         stepsAnchorpoint = 5400/270*anchorpoint*5
         self.steps(stepsTurnTable, stepsCantilever, stepsAnchorpoint)
-    
+
     def rotate( self,
                 turntable0, cantilever0, anchorpoint0,
                 turntable1, cantilever1, anchorpoint1 ):
@@ -113,3 +113,8 @@ class arm(Proxy):
             raise ValueError('unkown motion primitive', mpName)
 
 
+if __name__ == "__main__":
+    c = ArmProxy()
+    c.closeGripper()
+    time.sleep(1.0)
+    c.openGripper()

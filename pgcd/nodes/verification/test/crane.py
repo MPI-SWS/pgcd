@@ -33,6 +33,7 @@ class Crane(Process):
         self._effector = self._xAxis.locate_new(name + '_effector', (self._x + self.xOffset) * self._xAxis.i )
         # motion primitives
         home(self)
+        toHome(self)
         moveTo(self)
         moveToX(self)
         moveToY(self)
@@ -181,6 +182,18 @@ class home(MotionPrimitiveFactory):
         assert(len(args) == 0) #TODO 0 or 3
         return CraneHome(self.name(), self._component)
 
+class toHome(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return []
+
+    def setParameters(self, args):
+        assert(len(args) == 0) #TODO 0 or 3
+        return CraneHome(self.name(), self._component)
+
 class CraneHome(CraneMP):
 
     def __init__(self, name, component):
@@ -196,8 +209,8 @@ class CraneHome(CraneMP):
         return S.true
 
     def postG(self):
-        x = Eq(self._component._x, 0)
-        y = Eq(self._component._y, 0)
+        x = Eq(self._component._x, 90)
+        y = Eq(self._component._y, 110)
         z = Eq(self._component._z, 0)
         return And(x, y, z)
 

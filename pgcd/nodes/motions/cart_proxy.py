@@ -20,7 +20,6 @@ class CartProxy(Proxy):
         else:
             return (False, float(err.read()))
 
-
     def setAngleCart( self, angle, x=None, y=None, t=None ):
         if x != None:
             assert y != None and t != None
@@ -47,7 +46,7 @@ class CartProxy(Proxy):
         self.__compute_steps__( steps, 0, 0 )
         self.x += math.cos(math.radians(self.angleCart))*distance
         self.y += math.sin(math.radians(self.angleCart))*distance
-    
+
     def strafeCart( self, distance, x=None, y=None, t=None ):
         if x != None:
             assert y != None and t != None
@@ -59,7 +58,7 @@ class CartProxy(Proxy):
 
     def idle( self ):
         time.sleep(0.1)
-    
+
     def wait(self, time):
         time.sleep(time)
 
@@ -68,7 +67,7 @@ class CartProxy(Proxy):
             if len(arg) == 1:
                 if error == None:
                     return mpName, [-arg[0]]
-                else
+                else:
                     fraction = error.args[0]
                     return mpName, [-fraction * arg[0]]
             else:
@@ -87,3 +86,7 @@ class CartProxy(Proxy):
             return mpName, arg
         else:
             raise ValueError('unkown motion primitive', mpName)
+
+if __name__ == "__main__":
+    c = CartProxy()
+    c.moveCart(50)

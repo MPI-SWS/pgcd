@@ -2,6 +2,7 @@
 
 import steppers
 import RPi.GPIO as GPIO
+import sys
 
 class cart():
     """

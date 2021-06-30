@@ -12,9 +12,12 @@ class Crane():
     def __init__(self, port = "/dev/ttyUSB0", baud = 250000, t = 22): #115200
         self.t = t
         self.chan = serial.Serial(port, baud)
-        self.receive()
+        time.sleep(1.0)
+        while self.chan.inWaiting() > 0:
+            out = self.chan.read(1)
+        #self.receive()
         # TODO read?
-        self.processCommand("G90")
+        # self.send("G90")
 
     def __del__(self):
         self.chan.close()
@@ -22,22 +25,27 @@ class Crane():
     def send(self, command):
         self.chan.write(command.encode())
         self.chan.write(b'\r\n')
+        self.chan.flush()
 
-    def receive(self):
-        time.sleep(0.1)
+    def receive(self, prefix):
         out = ''
-        while self.chan.inWaiting() > 0:
-            out += self.chan.readline().decode()
-        print(out)
+        while not out.startswith(prefix):
+        #while self.chan.inWaiting() > 0:
+            out = self.chan.readline().decode()
+            print(out)
         return out
         # TODO parse (remove last ok?)
 
-    def processCommand(self, command):
+    def processCommand(self, command, prefix = "ok"):
         self.send(command)
-        return self.receive()
+        return self.receive(prefix)
 
     def home(self, x0 = None, y0 = None, z0 = None):
-        self.processCommand(b"G28")
+        self.processCommand("G28")
+
+    def toHome(self, x0 = None, y0 = None, z0 = None):
+        self.moveToZ(0)
+        self.moveToXY(90, 110)
 
     def moveTo(self, x, y, z, x0 = None, y0 = None, z0 = None):
         if x0 != None:
@@ -87,7 +95,9 @@ class Crane():
         time.sleep(1.0)
 
     def hasObject(self):
-        result = self.processCommand("M105")
+        self.processCommand("M400")
+        time.sleep(1.0)
+        result = self.processCommand("M105", "ok T")
         m = re.search('T0:(\d\d.\d)', result) #TODO as comp from ambient (bed) temp
         t = float(m.group(1))
         return t <= self.t
@@ -102,7 +112,7 @@ class Crane():
     def wait(self, t):
         time.sleep(t)
 
-    def moveObject(self, srcX, srcY, srcZ, fstX, dstY, dstZ):
+    def moveObject(self, srcX, srcY, srcZ, dstX, dstY, dstZ):
         self.openGripper()
         self.moveToXY(srcX, srcY)
         self.moveToZ(srcZ)
@@ -136,7 +146,7 @@ class Crane():
             if error == None:
                 return mpName, arg[3:6] + arg[0:3]
             else:
-                return "home", []
+                return "toHome", []
         elif mpName == "closeGripper":
             return "openGripper", arg
         elif mpName == "openGripper":
@@ -149,9 +159,13 @@ class Crane():
 if __name__ == "__main__":
     c = Crane()
     c.openGripper()
-    time.sleep(1.0)
-    if c.grip():
-        print("got object")
-    else:
-        print("did not get object")
-    c.openGripper()
+    c.home()
+    #c.hasObject()
+    c.moveObject(180, 0, 110, 0, 160, 170)
+    #c.openGripper()
+    #time.sleep(1.0)
+    #if c.grip():
+    #    print("got object")
+    #else:
+    #    print("did not get object")
+    #c.openGripper()

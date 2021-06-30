@@ -52,4 +52,9 @@ class arm():
 
 if __name__ == "__main__":
     c = arm()
-    c.steps( float(sys.argv[1]),  float(sys.argv[2]), float(sys.argv[3]))
+    if sys.argv[1] == 'steps':
+        c.steps( float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]) )
+    elif sys.argv[1] == 'grip':
+        c.grip( float(sys.argv[2]) )
+    else:
+        sys.exit(-1)
