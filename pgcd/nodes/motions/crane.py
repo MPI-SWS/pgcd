@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import serial
-from time import sleep, time
+import time
 import re
 
 # https://stackoverflow.com/questions/59957089/how-to-send-one-gcode-command-over-usb
@@ -9,21 +9,26 @@ import re
 
 class Crane():
 
-    def __init__(self, port = "/dev/ttyUSB0", baud = 250000, t = 20) #115200
+    def __init__(self, port = "/dev/ttyUSB0", baud = 250000, t = 22): #115200
         self.t = t
         self.chan = serial.Serial(port, baud)
+        self.receive()
         # TODO read?
         self.processCommand("G90")
 
+    def __del__(self):
+        self.chan.close()
+
     def send(self, command):
-        self.chan.write(command)
-        self.chan.write("\r\n")
+        self.chan.write(command.encode())
+        self.chan.write(b'\r\n')
 
     def receive(self):
         time.sleep(0.1)
         out = ''
-        while ser.inWaiting() > 0:
-            out += ser.read(1)
+        while self.chan.inWaiting() > 0:
+            out += self.chan.readline().decode()
+        print(out)
         return out
         # TODO parse (remove last ok?)
 
@@ -32,9 +37,7 @@ class Crane():
         return self.receive()
 
     def home(self, x0 = None, y0 = None, z0 = None):
-        self.processCommand("G28 Z")
-        self.processCommand("G28 X")
-        self.processCommand("G28 Y")
+        self.processCommand(b"G28")
 
     def moveTo(self, x, y, z, x0 = None, y0 = None, z0 = None):
         if x0 != None:
@@ -43,6 +46,9 @@ class Crane():
             x = x0
             y = y0
             z = z0
+        assert x >= 0 and x <= 180
+        assert y >= 0 and y <= 160
+        assert z >= 0 and z <= 200
         self.processCommand("G1 X" + str(x) + " Y" + str(y) + " Z" + str(z))
 
     def moveToXY(self, x, y, x0 = None, y0 = None):
@@ -50,30 +56,35 @@ class Crane():
             assert y0 != None
             x = x0
             y = y0
+        assert x >= 0 and x <= 180
+        assert y >= 0 and y <= 160
         self.processCommand("G1 X" + str(x) + " Y" + str(y))
 
     def moveToX(self, x, x0 = None):
         if x0 != None:
             x = x0
+        assert x >= 0 and x <= 180
         self.processCommand("G1 X" + str(x))
 
     def moveToY(self, y, y0 = None):
         if y0 != None:
             y = y0
+        assert y >= 0 and y <= 160
         self.processCommand("G1 Y" + str(y))
 
     def moveToZ(self, z, z0 = None):
         if z0 != None:
             z = z0
+        assert z >= 0 and z <= 200
         self.processCommand("G1 Z" + str(z))
 
     def closeGripper(self):
         self.processCommand("M106")
-        #self.processCommand("M106 S245")
+        time.sleep(1.0)
 
     def openGripper(self):
         self.processCommand("M107")
-        #self.processCommand("M106 S10")
+        time.sleep(1.0)
 
     def hasObject(self):
         result = self.processCommand("M105")
@@ -83,7 +94,6 @@ class Crane():
 
     def grip(self):
         self.closeGripper()
-        time.sleep(1.0)
         return self.hasObject()
 
     def idle(self):
@@ -103,7 +113,7 @@ class Crane():
         self.moveToZ(dstZ)
         self.openGripper()
         self.moveToZ(0)
-        self.moveToXY(0, 0)
+        self.moveToXY(90, 110)
 
     def inverse(self, mpName, arg, error = None):
         if mpName == "moveTo":
@@ -111,7 +121,7 @@ class Crane():
                 return mpName, arg[3:6] + arg[0:3]
             else:
                 raise ValueError('cannot invert absolute motion without the pre state', mpName)
-        elif mpName == "moveToX" or mpName = "moveToY" or mpName = "moveToZ":
+        elif mpName == "moveToX" or mpName == "moveToY" or mpName == "moveToZ":
             if len(arg) == 2:
                 return mpName, [arg[1], arg[0]]
             else:
@@ -122,7 +132,7 @@ class Crane():
             else:
                 raise ValueError('cannot invert absolute motion without the pre state', mpName)
         elif mpName == "moveObject":
-            assert len(arg) == 6:
+            assert len(arg) == 6
             if error == None:
                 return mpName, arg[3:6] + arg[0:3]
             else:
@@ -135,3 +145,13 @@ class Crane():
             return mpName, arg
         else:
             raise ValueError('unkown motion primitive', mpName)
+
+if __name__ == "__main__":
+    c = Crane()
+    c.openGripper()
+    time.sleep(1.0)
+    if c.grip():
+        print("got object")
+    else:
+        print("did not get object")
+    c.openGripper()
