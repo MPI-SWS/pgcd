@@ -15,10 +15,10 @@ class arm(Proxy):
         self.angleGripper = 0
 
     def grip( self, cycle ):
-        self.exec_bloquing("grip", [cycle])
+        self.exec_bloquing("./grip", [cycle])
 
     def steps( self, turntable, cantilever, anchorpoint ):
-        self.exec_bloquing("steps", [turntable, cantilever, anchorpoint])
+        self.exec_bloquing("./steps", [turntable, cantilever, anchorpoint])
 
     def setAngleTurntable( self, angle, angleDest = None):
         if angleDest != None:

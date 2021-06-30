@@ -14,7 +14,7 @@ class CartProxy(Proxy):
         self.y = 0
 
     def __compute_steps__( self, straight, side, rotate ):
-        (status, out, err) = self.exec_bloquing("steps", [straight, side, rotate])
+        (status, out, err) = self.exec_bloquing("./steps", [straight, side, rotate])
         if status == 0:
             return (True, 1.0)
         else:
