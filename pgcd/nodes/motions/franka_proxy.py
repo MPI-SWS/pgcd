@@ -1,11 +1,15 @@
-import franka_robot_arm
 import time
+from motions.proxy import Proxy
+from motions.proxy_conf import *
 
-class franka():
+class FrankaProxy():
 
-    def __init__( self, ip = "139.19.176.236"):
-        self.f = franka_robot_arm.franka_robot_arm()
-        self.f.start(ip)
+    def __init__(self):
+        super().__init__(franka_hostname, franka_username, franka_password)
+        (chan_in, chan_out, chan_err) = self.exec_nonbloquing("./franka_robot_arm", ["139.19.176.51"])
+        self.chan_in = chan_in
+        self.chan_out = chan_out
+        self.chan_err = chan_err
         # home
         self.a_ref = 0.000000
         self.b_ref = -0.785398
@@ -23,8 +27,17 @@ class franka():
         self.f_cur = 0.0
         self.g_cur = 0.0
 
-    def stop(self):
-        self.f.stop()
+    def __del__(self):
+        self.chan_in.close()
+
+    def run(self, prog):
+        out = []
+        for p in prog:
+            self.chan_in.write(p)
+            self.chan_in.write('\n')
+            self.chan_in.flush()
+            out.append(self.chan_out.readline())
+        return out
 
     def idle(self):
         time.sleep(0.1)
@@ -41,7 +54,7 @@ class franka():
         self.e_cur = self.e_ref
         self.f_cur = self.f_ref
         self.g_cur = self.g_ref
-        self.f.run(prog)
+        self.run(prog)
 
     def setJoints(self, a, b, c, d, e, f, g):
         a1 = a - self.a_cur
@@ -63,35 +76,25 @@ class franka():
         self.e_cur += e
         self.f_cur += f
         self.g_cur += g
-        self.f.run(prog)
+        self.run(prog)
 
     def grasp(self, dist = 0.03):
         prog = ["grasp("+str(dist)+")"]
-        self.f.run(prog)
+        if int(self.run(prog)[0]) == 0
+            raise ValueError("grasp")
 
     def open(self, dist = 0.03):
         prog = ["open()"]
-        self.f.run(prog)
+        self.run(prog)
 
     def moveGripper(self, a, b):
         prog = ["moveGripper("+str(a)+","+str(b)+")"]
-        self.f.run(prog)
+        self.run(prog)
 
     def getPos(self, dist = 0.03):
         prog = ["getPos()"]
-        self.f.run(prog)
-
-    def testRun(self):
-        prog = ["homePos()",
-                "grasp(0.03)",
-                "setJointRot(1.5708,0,0,0,0,0,0)",
-                "jointMotions()",
-                "open()",
-                "moveGripper(-0.05,0.1)",
-                "getPos()",
-                "moveGripper(0.05,0.1)"]
-        self.f.run(prog)
-        self.stop()
+        self.run(prog)
+        #TODO print
 
     def inverse(self, mpName, arg, error = None):
         if mpName == "homePos":
@@ -117,13 +120,8 @@ class franka():
 if __name__ == "__main__":
     f = franka()
     f.homePos()
-    #f.setJoints( 0.178310,0.635300,-0.449920,-2.122150,2.866786,2.016097,1.141317 )
-    #f.setJoints( 0.029303,0.719571,-0.449588,-2.003304,2.698555,2.014047,1.218498 )
-    #f.setJoints(0.113141,-0.756021,1.155316,-2.205151,0.138111,2.267583,1.449022)
-    #f.setJoints(-0.462060,-1.258402,2.159037,-1.921470,0.191438,2.483492,2.613494)
-    #f.grasp(0.02)
-    #f.homePos()
-    f.getPos()
-    #f.open()
-    #f.homePos()
-    f.stop()
+    f.setJoints( 0.605278,-0.752382,-1.742559,-2.683788,-1.266799,2.359626,-2.402420 )
+    f.grasp(0.02)
+    f.homePos()
+    f.setJoints( 2.631401,0.928037,-1.443972,-2.726619,1.378726,2.203010,-2.340407 )
+    f.open()
