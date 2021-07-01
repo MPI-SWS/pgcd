@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 
+from cart_shared import CartShared
 import steppers
 import RPi.GPIO as GPIO
 import sympy as sp
 from time import sleep, time
 import math
 
-class cart():
+class cart(CartShared):
     """
     Measurements of the cart:
 
@@ -21,6 +22,7 @@ class cart():
 
     """
     def __init__( self ):
+        CartShared.__init__(self)
         GPIO.setwarnings(False)
         self.motors = steppers.Steppers( 3, [11,13,16], [12,15,18], [3,3,3] )
         GPIO.setmode(GPIO.BOARD)
@@ -33,13 +35,7 @@ class cart():
         GPIO.setup( self.pinMS2, GPIO.OUT )
         GPIO.setup( self.pinMS3, GPIO.OUT )
         self.offset = 63
-        self.stepsCart = 0
-        self.angleCart = 0
-        self.microstepping = 16
         self.__microstepping__( 16 )
-        #print( self.microstepping )
-        self.x = 0
-        self.y = 0
 
     def __motors_start__( self ):
         GPIO.output( self.pinEnable, GPIO.LOW )
@@ -114,79 +110,8 @@ class cart():
         return steps
 
 
-    # Cart radius = 215mm, wheel radius = 33.5mm -> 6.41 rev. per wheel per full circle
-    # 200 steps per fc * microstepping
-    # factor 4 for the gearbox
-
-    def setAngleCart( self, angle, x=None, y=None, t=None ):
-        if x != None:
-            assert y != None and t != None
-            angle = t
-        steps = (angle/360)*200*6.42*6.5*self.microstepping
-        self.__compute_steps__( 0,0, steps-self.stepsCart)
-        self.stepsCart = steps
-        self.angleCart = angle
-
-    def rotate( self, angle, x=None, y=None, t=None ):
-        if x != None:
-            assert y != None and t != None
-            angle = t
-        steps = (angle/360)*200*6.42*6.5*self.microstepping
-        self.__compute_steps__( 0,0, steps)
-        self.stepsCart += steps
-        self.angleCart += angle
-
-    def moveCart( self, distance, x=None, y=None, t=None ):
-        if x != None:
-            assert y != None and t != None
-            distance = t
-        steps = distance / 410 * 200 * 6 * self.microstepping
-        self.__compute_steps__( steps, 0, 0 )
-        self.x += math.cos(math.radians(self.angleCart))*distance
-        self.y += math.sin(math.radians(self.angleCart))*distance
-    
-    def strafeCart( self, distance, x=None, y=None, t=None ):
-        if x != None:
-            assert y != None and t != None
-            distance = t
-        steps = distance / 410 * 200 * 6 * self.microstepping
-        self.__compute_steps__( 0, steps, 0 )
-        self.x += math.sin(math.radians(self.angleCart))*distance
-        self.y -= math.cos(math.radians(self.angleCart))*distance
-
-    def idle( self ):
-        time.sleep(0.1)
-    
-    def wait(self, time):
-        time.sleep(time)
-
     def getConfigurationMatrixCart( self ):
         angle = self.angleCart
         M = sp.Matrix( [ [sp.cos( angle ), -sp.sin( angle ), 0, 0], [sp.sin(angle), sp.cos(angle), 0, 0], [0, 0, 1, self.offset], [0, 0, 0, 1] ] )
         #print( "caa cart>>", M)
         return M
-
-    def inverse(self, mpName, arg, error = None):
-        if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":
-            if len(arg) == 1:
-                if error == None:
-                    return mpName, [-arg[0]]
-                else:
-                    fraction = error.args[0]
-                    return mpName, [-fraction * arg[0]]
-            else:
-                assert len(arg) == 4
-                if error == None:
-                    return mpName, [arg[0], arg[1], arg[2], -arg[3]] #TODO args 0-2
-                else
-                    fraction = error.args[0]
-                    return mpName, [arg[0], arg[1], arg[2], -fraction * arg[3]] #TODO args 0-2
-        elif mpName == "setAngleCart":
-            if len(arg) == 4:
-                return mpName, [arg[0], arg[1], arg[2], arg[2]] #TODO args 0-2
-            else:
-                raise ValueError('cannot invert absolute motion without the pre state', mpName)
-        elif mpName == "idle" or mpName == "wait":
-            return mpName, arg
-        else:
-            raise ValueError('unkown motion primitive', mpName)

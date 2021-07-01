@@ -4,15 +4,17 @@
 Calibrate arm first!
 """
 
+from arm_shared import ArmShared
 import steppers
 import RPi.GPIO as GPIO
 import time
 
-class arm():
+class arm(ArmShared):
     """
     """
 
     def __init__( self ):
+        ArmShared.__init__(self)
         GPIO.setwarnings(False)
         GPIO.setmode( GPIO.BOARD )
         # 1: turntable
@@ -25,13 +27,6 @@ class arm():
         self.p.start( 2.5 )
         #
         self.offset = 63 #height of cart
-        self.stepsTurnTable = 0
-        self.stepsCantilever = 0
-        self.stepsAnchorpoint = 0
-        self.angleTurnTable = 0
-        self.angleCantilever = 0
-        self.angleAnchorpoint = 0
-        self.angleGripper = 0
 
     def __updateAngleRos__( self, angleName, angle, maxAngle, timePerRev ):
         """
@@ -50,17 +45,6 @@ class arm():
         #    now = time()
         setattr( self, angleName, sp.N(sp.rad(angle)))
 
-    #17300 steps over all
-    def setAngleTurntable( self, angle, angleDest = None):
-        if angleDest != None:
-            angle = angleDest
-        assert( angle >= 0 and angle <= 270 )
-        steps = 17300/270*angle
-        delta = steps-self.stepsTurnTable
-        self.steps(delta, 0, 0)
-        self.stepsTurnTable = steps
-        #self.__updateAngleRos__( "angleTurnTable", angle, 270, 10 )
-
     def getConfigurationMatrixTurntable( self ):
         #angle = sp.rad(270*self.stepsTurnTable/17300)
         angle = self.angleTurnTable
@@ -68,33 +52,12 @@ class arm():
         #print( "caa turn>>", M)
         return M
 
-    #5600 steps over all
-    def setAngleCantilever( self, angle, angleDest = None):
-        if angleDest != None:
-            angle = angleDest
-        assert( angle >= -30 and angle <= 270 )
-        steps = 5400/270*angle
-        delta = steps-self.stepsCantilever
-        self.steps(0, delta, 0)
-        self.stepsCantilever = steps
-        #self.__updateAngleRos__( "angleCantilever", angle, 270, 10 )
-
     def getConfigurationMatrixCantilever( self ):
         #angle = sp.rad(270*self.stepsCantilever/5400)
         angle = self.angleCantilever-120
         M = sp.Matrix( [ [1, 0, 0, 0], [0, sp.cos(angle), -sp.sin(angle), 0], [0, sp.sin(angle), sp.cos(angle), 144], [0, 0, 0, 1] ] )
         #print( "caa cant>>", M)
         return M
-
-    def setAngleAnchorPoint( self, angle, angleDest = None):
-        if angleDest != None:
-            angle = angleDest
-        assert( angle >= -30 and angle <= 270 )
-        steps = 5400/270*angle*5
-        delta = steps-self.stepsAnchorpoint
-        self.steps(0, 0, delta)
-        self.stepsAnchorpoint = steps
-        #self.__updateAngleRos__( "angleAnchorpoint", -angle, 300, 10 )
 
     def getConfigurationMatrixAnchorPoint( self ):
         #angle = sp.rad(270*self.stepsAnchorpoint/5400)
@@ -108,12 +71,6 @@ class arm():
         self.p.ChangeDutyCycle( cycle )
         time.sleep( 2 )
         #self.__updateAngleRos__( "angleGripper", -angle, 270, 10 )
-
-    def openGripper(self):
-        self.grip(5.5)
-
-    def closeGripper(self):
-        self.grip(12)
 
     def getConfigurationMatrixGripper( self ):
         #angle = sp.rad(270*self.stepsAnchorpoint/5400)
@@ -141,65 +98,6 @@ class arm():
         step_list = list( map( abs, [ turntable, cantilever, anchorpoint] ) )
         time = round( max( list( map( abs, [ turntable/2.0, cantilever/1.0, anchorpoint/2.0 ] ))))
         self.motors.doSteps( time, step_list, direction )
-
-    def move( self, turntable, cantilever, anchorpoint ):
-        stepsTurnTable = 17300/270*turntable
-        stepsCantilever = 5400/270*cantilever
-        stepsAnchorpoint = 5400/270*anchorpoint*5
-        self.steps(stepsTurnTable, stepsCantilever, stepsAnchorpoint)
-    
-    def rotate( self,
-                turntable0, cantilever0, anchorpoint0,
-                turntable1, cantilever1, anchorpoint1 ):
-        self.move(turntable1-turntable0, cantilever1-cantilever0, anchorpoint1-anchorpoint0)
-    
-    def moveTo( self, turntable, cantilever, anchorpoint ):
-        stepsTurnTable = 17300/270*turntable
-        stepsCantilever = 5400/270*cantilever
-        stepsAnchorpoint = 5400/270*anchorpoint*5
-        self.steps(self.stepsTurnTable - stepsTurnTable,
-                   self.stepsCantilever - stepsCantilever,
-                   self.stepsAnchorpoint - stepsAnchorpoint)
-        self.stepsAnchorpoint = stepsAnchorpoint
-        self.stepsTurnTable = stepsTurnTable
-        self.stepsCantilever = stepsCantilever
-
-    def retractArm( self ):
-        self.moveTo(0, 0, 0)
-
-    def rotateAndGrab( self, angle ):
-        self.setAngleCantilever( 30 )
-        self.setAngleTurntable( angle )
-        self.setAngleCantilever( 0 )
-
-    def idle( self ):
-        time.sleep(0.1)
-
-    def wait(self, time):
-        time.sleep(time)
-    
-    def inverse(self, mpName, arg, error = None):
-        assert error == None #TODO
-        if mpName == "grip":
-            assert len(arg) == 1
-            middle = (5 + 12.5) / 2
-            delta = arg[0] - middle
-            return mpName, [middle - delta]
-        elif mpName == "rotate":
-            assert len(arg) == 6
-            return mpName, [arg[3], arg[4], arg[5], arg[0], arg[1], arg[2]]
-        elif mpName == "move":
-            assert len(arg) == 3
-            return mpName, [-i for i in args]
-        elif mpName == "retractArm" or
-             mpName == "setAngleTurntable" or
-             mpName == "setAngleCantilever" or
-             mpName == "setAngleAnchorPoint" or :
-            raise ValueError('cannot invert absolute motion without the pre state', mpName)
-        elif mpName == "idle" or mpName == "wait":
-            return mpName, arg
-        else:
-            raise ValueError('unkown motion primitive', mpName)
 
 if __name__ == "__main__":
     a = arm()
