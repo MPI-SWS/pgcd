@@ -54,6 +54,8 @@ class Component(Node,Interpreter,TFUpdater):
             self.choreo_path = self.get_parameter('choreography_location')._value
         else:
             self.choreo_path = None
+        true = rclpy.parameter.Parameter('resume_after_recovery',rclpy.parameter.Parameter.Type.BOOL, True)
+        self.resume_after_recovery = self.get_parameter_or('resume_after_recovery', true).value
 
     def message_callback(self, msg):
         # make sure there is an header, get the sender (frame), convert to local frame, put in queue
@@ -177,7 +179,7 @@ class Component(Node,Interpreter,TFUpdater):
             else:
                 rclpy.logging._root_logger.log("PGCD terminated " + self.id + " with " + str(self.status), LoggingSeverity.INFO)
                 assert self.status == InterpreterStatus.TERMINATED
-                if self.recoveryMgr.isRecovering:
+                if self.recoveryMgr.isRecovering and self.resume_after_recovery:
                     self.recoveryMgr.restoreProgram()
         self.evt.set()
 

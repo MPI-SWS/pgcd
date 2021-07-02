@@ -1,4 +1,4 @@
-from cart_shared import CartShared
+from motions.cart_shared import CartShared
 from motions.proxy import Proxy
 from motions.proxy_conf import *
 import math
@@ -19,4 +19,11 @@ class CartProxy(CartShared,Proxy):
 
 if __name__ == "__main__":
     c = CartProxy()
-    c.moveCart(50)
+    #c.rotate( 30)
+    #c.rotate(-30)
+    c.moveCart( 100)
+    c.strafeCart( 150)
+    c.moveCart(-100)
+    c.moveCart( 100)
+    c.strafeCart(-150)
+    c.moveCart(-100)

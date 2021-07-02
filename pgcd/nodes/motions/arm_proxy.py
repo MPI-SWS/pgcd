@@ -1,5 +1,5 @@
 
-from arm_shared import ArmShared
+from motions.arm_shared import ArmShared
 from motions.proxy import Proxy
 from motions.proxy_conf import *
 import time
@@ -14,6 +14,7 @@ class ArmProxy(ArmShared, Proxy):
     def grip( self, cycle ):
         c = (cycle - 5.5) * 1100 / 6.5 + 700 # from 700 too 1800
         (status, out, err) = self.exec_bloquing("python3", ["grip_pigpio.py", int(c)])
+        time.sleep(2.0)
 
     def steps( self, turntable, cantilever, anchorpoint ):
         self.exec_bloquing("./steps", [turntable, cantilever, anchorpoint])
@@ -21,6 +22,14 @@ class ArmProxy(ArmShared, Proxy):
 
 if __name__ == "__main__":
     c = ArmProxy()
-    c.closeGripper()
+    #c.closeGripper()
+    #c.openGripper()
+    #
+    #c.setAngleTurntable(0,90)
+    #time.sleep(1.0)
+    #c.setAngleTurntable(90,0)
+    c.setAngleAnchorPoint(0,130)
+    c.setAngleCantilever(0,260)
     time.sleep(1.0)
-    c.openGripper()
+    c.setAngleCantilever(260,0)
+    c.setAngleAnchorPoint(130,0)

@@ -161,7 +161,7 @@ if __name__ == "__main__":
     c.openGripper()
     c.home()
     #c.hasObject()
-    c.moveObject(180, 0, 110, 0, 160, 170)
+    c.moveObject(180, 0, 110, 0, 160, 175)
     #c.openGripper()
     #time.sleep(1.0)
     #if c.grip():

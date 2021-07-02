@@ -1,4 +1,4 @@
-from franka_shared import FrankaShared
+from motions.franka_shared import FrankaShared
 import franka_robot_arm
 import time
 

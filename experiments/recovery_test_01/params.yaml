@@ -4,6 +4,7 @@ dummy:
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
         recovery: true
+        resume_after_recovery: false
         choreography_location: "experiments/recovery_test_01/dummy.choreo"
         env_processes_ids:
             - "dummy"

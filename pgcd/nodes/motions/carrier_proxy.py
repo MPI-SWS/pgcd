@@ -1,5 +1,5 @@
 
-from carrier_shared import CarrierShared
+from motions.carrier_shared import CarrierShared
 from motions.proxy import Proxy
 from motions.proxy_conf import *
 import math
@@ -21,4 +21,5 @@ class CarrierProxy(CarrierShared, Proxy):
 
 if __name__ == "__main__":
     c = CarrierProxy()
-    c.moveCart(50)
+    c.moveCart(1500)
+    c.moveCart(-1500)

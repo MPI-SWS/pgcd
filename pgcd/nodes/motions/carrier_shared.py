@@ -1,7 +1,7 @@
 
 import math
 import time
-from abc import ABC
+from abc import ABC, abstractmethod
 
 class CarrierShared():
 
