@@ -1,0 +1,60 @@
+crane:
+    ros__parameters:
+        program_location: "experiments/recovery_ferry_01/"
+        object_module_name: "src.pgcd.nodes.motions.crane"
+        object_class_name: "Crane"
+        recovery: true
+        resume_after_recovery: false
+        choreography_location: "experiments/recovery_ferry_01/ferry.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"
+carrier:
+    ros__parameters:
+        program_location: "experiments/recovery_ferry_01/"
+        object_module_name: "src.pgcd.nodes.motions.carrier_proxy"
+        object_class_name: "CarrierProxy"
+        recovery: true
+        resume_after_recovery: false
+        choreography_location: "experiments/recovery_ferry_01/ferry.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"
+franka:
+    ros__parameters:
+        program_location: "experiments/recovery_ferry_01/"
+        object_module_name: "src.pgcd.nodes.motions.franka_proxy"
+        object_class_name: "FrankaProxy"
+        recovery: true
+        resume_after_recovery: false
+        choreography_location: "experiments/recovery_ferry_01/ferry.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"

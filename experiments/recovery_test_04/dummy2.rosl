@@ -1,0 +1,14 @@
+receive(dummy1, idle) {
+    case Ok() => {
+        wait(1.0);
+        receive(dummy1, idle) {
+            case Ok() => {
+                wait(1.0);
+                receive(dummy1, idle) {
+                    case Done() =>
+                        exit(0);
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,12 @@
+receive(dummy1, idle) {
+    case Red() => {
+        receive(dummy2, idle) {
+            case Done() =>
+                exit(0);
+        }
+    }
+    case Green() => {
+        fail(1,2);
+        send(dummy1, Done);
+    }
+}

@@ -52,7 +52,8 @@ class ArmShared(ABC):
         self.grip(5.5)
 
     def closeGripper(self):
-        self.grip(12)
+        #self.grip(12)
+        self.grip(10.8)
 
     def move( self, turntable, cantilever, anchorpoint ):
         stepsTurnTable = 17300/270*turntable

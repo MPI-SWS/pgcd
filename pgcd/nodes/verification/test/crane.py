@@ -1,12 +1,12 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
-from spec.component import *
-from spec.motion import *
-from spec.time import *
-import spec.conf
-from utils.geometry import *
-import utils.transition
+from verification.spec.component import *
+from verification.spec.motion import *
+from verification.spec.time import *
+import verification.spec.conf
+from verification.utils.geometry import *
+import verification.utils.transition
 
 # model for a 3-axis cartesian motion platform
 class Crane(Process):
@@ -432,7 +432,7 @@ class grip(MotionPrimitiveFactory):
         return CraneWait(self.name(), self._component, 1)
 
 
-class moveObject(MotionPrimitiveFactory)
+class moveObject(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)

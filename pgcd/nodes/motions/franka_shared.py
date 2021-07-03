@@ -13,14 +13,14 @@ class FrankaShared(ABC):
         self.e_ref = 0.000000
         self.f_ref = 1.570796
         self.g_ref = 0.785398
-        # current
-        self.a_cur = 0.0
-        self.b_cur = 0.0
-        self.c_cur = 0.0
-        self.d_cur = 0.0
-        self.e_cur = 0.0
-        self.f_cur = 0.0
-        self.g_cur = 0.0
+        # current (assume at home position)
+        self.a_cur = self.a_ref
+        self.b_cur = self.b_ref
+        self.c_cur = self.c_ref
+        self.d_cur = self.d_ref
+        self.e_cur = self.e_ref
+        self.f_cur = self.f_ref
+        self.g_cur = self.g_ref
 
     @abstractmethod
     def run(self, prog):
@@ -32,7 +32,7 @@ class FrankaShared(ABC):
     def wait(self, t):
         time.sleep(t)
 
-    def homePos(self):
+    def homePos(self, aDst = None, bDst = None, cDst = None, dDst = None, eDst = None, fDst = None, gDst = None):
         prog = ["homePos()"]
         self.a_cur = self.a_ref
         self.b_cur = self.b_ref
@@ -43,7 +43,16 @@ class FrankaShared(ABC):
         self.g_cur = self.g_ref
         self.run(prog)
 
-    def setJoints(self, a, b, c, d, e, f, g):
+    def setJoints(self, a, b, c, d, e, f, g, aDst = None, bDst = None, cDst = None, dDst = None, eDst = None, fDst = None, gDst = None):
+        if aDst != None:
+            assert bDst != None and cDst != None and dDst != None and eDst != None and fDst != None and gDst != None
+            a = aDst
+            b = bDst
+            c = cDst
+            d = dDst
+            e = eDst
+            f = fDst
+            g = gDst
         a1 = a - self.a_cur
         b1 = b - self.b_cur
         c1 = c - self.c_cur
@@ -67,7 +76,7 @@ class FrankaShared(ABC):
 
     def grasp(self, dist = 0.03):
         prog = ["grasp("+str(dist)+")"]
-        if int(self.run(prog)[0]) == 0:
+        if int(self.run(prog)[0]) != 1:
             raise ValueError("grasp")
 
     def open(self, dist = 0.03):

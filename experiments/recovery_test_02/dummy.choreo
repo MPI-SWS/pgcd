@@ -1,0 +1,12 @@
+Test =
+def x0 = (dummy1: wait(1),dummy2: idle()); x1
+    x1 = [True] x2 + [True] x3
+    x2 = dummy1 -> dummy2: Red(); x4
+    x3 = dummy1 -> dummy2: Green(); x5
+    x4 = (dummy1: fail(1,2),dummy2: idle()); x6
+    x5 = (dummy1: idle(),dummy2: fail(1,2)); x7
+    x6 = dummy1 -> dummy2: Done(); x8
+    x7 = dummy2 -> dummy1: Done(); x9
+    x8 + x9 = x10
+    x10 = end
+in [ True ] x0

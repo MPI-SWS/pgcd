@@ -1,0 +1,8 @@
+receive(crane, idle) { case Ok() => skip; }
+moveCart(1500);
+send(crane, Ok);
+send(franka, Ok);
+receive(franka, idle) { case Ok() => skip; }
+moveCart(-1500);
+send(crane, Ok);
+send(franka, Ok);

@@ -50,9 +50,11 @@ class RecoveryManager:
         self.sendComp()
         self.gotInfo.wait()
         (chkpt, rec_choreo) = self.computeRecoveryChoreo(self.comps)
+        #print(rec_choreo)
         proc = rec_choreo.getProcess(self.interpreter.id)
         p = Proj2Code(rec_choreo, proc)
         rec_code = p.getCode()
+        #print(rec_code)
         # clean-up
         self.gotInfo.clear()
         self.comps.clear()
@@ -167,7 +169,7 @@ class RecoveryManager:
         for p in procs:
             stacks[p] = comp_info[p][1:] # remove the checkpoint
         # lookahead to figure out which branch was taken (1st message sent)
-        def isBranchPossible(self, state):
+        def isBranchPossible(state):
             node = state_to_node[state]
             if isinstance(node, ast_chor.Message):
                 stack = stacks[node.sender]
@@ -179,7 +181,7 @@ class RecoveryManager:
         nodes = [] # accumulate nodes for the new choreo
         def traverse(new_name, state):
             node = state_to_node[state]
-            if isinstance(node, ast_chor.Fork):
+            if node.isFork():
                 s = node.end_state
                 s2 = [ self.fresh(n) for n in s ]
                 nodes.append(ast_chor.Fork([new_name],node.footprints,s2))
@@ -187,7 +189,7 @@ class RecoveryManager:
                 ns = [ n for n in nodes if n.start_state[0] in ends ]
                 for n in ns:
                     nodes.remove(n)
-                joins = [n for n in ns if isinstance(n, ast_chor.Join)]
+                joins = [n for n in ns if n.isJoin()]
                 join_name = 'join'
                 if len(joins) > 0:
                     join_name = joins[0].end_state[0]
@@ -199,24 +201,24 @@ class RecoveryManager:
                     # a node has finished so everybody ends
                     nodes.append(ast_chor.End([new_join_name]))
                     return new_join_name
-            elif isinstance(node, ast_chor.Join):
+            elif node.isJoin():
                 nodes.append(ast_chor.Join([new_name],node.end_state))
                 return new_name
-            elif isinstance(node, ast_chor.GuardedChoice):
+            elif node.isChoice():
                 possible = [ s for s in node.end_state if isBranchPossible(s) ]
                 assert(len(possible) >= 0)
                 if len(possible) > 1:
                     log.warning("more than 1 possible branch")
                 n = possible[0]
                 n2 = self.fresh(n)
-                nodes.append(ast_chor.GuardedChoice([new_name],[GuardArg(sp.true,n2)]))
+                nodes.append(ast_chor.GuardedChoice([new_name],[ast_chor.GuardArg(sp.true,n2)]))
                 return traverse(n2, n)
-            elif isinstance(node, ast_chor.Merge):
+            elif node.isMerge():
                 n = node.end_state[0]
                 n2 = self.fresh(n)
                 nodes.append(ast_chor.Merge([new_name],[n2]))
                 return traverse(n2, n)
-            elif isinstance(node, ast_chor.Motion):
+            elif node.isMotion():
                 # consume the motions
                 ms = []
                 done = False
@@ -237,7 +239,7 @@ class RecoveryManager:
                     return n2
                 else:
                     return traverse(n2, n)
-            elif isinstance(node, ast_chor.Message):
+            elif node.isMessage():
                 # consume the message
                 stack = stacks[node.sender]
                 action = stack[0]
@@ -276,11 +278,10 @@ class RecoveryManager:
                 toRemove.append(node)
                 assert len(node.end_state) == 1
                 new_state = node.end_state[0]
-                for state in node.start_state:
-                    n2 = state_to_node[state]
-                    end_state2 = [ s if s != state else new_state for s in n2.end_state ]
+                for n2 in path.statements:
+                    end_state2 = [ new_state if s in node.start_state else s for s in n2.end_state ]
                     n2.end_state = end_state2
-                if path.start_state == state:
+                if path.start_state in node.start_state:
                     path.start_state = new_state
         for n in toRemove:
             path.statements.remove(n)
@@ -293,7 +294,7 @@ class RecoveryManager:
             if isinstance(node, ast_chor.Fork):
                 new_nodes.append(ast_chor.Join(node.end_state,node.start_state))
             elif isinstance(node, ast_chor.Join):
-                new_nodes.append(ast_chor.Fork(node.end_state,node.start_state))
+                new_nodes.append(ast_chor.Fork(node.end_state, [sp.true for s in node.start_state], node.start_state))
             elif isinstance(node, ast_chor.Motion):
                 new_nodes.append(ast_chor.Motion(node.end_state,node.motions,node.start_state))
             elif isinstance(node, ast_chor.End):

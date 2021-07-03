@@ -170,7 +170,7 @@ class Interpreter:
         next_prog = Skip()
         waiting_msg = True
         push = True
-        while waiting_msg:
+        while waiting_msg and self.status == InterpreterStatus.RUNNING:
             try:
                 msg = self.receive_from[node.sender].get_nowait()
                 ack = std_msgs.msg.String()
@@ -178,20 +178,16 @@ class Interpreter:
                 self.send_to[node.sender]["Ack"].publish(ack)
                 waiting_msg = False
                 for action in actions:
-                    if action['msg_type'] == type(msg):
-                        if action['msg_type'].__name__.endswith("Stamped"):
+                    if action[0] == type(msg):
+                        if action[0].__name__.endswith("Stamped"):
                             inner_msg = getattr(msg, msg.__slots__[1]) #assume header 1st
-                            for name, var in zip(inner_msg.__slots__, action['data_name']):
-                                val = getattr(inner_msg, name)
-                                rclpy.logging._root_logger.log("Setting: " + var + " to " + name + " = " + str(val), LoggingSeverity.DEBUG)
-                                self.__setattr__(var, val)
-                            next_prog = action['program']
                         else:
-                            for name, var in zip(msg.__slots__, action['data_name']):
-                                val = getattr(msg, name)
-                                rclpy.logging._root_logger.log("Setting: " + var + " to " + name + " = " + str(val), LoggingSeverity.DEBUG)
-                                self.__setattr__(var, val)
-                            next_prog = action['program']
+                            inner_msg = msg
+                        for name, var in zip(inner_msg.__slots__, action[1]):
+                            val = getattr(inner_msg, name)
+                            rclpy.logging._root_logger.log("Setting: " + var + " to " + name + " = " + str(val), LoggingSeverity.DEBUG)
+                            self.__setattr__(var, val)
+                        next_prog = action[2]
                         break
                 else:
                     assert False, "did not find handler for " + str(msg)
@@ -202,7 +198,7 @@ class Interpreter:
         self.visit(next_prog)
 
     def visit_action(self, node):
-        return {'msg_type': self.msg_types[node.str_msg_type], 'data_name': node.data_names, 'program': node.program}
+        return (self.msg_types[node.str_msg_type], node.data_names, node.program)
 
     def visit_if(self, node):
         for if_stmt in node.if_list:

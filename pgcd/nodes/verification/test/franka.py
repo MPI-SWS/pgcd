@@ -1,11 +1,11 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
-from spec.component import *
-from spec.motion import *
-from spec.time import *
-from utils.geometry import *
-import utils.transition
+from verification.spec.component import *
+from verification.spec.motion import *
+from verification.spec.time import *
+from verification.utils.geometry import *
+import verification.utils.transition
 
 # A rough model for a franka emika panda arm
 #

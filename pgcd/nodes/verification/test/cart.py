@@ -1,19 +1,19 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
-from spec.component import *
-from spec.motion import *
-from spec.time import *
-from utils.geometry import *
-import utils.transition
+from verification.spec.component import *
+from verification.spec.motion import *
+from verification.spec.time import *
+from verification.utils.geometry import *
+import verification.utils.transition
 
 #when modeled as triangle then center 2 side is about 0.16
 
 # cart
 class Cart(Process):
 
-    def __init__(self, name, world, index = 0):
-        super().__init__(name, world, index)
+    def __init__(self, name, parent, index = 0):
+        super().__init__(name, parent, index)
         # dimensions
         self.height = 0.08
         self.radius = 0.30
@@ -24,7 +24,7 @@ class Cart(Process):
         self._x = symbols(name + '_x')
         self._y = symbols(name + '_y')
         self._theta = symbols(name + '_theta')
-        f = world.mountingPoint(index)
+        f = parent.mountingPoint(index)
         self._position = self._x * f.i + self._y * f.j
         # mount is 11cm above the ground 
         self._mount = f.orient_new_axis(name + '_mount', self._theta, f.k, location= self._position + self.bedHeight * f.k)
@@ -65,8 +65,8 @@ class Cart(Process):
 #the 2nd cart of a cube 0.18 wide, 0.17 long, 0.16 high
 class CartSquare(Cart):
 
-    def __init__(self, name, world, index = 0):
-        super().__init__(name, world, index)
+    def __init__(self, name, parent, index = 0):
+        super().__init__(name, parent, index)
         # dimensions
         self.height = 0.16
         self.width = 0.18

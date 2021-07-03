@@ -1,0 +1,6 @@
+wait(1);
+send(dummy2, Ok);
+wait(2.0);
+send(dummy2, Ok);
+fail(1,2);
+send(dummy2, Done);

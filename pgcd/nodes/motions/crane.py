@@ -58,6 +58,7 @@ class Crane():
         assert y >= 0 and y <= 160
         assert z >= 0 and z <= 200
         self.processCommand("G1 X" + str(x) + " Y" + str(y) + " Z" + str(z))
+        self.processCommand("M400")
 
     def moveToXY(self, x, y, x0 = None, y0 = None):
         if x0 != None:
@@ -67,24 +68,28 @@ class Crane():
         assert x >= 0 and x <= 180
         assert y >= 0 and y <= 160
         self.processCommand("G1 X" + str(x) + " Y" + str(y))
+        self.processCommand("M400")
 
     def moveToX(self, x, x0 = None):
         if x0 != None:
             x = x0
         assert x >= 0 and x <= 180
         self.processCommand("G1 X" + str(x))
+        self.processCommand("M400")
 
     def moveToY(self, y, y0 = None):
         if y0 != None:
             y = y0
         assert y >= 0 and y <= 160
         self.processCommand("G1 Y" + str(y))
+        self.processCommand("M400")
 
     def moveToZ(self, z, z0 = None):
         if z0 != None:
             z = z0
         assert z >= 0 and z <= 200
         self.processCommand("G1 Z" + str(z))
+        self.processCommand("M400")
 
     def closeGripper(self):
         self.processCommand("M106")
@@ -95,7 +100,6 @@ class Crane():
         time.sleep(1.0)
 
     def hasObject(self):
-        self.processCommand("M400")
         time.sleep(1.0)
         result = self.processCommand("M105", "ok T")
         m = re.search('T0:(\d\d.\d)', result) #TODO as comp from ambient (bed) temp

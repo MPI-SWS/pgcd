@@ -84,13 +84,21 @@ class Component(Node,Interpreter,TFUpdater):
         except queue.Full:
             self.get_logger().warning('dropping message due to full queue')
 
-    def setup_communication(self):
+    def setup_communication(self, recoveryEnv):
         ack = set()
         topics = set()
         # subscriptions
         rclpy.logging._root_logger.log("PGCD sub /" + self.id + "/Ack", LoggingSeverity.INFO)
         self.create_subscription(String, "/" + self.id + "/Ack", self.ack_callback, 1)
-        for name, msg_name in get_receive_info(self.program):
+        rcv_info = get_receive_info(self.program)
+        snd_info = get_send_info(self.program)
+        if recoveryEnv != None:
+            procs = recoveryEnv.allProcesses()
+            for p in procs:
+                if p.name() != self.id:
+                    rcv_info.append((p.name(),"Ok"))
+                    snd_info.append((p.name(),"Ok"))
+        for name, msg_name in rcv_info:
             topic = "/" + self.id + "/" + msg_name
             if not topic in topics:
                 topics.add(topic)
@@ -103,7 +111,7 @@ class Component(Node,Interpreter,TFUpdater):
                 self.send_to[name]["Ack"] = self.create_publisher(String, "/" + name + "/Ack", 1) #to emulate synchronous communication
                 ack.add(name)
         # publishers
-        for name, msg_name in get_send_info(self.program):
+        for name, msg_name in snd_info:
             if name not in self.send_to:
                 self.send_to[name] = {}
             if name not in ack:
@@ -141,12 +149,11 @@ class Component(Node,Interpreter,TFUpdater):
                 rclpy.logging._root_logger.log("PGCD could not find spec " + cls + " of " + name, LoggingSeverity.ERROR)
         return Env(w, [])
 
-    def setup_recovery(self):
+    def setup_recovery(self, env):
         rclpy.logging._root_logger.log("PGCD setup for recovery" + self.id, LoggingSeverity.INFO)
         # create recovery manager
         with open(self.choreo_path, 'r') as content_file:
             choreo_src = content_file.read()
-        env = self.getEnv()
         choreo = ChoreographyParser(env).parse(choreo_src, check = False)
         self.recoveryMgr = RecoveryManager(self, choreo)
         # create publishers
@@ -160,9 +167,12 @@ class Component(Node,Interpreter,TFUpdater):
         with open(self.prog_path, 'r') as content_file:
             program = content_file.read()
         self.parse(program)
-        self.setup_communication()
         if self.choreo_path != None:
-            self.setup_recovery()
+            env = self.getEnv()
+            self.setup_communication(env)
+            self.setup_recovery(env)
+        else:
+            self.setup_communication(None)
         while self.status != InterpreterStatus.TERMINATED:
             self.execute()
             if self.status == InterpreterStatus.ERROR:

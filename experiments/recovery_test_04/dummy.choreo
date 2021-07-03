@@ -1,0 +1,17 @@
+Test =
+def x0 = (dummy1: wait(1),dummy2: idle()); x1
+    x1 = dummy1 -> dummy2: Ok(); x4
+    x4 = {True} d1 || {True} d2
+    d1 = (dummy1: wait(2.0)); d3
+    d2 = (dummy2: wait(1.0)); d4
+    d4 = (dummy2: idle()); d5
+    d3 || d5 = x6
+    x6 = dummy1 -> dummy2: Ok(); x7
+    x7 = {True} e1 || {True} e2
+    e1 = (dummy1: fail(2,3)); e3
+    e2 = (dummy2: wait(1.0)); e4
+    e4 = (dummy2: idle()); e5
+    e3 || e5 = x8
+    x8 = dummy1 -> dummy2: Done(); x9
+    x9 = end
+in [ True ] x0

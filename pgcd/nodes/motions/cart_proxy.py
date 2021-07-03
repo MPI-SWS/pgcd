@@ -17,13 +17,21 @@ class CartProxy(CartShared,Proxy):
         else:
             return (False, float(err.read()))
 
+# 1st motion
+#    c.moveCart( 150)
+# 2nd motion
+#    c.rotate(-7)
+#    c.strafeCart( 250)
+
 if __name__ == "__main__":
     c = CartProxy()
-    #c.rotate( 30)
-    #c.rotate(-30)
-    c.moveCart( 100)
-    c.strafeCart( 150)
-    c.moveCart(-100)
-    c.moveCart( 100)
-    c.strafeCart(-150)
-    c.moveCart(-100)
+    #c.rotate( 10)
+    #c.rotate(-10)
+    #c.moveCart( 150)
+    #c.rotate(-6)
+    #c.strafeCart( 250)
+    #c.moveCart(-150)
+    #c.moveCart( 100)
+    #c.strafeCart(-250)
+    #c.rotate( 6)
+    #c.moveCart(-100)

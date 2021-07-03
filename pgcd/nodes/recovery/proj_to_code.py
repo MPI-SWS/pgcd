@@ -53,7 +53,7 @@ class Proj2Code:
                 snd = ast_inter.Send(node.receiver, node.msg_type, node.expressions)
                 transformed.append(snd)
             elif node.isReceiveMessage() or (node.isMessage() and node.receiver == self.process.name()):
-                m = self.withNextReceive if self.withNextReceive != None else ast_inter.Motion('Idle',[])
+                m = self.withNextReceive if self.withNextReceive != None else ast_inter.Motion('idle',[])
                 self.withNextReceive = None
                 rcv = ast_inter.Receive(node.sender, m, [ast_inter.Action(node.msg_type, node.expressions, ast_inter.Skip())])
                 transformed.append(rcv)

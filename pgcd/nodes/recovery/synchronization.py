@@ -170,7 +170,7 @@ class Synchronizer:
                 for r in receivers:
                     end_state = start_state
                     start_state = self.fresh("sync")
-                    msg = ast_chor.Message([start_state], sender, r, 'Ok', [], [end_state])
+                    msg = ast_chor.Message([start_state], sender, r, 'Ok', [], [end_state]) ##XXX
                     self.comp.statements.append(msg)
                     # insert into aux lookup maps
                     self.state_to_node[start_state] = msg
@@ -182,7 +182,7 @@ class Synchronizer:
                     s = node.start_state[0]
                     for n2 in self.comp.statements:  #find pred and rename
                         if not n2.start_state[0].startswith("sync_") and s in n2.end_state:
-                            n2.end_state[n2.end_state.index(s)] = start_state
+                            n2.end_state = [ s2 if s2 != s else start_state for s2 in n2.end_state ]
                 # modifyLastMotion if needed
                 max_duration = ds2[sender].max
                 for r in receivers:
