@@ -1,0 +1,11 @@
+receive(dummy1, idle) { case Ok() => skip; }
+wait(10); # this could fail
+send(dummy1, Ok);
+send(dummy3, Ok);
+receive(dummy3, idle) { case Ok() => skip; }
+send(dummy1, Ok);
+checkpoint(1);
+#wait(10); # this could fail
+fail(1,10);
+send(dummy1, Ok);
+send(dummy3, Ok);

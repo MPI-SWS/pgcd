@@ -1,0 +1,19 @@
+wait(3.0);
+wait(2.0);
+wait(1.0);
+wait(2.0);
+wait(2.0);
+wait(1.0);
+wait(2.0);
+receive(dummy2, idle) {
+    case Ok() =>
+        skip;
+}
+wait(2.0);
+fail(0,1); #wait(1.0);
+wait(2.0);
+send(dummy2, Ok); # notify dummy2
+wait(2.0);
+wait(1.0);
+wait(2.0);
+receive(dummy2, idle) { case Ok() => skip; }

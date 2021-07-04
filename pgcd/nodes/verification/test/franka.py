@@ -100,12 +100,12 @@ class FrankaEmikaPanda(Process):
         wait(self)
         homePos(self)
         setJoints(self)
-        closeGripper(self)
+        grasp(self)
         openGripper(self)
-    
+
     def frame(self):
         return self._frame
-    
+
     def internalVariables(self):
         return [self._a, self._b, self._c, self._d, self._e, self._f, self._g]
 
@@ -119,7 +119,7 @@ class FrankaEmikaPanda(Process):
         domain_f = And(self._f >= self.minAngleF, self._f <= self.maxAngleF)
         domain_g = And(self._g >= self.minAngleG, self._g <= self.maxAngleG)
         return And(domain_a, domain_b, domain_c, domain_d, domain_e, domain_f, domain_g)
-        
+
     def ownResources(self, point, delta = 0.0):
         lowerBackLeft1   = self._frame.origin.locate_new('franka_base_lbl',-self.base_x * self._frame.i / 2 - self.base_y * self._frame.j / 2 )
         upperFrontRight1 = self._frame.origin.locate_new('franka_base_ufr', self.base_x * self._frame.i / 2 + self.base_y * self._frame.j / 2 + self.base_z * self._frame.k )
@@ -226,7 +226,7 @@ class FrankaIdle(FrankaMotionPrimitive):
 
 
 # since we don't precisely model the gripper, it is like waiting
-class closeGripper(MotionPrimitiveFactory):
+class grasp(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -245,7 +245,7 @@ class openGripper(MotionPrimitiveFactory):
         super().__init__(component)
 
     def setParameters(self, args):
-        assert(len(args) == 0)
+        assert(len(args) in {0, 1})
         return FrankaWait(self.name(), self._component)
 
 class wait(MotionPrimitiveFactory):
@@ -265,15 +265,15 @@ class FrankaWait(FrankaMotionPrimitive):
     def __init__(self, name, component, duration = None):
         super().__init__(name, component)
         if duration != None:
-            self.duration = duration
+            self.d = duration
         else:
-            self.duration = 1
+            self.d = 1
 
     def modifies(self):
         return []
     
     def duration(self):
-        return DurationSpec(self.duration, self.duration, False)
+        return DurationSpec(self.d, self.d, False)
 
     def preG(self):
         return S.true

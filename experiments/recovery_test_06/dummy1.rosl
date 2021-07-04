@@ -1,0 +1,4 @@
+wait(10);
+send(dummy2, Ok);
+receive(dummy2, idle) { case Ok() => skip; }
+receive(dummy2, idle) { case Ok() => skip; }

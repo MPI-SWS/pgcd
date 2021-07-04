@@ -1,0 +1,60 @@
+dummy1:
+    ros__parameters:
+        program_location: "experiments/recovery_test_05/"
+        object_module_name: "src.pgcd.nodes.motions.dummy_robot"
+        object_class_name: "DummyRobot"
+        recovery: true
+        resume_after_recovery: false
+        choreography_location: "experiments/recovery_test_05/dummy.choreo"
+        env_processes_ids:
+            - "dummy1"
+            - "dummy2"
+            - "dummy3"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.static_process"
+            - "src.pgcd.nodes.verification.test.static_process"
+            - "src.pgcd.nodes.verification.test.static_process"
+        env_processes_class:
+            - "PointProcess"
+            - "PointProcess"
+            - "PointProcess"
+dummy2:
+    ros__parameters:
+        program_location: "experiments/recovery_test_05/"
+        object_module_name: "src.pgcd.nodes.motions.dummy_robot"
+        object_class_name: "DummyRobot"
+        recovery: true
+        resume_after_recovery: false
+        choreography_location: "experiments/recovery_test_05/dummy.choreo"
+        env_processes_ids:
+            - "dummy1"
+            - "dummy2"
+            - "dummy3"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.static_process"
+            - "src.pgcd.nodes.verification.test.static_process"
+            - "src.pgcd.nodes.verification.test.static_process"
+        env_processes_class:
+            - "PointProcess"
+            - "PointProcess"
+            - "PointProcess"
+dummy3:
+    ros__parameters:
+        program_location: "experiments/recovery_test_05/"
+        object_module_name: "src.pgcd.nodes.motions.dummy_robot"
+        object_class_name: "DummyRobot"
+        recovery: true
+        resume_after_recovery: false
+        choreography_location: "experiments/recovery_test_05/dummy.choreo"
+        env_processes_ids:
+            - "dummy1"
+            - "dummy2"
+            - "dummy3"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.static_process"
+            - "src.pgcd.nodes.verification.test.static_process"
+            - "src.pgcd.nodes.verification.test.static_process"
+        env_processes_class:
+            - "PointProcess"
+            - "PointProcess"
+            - "PointProcess"

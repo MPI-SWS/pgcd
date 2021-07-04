@@ -79,7 +79,7 @@ class FrankaShared(ABC):
         if int(self.run(prog)[0]) != 1:
             raise ValueError("grasp")
 
-    def open(self, dist = 0.03):
+    def openGripper(self, dist = 0.03):
         prog = ["open()"]
         self.run(prog)
 
@@ -103,10 +103,10 @@ class FrankaShared(ABC):
         elif mpName == "setJoints":
             assert len(arg) == 14
             return mpName, arg[7:14] + arg[0:7]
-        elif mpName == "open":
+        elif mpName == "openGripper":
             return "grasp", [0.03] #TODO
         elif mpName == "grasp":
-            return "open", []
+            return "openGripper", []
         elif mpName == "idle" or mpName == "wait":
             return mpName, arg
         else:
@@ -122,6 +122,6 @@ if __name__ == "__main__":
     #f.grasp(0.02)
     #f.homePos()
     f.getPos()
-    #f.open()
+    #f.openGripper()
     #f.homePos()
     f.stop()

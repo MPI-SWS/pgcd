@@ -1,0 +1,33 @@
+Test =
+def x0 = { True } f1 || { True } cc1
+    # Franka
+    f1 = (dummy3: idle()); f2
+    # Crane and Carrier
+    cc1 = (dummy1: wait(5), dummy2: idle()); cc2
+    cc2 = dummy1 -> dummy2: Ok(); cc3
+    cc3 = (dummy1: idle(), dummy2: wait(10)); cc4
+    # shuffle threads
+    cc4 || f2 = x2
+    x2 = dummy2 -> dummy1: Ok(); x3
+    x3 = dummy2 -> dummy3: Ok(); x4
+    x4 = {True} cr1 || {True} c1 || {True} ff1
+    # Crane
+    cr1 = (dummy1: idle()); cr2
+    # Carrier
+    c1 = (dummy2: idle()); c2
+    # Franka
+    ff1 = (dummy3: wait(2)); ff2
+    ff2 = (dummy3: wait(1)); ff3
+    ff3 = (dummy3: wait(2)); ff4
+    ff4 = (dummy3: wait(2)); ff5
+    ff5 = (dummy3: wait(1)); ff6
+    ff6 = (dummy3: wait(2)); ff7
+    ff7 || c2 || cr2 = x5
+    x5 = dummy3 -> dummy2: Ok(); x6
+    x6 = dummy2 -> dummy1 : Ok(); x7
+    x7 = checkpoint(1); x8
+    x8 = (dummy1: idle(), dummy2: wait(10), dummy3: idle()); x9
+    x9 = dummy2 -> dummy1: Ok(); x10
+    x10 = dummy2 -> dummy3: Ok(); x11
+    x11 = end
+in [ True ] x0

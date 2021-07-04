@@ -92,7 +92,10 @@ class Synchronizer:
             assert len(preds) == 1
             ds = dict()
             for m in node.motions:
-                d = self.comp.getMotion(m.id, m.mp_name, m.mp_args).duration()
+                print("getting " + str(m))
+                mo = self.comp.getMotion(m.id, m.mp_name, m.mp_args)
+                print("got " + str(mo))
+                d = mo.duration()
                 self.motionDurationForRecovery(d) # adapt the duration to recovery
                 ds[m.id] = d
             t = preds[0].copy()

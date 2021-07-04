@@ -104,7 +104,7 @@ class Steppers():
                 GPIO.output( self.pinDir[i], self.PULL )
             i += 1
         noInterrupt = self.pinInterrupt == None or \
-                      GPIO.read(self.pinInterrupt) == HIGH #if pin is high at the start, ignore the interrupt!
+                      GPIO.input(self.pinInterrupt) == GPIO.HIGH #if pin is high at the start, ignore the interrupt!
         while iteration > 0 and (noInterrupt or not GPIO.event_detected(self.pinInterrupt)):
             iteration -= 1
             # pulse if needed

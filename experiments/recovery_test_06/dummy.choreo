@@ -1,0 +1,44 @@
+Ferry =
+def x0 = { True } f0 || { True } cc1
+    # Franka
+    f0 = (dummy3: wait(3)); f1
+    f1 = (dummy3: wait(2) ); f2
+    f2 = (dummy3: wait(1)); f3
+    f3 = (dummy3: wait(2)); f4
+    f4 = (dummy3: wait(2) ); f5
+    f5 = (dummy3: wait(1)); f6
+    f6 = (dummy3: wait(2)); f7
+    # Crane and Carrier
+    cc1 = (dummy1: wait(10), dummy2: idle()); cc2
+    cc2 = dummy1 -> dummy2: Ok(); cc3
+    cc3 = (dummy1: idle(), dummy2: wait(10)); cc4
+    # shuffle threads
+    cc4 || f7 = x2
+    x2 = dummy2 -> dummy1: Ok(); x3
+    x3 = dummy2 -> dummy3: Ok(); x4
+    x4 = {True} fc1 || {True} cr1
+    fc1 = {True} c1 || {True} ff1
+    # Crane
+    cr1 = (dummy1: idle()); cr2
+    # Carrier
+    c1 = (dummy2: idle()); c2
+    # Franka
+    ff1 = (dummy3: wait(2)); ff2
+    ff2 = (dummy3: wait(1)); ff3
+    ff3 = (dummy3: wait(2)); ff4
+    ff4 || c2 = fc2
+    fc2 = dummy3 -> dummy2: Ok(); fc3
+    fc3 = {True} ff5 || {True} c3
+    # Carrier
+    c3 = (dummy2: wait(10)); c4
+    # Franka
+    ff5 = (dummy3: wait(2) ); ff6
+    ff6 = (dummy3: wait(1)); ff7
+    ff7 = (dummy3: wait(2)); ff8
+    ff8 = (dummy3: idle()); ff9
+    c4 || ff9 = x5
+    x5 || cr2 = x6
+    x6 = dummy2 -> dummy1: Ok(); x7
+    x7 = dummy2 -> dummy3: Ok(); x8
+    x8 = end
+in [ True ] x0

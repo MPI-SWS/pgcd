@@ -12,6 +12,9 @@ class ArmShared(ABC):
         self.angleCantilever = 0
         self.angleAnchorpoint = 0
         self.angleGripper = 0
+        self.turntableBase = 17300.0/270
+        self.cantileverBase = 5400.0/270/4
+        self.anchorpointBase = 5400.0/270*5
 
     @abstractmethod
     def grip( self, cycle ):
@@ -25,7 +28,7 @@ class ArmShared(ABC):
         if angleDest != None:
             angle = angleDest
         assert( angle >= 0 and angle <= 270 )
-        steps = 17300/270*angle
+        steps = self.turntableBase*angle
         delta = steps-self.stepsTurnTable
         self.steps(delta, 0, 0)
         self.stepsTurnTable = steps
@@ -34,7 +37,7 @@ class ArmShared(ABC):
         if angleDest != None:
             angle = angleDest
         assert( angle >= -30 and angle <= 270 )
-        steps = 5400/270*angle
+        steps = self.cantileverBase*angle
         delta = steps-self.stepsCantilever
         self.steps(0, delta, 0)
         self.stepsCantilever = steps
@@ -43,7 +46,7 @@ class ArmShared(ABC):
         if angleDest != None:
             angle = angleDest
         assert( angle >= -30 and angle <= 270 )
-        steps = 5400/270*angle*5
+        steps = self.anchorpointBase*angle
         delta = steps-self.stepsAnchorpoint
         self.steps(0, 0, delta)
         self.stepsAnchorpoint = steps
@@ -53,12 +56,12 @@ class ArmShared(ABC):
 
     def closeGripper(self):
         #self.grip(12)
-        self.grip(10.8)
+        self.grip(10.0)
 
     def move( self, turntable, cantilever, anchorpoint ):
-        stepsTurnTable = 17300/270*turntable
-        stepsCantilever = 5400/270*cantilever
-        stepsAnchorpoint = 5400/270*anchorpoint*5
+        stepsTurnTable = self.turntableBase*turntable
+        stepsCantilever = self.cantileverBase*cantilever
+        stepsAnchorpoint = self.anchorpointBase*anchorpoint
         self.steps(stepsTurnTable, stepsCantilever, stepsAnchorpoint)
 
     def rotate( self,
@@ -67,9 +70,9 @@ class ArmShared(ABC):
         self.move(turntable1-turntable0, cantilever1-cantilever0, anchorpoint1-anchorpoint0)
 
     def moveTo( self, turntable, cantilever, anchorpoint ):
-        stepsTurnTable = 17300/270*turntable
-        stepsCantilever = 5400/270*cantilever
-        stepsAnchorpoint = 5400/270*anchorpoint*5
+        stepsTurnTable = self.turntableBase*turntable
+        stepsCantilever = self.cantileverBase*cantilever
+        stepsAnchorpoint = self.anchorpointBase*anchorpoint
         self.steps(self.stepsTurnTable - stepsTurnTable,
                    self.stepsCantilever - stepsCantilever,
                    self.stepsAnchorpoint - stepsAnchorpoint)

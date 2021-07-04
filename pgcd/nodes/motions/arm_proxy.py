@@ -22,17 +22,18 @@ class ArmProxy(ArmShared, Proxy):
 
 if __name__ == "__main__":
     c = ArmProxy()
-    c.closeGripper()
-    c.openGripper()
+    #c.closeGripper()
+    #time.sleep(2.0)
+    #c.openGripper()
     #
     #c.setAngleTurntable(0,90)
     #time.sleep(1.0)
     #c.setAngleTurntable(90,0)
-    #c.setAngleAnchorPoint(0,110)
-    #c.setAngleCantilever(0,240)
+    #
     c.rotate(0,0,0,0,270,190)
     c.closeGripper()
-    #c.setAngleCantilever(240,0)
-    #c.setAngleAnchorPoint(110,0)
     c.rotate(0,270,190,0,0,0)
+    time.sleep(1.0)
+    c.rotate(0,0,0,0,270,190)
     c.openGripper()
+    c.rotate(0,270,190,0,0,0)
