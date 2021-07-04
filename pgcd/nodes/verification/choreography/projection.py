@@ -42,9 +42,9 @@ class Projection:
         try:
             self.normalize_projection(projection, state_to_node)
         except Exception as ex:
-            logger.error("ERROR during projection, nodes are")
+            log.error("ERROR during projection, nodes are")
             for v in state_to_node.values():
-                logger.error("%s", v)
+                log.error("%s", v)
             raise
         return projection
 
@@ -74,6 +74,7 @@ class Projection:
 
 
     def normalize_projection(self, choreography, state_to_node):
+        log.debug("-- before remove indirections --\n%s", choreography)
         removeIndirections(choreography, state_to_node)
         log.debug("-- after remove indirections --\n%s", choreography)
         removeForkJoin(self, choreography, state_to_node)

@@ -4,7 +4,7 @@ import launch.substitutions
 import launch_ros.actions
 from launch_ros.actions import Node
 
-parameters_file = 'experiments/recovery_test_02/params.yaml'
+parameters_file = 'experiments/recovery_test_04/params.yaml'
 
 def generate_launch_description():
     return launch.LaunchDescription([

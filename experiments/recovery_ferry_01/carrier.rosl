@@ -1,8 +1,10 @@
 receive(crane, idle) { case Ok() => skip; }
-moveCart(1500);
+moveCart(0, 0, 0, 1500);
 send(crane, Ok);
 send(franka, Ok);
 receive(franka, idle) { case Ok() => skip; }
-moveCart(-1500);
+send(crane, Ok);
+checkpoint(1);
+moveCart(1500, 0, 0, -1500);
 send(crane, Ok);
 send(franka, Ok);

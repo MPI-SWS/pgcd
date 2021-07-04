@@ -150,7 +150,7 @@ class Component(Node,Interpreter,TFUpdater):
         return Env(w, [])
 
     def setup_recovery(self, env):
-        rclpy.logging._root_logger.log("PGCD setup for recovery" + self.id, LoggingSeverity.INFO)
+        rclpy.logging._root_logger.log("PGCD setup for recovery " + self.id, LoggingSeverity.INFO)
         # create recovery manager
         with open(self.choreo_path, 'r') as content_file:
             choreo_src = content_file.read()

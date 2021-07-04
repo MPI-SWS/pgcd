@@ -45,7 +45,7 @@ class Proj2Code:
                     motion = self.choreography.getMotion(self.process.name(), name, m.mp_args)
                     d = motion.duration()
                     if d.interruptible:
-                        assert self.withNextReceive == None
+                        #assert self.withNextReceive == None #TODO fix that later
                         self.withNextReceive = mi
                     else:
                         transformed.append(mi)

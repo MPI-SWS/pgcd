@@ -1,6 +1,6 @@
 import unittest
-from choreography.threads import *
-from choreography.parser_chor import ChoreographyParser
+from verification.choreography.threads import *
+from verification.choreography.parser_chor import ChoreographyParser
 import experiments_setups
 import xp_fetch_01_test
 import xp_sorting_test

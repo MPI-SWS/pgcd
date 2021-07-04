@@ -144,10 +144,9 @@ class Message(DistributedStateNode):
 
     def __str__(self):
         string = ''
-        string += self.start_state[0] + '=' + self.sender + '->' + self.receiver + ':' + self.msg_type + '('
-        for x in self.expressions:
-            string += str(x)
-        string += ');' + self.end_state[0]
+        string += self.start_state[0] + ' = ' + self.sender + '->' + self.receiver + ':' + \
+                  self.msg_type + '(' + ','.join([str(x) for x in self.expressions]) + \
+                  '); ' + self.end_state[0]
         return string
 
     def accept(self, visitor):
@@ -317,7 +316,7 @@ class Join(DistributedStateNode):
         for x in self.start_state:
             string += str(x)
             if x != self.start_state[-1]:
-                string += '||'
+                string += ' || '
         string += ' = ' + ''.join(self.end_state)
         return string
 

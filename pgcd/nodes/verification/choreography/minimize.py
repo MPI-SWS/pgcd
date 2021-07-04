@@ -28,9 +28,12 @@ def removeIndirections(choreography, state_to_node):
     # first scan to figure out what to remove
     for node in state_to_node.values():
         if isinstance(node, Indirection):
+            assert len(node.start_state) == 1 and len(node.end_state) == 1
             src = node.start_state[0]
             trg = node.end_state[0]
             removedStates.add(src)
+            while trg in substitution:
+                trg = substitution[trg]
             substitution = { k : (trg if v == src else v)  for k, v in substitution.items() }
             substitution[src] = trg
     # now do the remove

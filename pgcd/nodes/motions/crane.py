@@ -93,14 +93,14 @@ class Crane():
 
     def closeGripper(self):
         self.processCommand("M106")
-        time.sleep(1.0)
+        time.sleep(0.5)
 
     def openGripper(self):
         self.processCommand("M107")
-        time.sleep(1.0)
+        time.sleep(0.5)
 
     def hasObject(self):
-        time.sleep(1.0)
+        time.sleep(0.5)
         result = self.processCommand("M105", "ok T")
         m = re.search('T0:(\d\d.\d)', result) #TODO as comp from ambient (bed) temp
         t = float(m.group(1))

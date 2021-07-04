@@ -1,11 +1,11 @@
 dummy1:
     ros__parameters:
-        program_location: "experiments/recovery_test_02/"
+        program_location: "experiments/recovery_test_04/"
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
         recovery: true
         resume_after_recovery: false
-        choreography_location: "experiments/recovery_test_02/dummy.choreo"
+        choreography_location: "experiments/recovery_test_04/dummy.choreo"
         env_processes_ids:
             - "dummy1"
             - "dummy2"
@@ -17,12 +17,12 @@ dummy1:
             - "PointProcess"
 dummy2:
     ros__parameters:
-        program_location: "experiments/recovery_test_02/"
+        program_location: "experiments/recovery_test_04/"
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
         recovery: true
         resume_after_recovery: false
-        choreography_location: "experiments/recovery_test_02/dummy.choreo"
+        choreography_location: "experiments/recovery_test_04/dummy.choreo"
         env_processes_ids:
             - "dummy1"
             - "dummy2"

@@ -35,7 +35,7 @@ class RecoveryManager:
         self.lock = threading.Lock()
 
     def failure_callback(self, msg):
-        log.warning("received error")
+        log.warning("received error at %s" % self.interpreter.id)
         self.interpreter.status = InterpreterStatus.INTERRUPTED #TODO sync
 
     def comp_callback(self, msg):
@@ -51,10 +51,11 @@ class RecoveryManager:
         self.gotInfo.wait()
         (chkpt, rec_choreo) = self.computeRecoveryChoreo(self.comps)
         #print(rec_choreo)
+        log.info("recovery path (%s)\n%s" %(self.interpreter.id,str(rec_choreo)))
         proc = rec_choreo.getProcess(self.interpreter.id)
         p = Proj2Code(rec_choreo, proc)
         rec_code = p.getCode()
-        #print(rec_code)
+        log.info("recovery code (%s)\n%s" %(self.interpreter.id,str(rec_code)))
         # clean-up
         self.gotInfo.clear()
         self.comps.clear()
@@ -194,7 +195,7 @@ class RecoveryManager:
                 if len(joins) > 0:
                     join_name = joins[0].end_state[0]
                 new_join_name = self.fresh(join_name)
-                nodes.append(ast_chor.Join(ends,[new_join_name]))
+                nodes.append(ast_chor.Join(list(ends),[new_join_name]))
                 if len(joins) == len(ends):
                     return traverse(new_join_name, join_name)
                 else:

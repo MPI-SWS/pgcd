@@ -55,8 +55,8 @@ class CartShared(ABC):
     def idle( self ):
         time.sleep(0.1)
 
-    def wait(self, time):
-        time.sleep(time)
+    def wait(self, t):
+        time.sleep(t)
 
     def inverse(self, mpName, arg, error = None):
         if mpName == "moveCart" or mpName == "strafeCart" or mpName == "rotate":

@@ -1,22 +1,16 @@
 Ferry =
 def x0 = { True } f1 || { True } cc1
     # Franka
-    f1 = (franka: setJoints( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ); f2
-    f2 = (franka: grasp(0.03)); f3
-    f3 = (franka: homePos(0, 0, 0, 0, 0, 0, 0)); f4
-    f4 = (franka: setJoints( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ); f5
-    f5 = (franka: open(0.03)); f6
-    f6 = (franka: homePos(0, 0, 0, 0, 0, 0, 0)); f7
+    f1 = (franka: idle()); f2
     # Crane and Carrier
     cc1 = (crane: moveObject(180, 0, 110, 0, 160, 175), carrier: idle()); cc2
     cc2 = crane -> carrier: Ok(); cc3
-    cc3 = (crane: idle(), carrier: moveCart(1500)); cc4
+    cc3 = (crane: idle(), carrier: moveCart(0, 0, 0, 1500)); cc4
     # shuffle threads
-    cc4 || f7 = x2
+    cc4 || f2 = x2
     x2 = carrier -> crane: Ok(); x3
     x3 = carrier -> franka: Ok(); x4
-    x4 = {True} fc1 || {True} cr1
-    fc1 = {True} c1 || {True} ff1
+    x4 = {True} cr1 || {True} c1 || {True} ff1
     # Crane
     cr1 = (crane: idle()); cr2
     # Carrier
@@ -25,19 +19,15 @@ def x0 = { True } f1 || { True } cc1
     ff1 = (franka: setJoints( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)); ff2
     ff2 = (franka: grasp(0.03)); ff3
     ff3 = (franka: homePos(0, 0, 0, 0, 0, 0, 0)); ff4
-    ff4 || c2 = fc2
-    fc2 = franka -> carrier: Ok(); fc3
-    fc3 = {True} ff5 || {True} c3
-    # Carrier
-    c3 = (carrier: moveCart(-1500)); c4
-    # Franka
-    ff5 = (franka: setJoints( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ); ff6
-    ff6 = (franka: open(0.03)); ff7
-    ff7 = (franka: homePos(0, 0, 0, 0, 0, 0, 0)); ff8
-    ff8 = (franka: idle()); ff9
-    c4 || ff9 = x5
-    x5 || cr2 = x6
-    x6 = carrier -> crane: Ok(); x7
-    x7 = carrier -> franka: Ok(); x8
-    x8 = end
+    ff4 = (franka: setJoints( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ); ff5
+    ff5 = (franka: open(0.03)); ff6
+    ff6 = (franka: homePos(0, 0, 0, 0, 0, 0, 0)); ff7
+    ff7 || c2 || cr2 = x5
+    x5 = franka -> carrier: Ok(); x6
+    x6 = carrier -> crane : Ok(); x7
+    x7 = checkpoint(1); x8
+    x8 = (crane: idle(), carrier: moveCart(1500, 0, 0, -1500), franka: idle()); x9
+    x9 = carrier -> crane: Ok(); x10
+    x10 = carrier -> franka: Ok(); x11
+    x11 = end
 in [ True ] x0

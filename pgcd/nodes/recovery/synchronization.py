@@ -164,6 +164,7 @@ class Synchronizer:
                 # FIXME not the optimal strategy but it will do
                 receivers = list(procs)
                 receivers.sort(key = lambda x: (ds2[x].max - ds2[x].min, x))
+                receivers.reverse()
                 sender = receivers.pop()
                 # insert messages
                 start_state = state
@@ -201,3 +202,6 @@ class Synchronizer:
                 for r in receivers:
                     tracker.duration[r] = DurationSpec(0,0,False)
             self.propagateTime(node)
+        # fill comp.state_to_processes
+        tc = ThreadChecks(self.comp, self.comp.world)
+        self.comp.state_to_processes = { s:t.processes for (s,t) in tc.perform().items() }
