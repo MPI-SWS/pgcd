@@ -15,8 +15,6 @@ class Crane():
         time.sleep(1.0)
         while self.chan.inWaiting() > 0:
             out = self.chan.read(1)
-        #self.receive()
-        # TODO read?
         # self.send("G90")
 
     def __del__(self):
@@ -32,7 +30,7 @@ class Crane():
         while not out.startswith(prefix):
         #while self.chan.inWaiting() > 0:
             out = self.chan.readline().decode()
-            print(out)
+            #print(out)
         return out
         # TODO parse (remove last ok?)
 

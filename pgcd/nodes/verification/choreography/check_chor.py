@@ -154,6 +154,10 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, End): #TODO no supported for the moment
+            self.traverse_graph(node.end_state[0], visited, process, causality)
+            return
+        
+        elif isinstance(node, Checkpoint):
             return
 
         self.check_no_disconnected_parts(visited)
@@ -174,7 +178,7 @@ class ChoreographyCheck:
         return
 
     def check_no_disconnected_parts(self, visited):
-        assert not len(self.state_to_node) != len(visited), 'There are some disconnected graph parts!'
+        assert not len(self.state_to_node) != len(visited), 'There are some disconnected graph parts! ' + str(visited) 
 
     def check_component_motion_is_in_only_one_forked_thread(self):
         for i in range(0, len(self.motion_check[self.scope]) - 1):

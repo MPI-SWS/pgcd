@@ -47,7 +47,7 @@ class arm():
         else:
             direction.append( 0 )
         step_list = list( map( abs, [ turntable, cantilever, anchorpoint] ) )
-        time = round( max( list( map( abs, [ turntable/2.0, cantilever/1.0, anchorpoint/2.0 ] ))))
+        time = round( max( list( map( abs, [ turntable/2.0, cantilever/0.2, anchorpoint/1.5 ] ))))
         self.motors.doSteps( time, step_list, direction )
 
 if __name__ == "__main__":

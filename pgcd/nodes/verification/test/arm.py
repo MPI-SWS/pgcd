@@ -1,12 +1,12 @@
 from sympy import *
 from sympy.vector import CoordSys3D
 from mpmath import mp
-from spec.component import *
-from spec.motion import *
-from spec.time import *
-import spec.conf
-from utils.geometry import *
-import utils.transition
+from verification.spec.component import *
+from verification.spec.motion import *
+from verification.spec.time import *
+from verification.utils.geometry import *
+import verification.utils.transition
+import verification.spec.conf as conf
 
 # model for a generic arm as 3 linkage connected by revolute actuators
 class Arm(Process):
@@ -298,12 +298,12 @@ class ArmGrab(ArmMP):
         self._orientation = orientation
 
     def duration(self):
-        return DurationSpec(0, 1, False) #TODO 
+        return DurationSpec(0, 1, False) #TODO
 
     def mountA(self):
         assert self._pos != None
-        (x1, y1, z1) = self._component.frame().origin.express_coordinates(spec.conf.worldFrame)
-        (x2, y2, z2) = self._pos.express_coordinates(spec.conf.worldFrame)
+        (x1, y1, z1) = self._component.frame().origin.express_coordinates(conf.worldFrame)
+        (x2, y2, z2) = self._pos.express_coordinates(conf.worldFrame)
         return ((x1,x2), (y1,y2), (Symbol('C_theta'), self._orientation)) #FIXME hack
 
     def removeParentVar(self, f):
@@ -661,9 +661,9 @@ class ArmSetAllAngles(ArmMP):
         if self.smooth:
             t = timeSymbol()
             dt = self.dt.max
-            ta = Eq(self._component._a, utils.transition.linear(t, self.angle3a, self.angle3b, dt))
-            tb = Eq(self._component._b, utils.transition.linear(t, self.angle2a, self.angle2b, dt))
-            tc = Eq(self._component._c, utils.transition.linear(t, self.angle1a, self.angle1b, dt))
+            ta = Eq(self._component._a, verification.utils.transition.linear(t, self.angle3a, self.angle3b, dt))
+            tb = Eq(self._component._b, verification.utils.transition.linear(t, self.angle2a, self.angle2b, dt))
+            tc = Eq(self._component._c, verification.utils.transition.linear(t, self.angle1a, self.angle1b, dt))
             f = And(t >= 0, t <= dt, ta, tb, tc)
         else:
             if self.angle1a < self.angle1b:

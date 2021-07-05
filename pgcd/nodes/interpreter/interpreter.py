@@ -28,7 +28,7 @@ class Interpreter:
         self.program = Skip()
         self.status = InterpreterStatus.IDLE
         # stack keeps:
-        # - checkpoint: ID, snapshot of logical state
+        # - checkpoint: ID, snapshot of logical state %TODO
         # - motion: name and args
         # - message: type and args
         self.stack = []
@@ -188,6 +188,7 @@ class Interpreter:
                             rclpy.logging._root_logger.log("Setting: " + var + " to " + name + " = " + str(val), LoggingSeverity.DEBUG)
                             self.__setattr__(var, val)
                         next_prog = action[2]
+                        self.stack.append((ActionType.MESSAGERCV,action[0].__name__,[]))
                         break
                 else:
                     assert False, "did not find handler for " + str(msg)

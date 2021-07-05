@@ -1,0 +1,21 @@
+receive(carrier, idle) { case Ok() => skip; }
+checkpoint(1);
+receive(carrier, idle) {
+    case Ok() => {
+        receive(carrier, idle) { case Ok() => skip; }
+        rotate(0,0,0,0,270,190);
+        closeGripper();
+        rotate(0,270,190,0,0,0); #rotate(0,270,190,0,250,180);
+        send(cart, Ok);
+        send(carrier, Ok);
+        #rotate(0,250,180,0,0,0);
+        receive(cart, idle) { case Ok() => skip; }
+        rotate(0,0,0,90,270,190);
+        openGripper();
+        rotate(90,270,190,0,0,0);
+        send(cart, Ok);
+    }
+    case Done() =>
+        send(cart, Done);
+}
+receive(carrier, idle) { case Ok() => skip; }

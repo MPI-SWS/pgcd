@@ -20,7 +20,7 @@ class Proj2Code:
         proj = Projection()
         proj.choreography = deepcopy(self.choreography)
         p_chor = proj.project(self.process.name(), self.process)
-        #print(p_chor)
+        log.debug(p_chor)
         transformed = []
         state = p_chor.start_state
         state_to_node = p_chor.mk_state_to_node()
@@ -38,7 +38,7 @@ class Proj2Code:
                 elif needIdle:
                     mi = ast_inter.Motion(name, m.mp_args)
                     transformed.append(mi)
-                    assert self.withNextReceive == None
+                    #assert self.withNextReceive == None #TODO fix that later
                 else:
                     mi = ast_inter.Motion(name, m.mp_args)
                     # if interruptible should be folded into the next receive !!

@@ -14,7 +14,7 @@ class ArmShared(ABC):
         self.angleGripper = 0
         self.turntableBase = 17300.0/270
         self.cantileverBase = 5400.0/270/4
-        self.anchorpointBase = 5400.0/270*5
+        self.anchorpointBase = 5400.0/270*5/4
 
     @abstractmethod
     def grip( self, cycle ):
@@ -56,7 +56,7 @@ class ArmShared(ABC):
 
     def closeGripper(self):
         #self.grip(12)
-        self.grip(10.0)
+        self.grip(12.0)
 
     def move( self, turntable, cantilever, anchorpoint ):
         stepsTurnTable = self.turntableBase*turntable

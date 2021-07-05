@@ -98,11 +98,16 @@ class RecoveryManager:
             e.kind = 2
             e.description = motion
             e.parameters = args
+        elif entry[0] == ActionType.MESSAGERCV:
+            e.kind = 3
+            e.description = entry[1]
+            e.parameters = entry[2]
         else:
             assert False, "unexpected entry: " + str(entry)
         return e
 
     def prepareComp(self):
+        log.info("stack for %s\n%s" % (self.interpreter.id, str(self.interpreter.stack)))
         msg = pgcd.msg.CompensationStamped()
         msg.header.frame_id = self.interpreter.id
         checkPt = self.interpreter.stack[0]
@@ -120,6 +125,8 @@ class RecoveryManager:
             return (ActionType.MESSAGE, entry.description, entry.parameters)
         elif entry.kind == 2:
             return (ActionType.MOTION, entry.description, entry.parameters)
+        elif entry.kind == 3:
+            return (ActionType.MESSAGERCV, entry.description, entry.parameters)
         else:
             assert False, "unexpected entry: " + str(entry)
 
@@ -241,11 +248,20 @@ class RecoveryManager:
                 else:
                     return traverse(n2, n)
             elif node.isMessage():
-                # consume the message
+                # consume the message on the sender side
                 stack = stacks[node.sender]
                 action = stack[0]
-                assert(action[0] == ActionType.MESSAGE and action[1] == node.msg_type)
+                assert action[0] == ActionType.MESSAGE and action[1] == node.msg_type, "not a match " + str(node) + "\n" + str(action)
                 stacks[node.sender] = stack[1:]
+                # consume the message on the receiver side
+                stack = stacks[node.receiver]
+                action = stack[0]
+                if action[0] == ActionType.MOTION and action[1] == "idle":
+                    stack = stack[1:]
+                    action = stack[0]
+                assert action[0] == ActionType.MESSAGERCV, "not a match " + str(node) + "\n" + str(action)
+                stacks[node.receiver] = stack[1:]
+                # continue
                 n = node.end_state[0]
                 n2 = self.fresh(n)
                 nodes.append(ast_chor.Message([new_name],node.sender,node.receiver,node.msg_type,node.expressions,[n2]))

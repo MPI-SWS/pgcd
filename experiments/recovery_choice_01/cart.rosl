@@ -1,0 +1,13 @@
+receive(carrier, idle) { case Ok() => skip; }
+checkpoint(1);
+receive(arm, idle) {
+    case Ok() => {
+        moveCart(0, 0, 0, -150);
+        send(arm, Ok);
+        receive(arm, idle) { case Ok() => skip; }
+        moveCart(0, 0, 0,  150);
+    }
+    case Done() =>
+        skip;
+}
+receive(carrier, idle) { case Ok() => skip; }

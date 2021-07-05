@@ -32,11 +32,10 @@ class CarrierShared():
         if x != None:
             assert y != None and t != None
             angle = t
-        assert( 0<=angle and angle<=360 )
         steps = (angle/360)*14720*1.6
         (ok, fraction) = self.__compute_steps__( 0,0, steps)
-        self.stepsCart += self.stepsCart + fraction*(steps-self.stepsCart)
-        self.angleCart += self.angleCart + fraction*(angle-self.angleCart)
+        self.stepsCart += self.stepsCart + fraction*(steps)
+        self.angleCart += self.angleCart + fraction*(angle)
         if not ok:
             raise RuntimeError(fraction)
 

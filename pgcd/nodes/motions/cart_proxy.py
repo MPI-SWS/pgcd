@@ -35,3 +35,5 @@ if __name__ == "__main__":
     #c.strafeCart(-250)
     #c.rotate( 6)
     #c.moveCart(-100)
+    c.moveCart(-150)
+    c.moveCart( 150)

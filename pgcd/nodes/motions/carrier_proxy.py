@@ -21,5 +21,11 @@ class CarrierProxy(CarrierShared, Proxy):
 
 if __name__ == "__main__":
     c = CarrierProxy()
-    c.moveCart(1500)
-    c.moveCart(-1500)
+    #c.moveCart(1500)
+    #c.moveCart(-1500)
+    c.moveCart(800)
+    c.rotate( 86)
+    c.moveCart( 550)
+    c.moveCart(-550)
+    c.rotate(-86)
+    c.moveCart(-800)

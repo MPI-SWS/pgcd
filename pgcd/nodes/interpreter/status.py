@@ -16,3 +16,4 @@ class ActionType(Enum):
     MESSAGE = 2
     CHECKPOINT = 3
     FAILEDMOTION = 4
+    MESSAGERCV = 5 # small delays can insert idle in the stack before messages, keep track of receive to flush them out

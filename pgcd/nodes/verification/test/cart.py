@@ -294,7 +294,7 @@ class CartSetAngle(CartMotionPrimitive):
         if self.af != None:
             t = timeSymbol()
             dt = self.duration().max
-            return And( t >= 0, t <= dt, Eq(self.var, utils.transition.linear(t, self.af, self.angle, dt)))
+            return And( t >= 0, t <= dt, Eq(self.var, verification.utils.transition.linear(t, self.af, self.angle, dt)))
         else:
             return S.true
 
