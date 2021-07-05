@@ -4,7 +4,7 @@ dummy1:
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
         recovery: true
-        resume_after_recovery: false
+        resume_after_recovery: true
         choreography_location: "experiments/recovery_test_05/dummy.choreo"
         env_processes_ids:
             - "dummy1"
@@ -24,7 +24,7 @@ dummy2:
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
         recovery: true
-        resume_after_recovery: false
+        resume_after_recovery: true
         choreography_location: "experiments/recovery_test_05/dummy.choreo"
         env_processes_ids:
             - "dummy1"
@@ -44,7 +44,7 @@ dummy3:
         object_module_name: "src.pgcd.nodes.motions.dummy_robot"
         object_class_name: "DummyRobot"
         recovery: true
-        resume_after_recovery: false
+        resume_after_recovery: true
         choreography_location: "experiments/recovery_test_05/dummy.choreo"
         env_processes_ids:
             - "dummy1"

@@ -171,7 +171,7 @@ class Receive(AstNode):
         return self == node or self.motion.contains(node) or any(c.contains(node) for c in self.actions)
 
     def exists(self, f):
-        return f(self) or self.motion.exists(f) or any(c.exists(f) for c in self.children)
+        return f(self) or self.motion.exists(f) or any(c.exists(f) for c in self.actions)
 
 class Action(AstNode):
 
@@ -335,4 +335,4 @@ class Checkpoint(AstNode):
         self.ids = ids
 
     def __str__(self):
-        return 'checkpoint'
+        return 'checkpoint(' + (', '.join([str(i) for i in self.ids])) + ")" 

@@ -4,8 +4,13 @@ send(dummy1, Ok);
 send(dummy3, Ok);
 receive(dummy3, idle) { case Ok() => skip; }
 send(dummy1, Ok);
+x = 0;
 checkpoint(1);
-#wait(10); # this could fail
-fail(1,10);
+if (x == 0) {
+    x = 1;
+    fail(1,10);
+} else {
+    wait(10);
+}
 send(dummy1, Ok);
 send(dummy3, Ok);

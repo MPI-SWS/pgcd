@@ -71,7 +71,7 @@ class RecoveryManager:
 
     def restoreProgram(self):
         assert self.isRecovering
-        self.isRecovering == False
+        self.isRecovering = False
         new_prog = resumeAt(self.originalProgram, self.restartFrom)
         self.interpreter.program = new_prog
         self.interpreter.status = InterpreterStatus.IDLE
