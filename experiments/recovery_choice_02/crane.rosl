@@ -1,0 +1,5 @@
+moveObject(180, 0, 110, 0, 160, 175);
+send(carrier, Ok);
+receive(carrier, idle) { case Ok() => skip; }
+checkpoint(1,2);
+receive(carrier, idle) { case Ok() => skip; }

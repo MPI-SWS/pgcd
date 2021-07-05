@@ -1,0 +1,130 @@
+crane:
+    ros__parameters:
+        program_location: "experiments/recovery_choice_02/"
+        object_module_name: "src.pgcd.nodes.motions.crane"
+        object_class_name: "Crane"
+        recovery: true
+        resume_after_recovery: true
+        choreography_location: "experiments/recovery_choice_02/choice.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+            - "cart"
+            - "arm"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.arm"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"
+            - "Cart"
+            - "Arm"
+carrier:
+    ros__parameters:
+        program_location: "experiments/recovery_choice_02/"
+        object_module_name: "src.pgcd.nodes.motions.carrier_proxy"
+        object_class_name: "CarrierProxy"
+        recovery: true
+        resume_after_recovery: true
+        choreography_location: "experiments/recovery_choice_02/choice.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+            - "cart"
+            - "arm"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.arm"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"
+            - "Cart"
+            - "Arm"
+franka:
+    ros__parameters:
+        program_location: "experiments/recovery_choice_02/"
+        object_module_name: "src.pgcd.nodes.motions.franka_proxy"
+        object_class_name: "FrankaProxy"
+        recovery: true
+        resume_after_recovery: true
+        choreography_location: "experiments/recovery_choice_02/choice.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+            - "cart"
+            - "arm"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.arm"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"
+            - "Cart"
+            - "Arm"
+cart:
+    ros__parameters:
+        program_location: "experiments/recovery_choice_02/"
+        object_module_name: "src.pgcd.nodes.motions.cart_proxy"
+        object_class_name: "CartProxy"
+        recovery: true
+        resume_after_recovery: true
+        choreography_location: "experiments/recovery_choice_02/choice.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+            - "cart"
+            - "arm"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.arm"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"
+            - "Cart"
+            - "Arm"
+arm:
+    ros__parameters:
+        program_location: "experiments/recovery_choice_02/"
+        object_module_name: "src.pgcd.nodes.motions.arm_proxy"
+        object_class_name: "ArmProxy"
+        recovery: true
+        resume_after_recovery: true
+        choreography_location: "experiments/recovery_choice_02/choice.choreo"
+        env_processes_ids:
+            - "crane"
+            - "carrier"
+            - "franka"
+            - "cart"
+            - "arm"
+        env_processes_module:
+            - "src.pgcd.nodes.verification.test.crane"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.franka"
+            - "src.pgcd.nodes.verification.test.cart"
+            - "src.pgcd.nodes.verification.test.arm"
+        env_processes_class:
+            - "Crane"
+            - "CartSquare"
+            - "FrankaEmikaPanda"
+            - "Cart"
+            - "Arm"

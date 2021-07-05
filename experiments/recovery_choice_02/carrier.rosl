@@ -1,0 +1,31 @@
+receive(crane, idle) { case Ok() => skip; }
+moveCart(0, 0, 0, 800);
+send(crane, Ok);
+send(franka, Ok);
+send(cart, Ok);
+x = 0;
+if (x == 0) { # toward franka
+    send(arm, Done);
+    checkpoint(1);
+    x = 1 - x;
+    moveCart(800, 0, 0, 700);
+    send(franka, Ok);
+    receive(franka, idle) { case Ok() => skip; }
+    moveCart(1500, 0, 0, -1500);
+} else { # toward cart
+    send(arm, Ok);
+    checkpoint(2);
+    send(franka, Done);
+    x = 1 - x;
+    rotate(800, 0, 0, 85); # should be 90 but robot slighlty oversteer
+    moveCart(800, 0, 90, 550);
+    send(arm, Ok);
+    receive(arm, idle) { case Ok() => skip; }
+    moveCart(800, 550, 90, -550);
+    rotate(800, 0, 90, -85); # should be 90 but robot slighlty oversteer
+    moveCart(800, 0, 0, -800);
+}
+send(crane, Ok);
+send(franka, Ok);
+send(arm, Ok);
+send(cart, Ok);
