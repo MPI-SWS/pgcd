@@ -1,0 +1,79 @@
+start: receive(crane, idle) { case Ok() => skip; }
+try: moveCart(0, 0, 0, 800);
+catch MotionError(fraction) => {
+    moveCart(800*fraction, 0, 0, -800*fraction);
+    send(crane, Error);
+    goto start;
+}
+send(crane, Ok);
+send(franka, Ok);
+send(arm, Ok);
+send(cart, Ok);
+checkpoint(1);
+choice: x = 0;
+if (x == 0) { # toward franka
+    send(arm, Done);
+    x = 1 - x;
+    try moveCart(800, 0, 0, 700);
+    catch MotionError(fraction) => {
+        moveCart(800+700*fraction, 0, 0, -fraction*700);
+        goto choice;
+    }
+    send(franka, Ok);
+    receive(franka, idle) {
+        case Ok() => skip;
+        case Error() => 
+            moveCart(1500, 0, 0, -700);
+            goto choice;
+    }
+    try: moveCart(1500, 0, 0, -1500);
+    catch MotionError(fraction) => {
+        moveCart(1500*(1-fraction), 0, 0, 155*(1-fraction));
+        send(franka, Error);
+        receive(franka, idle) { case Ok() => skip; );
+        moveCart(1500, 0, 0, -700);
+        goto choice;
+    }
+} else { # toward cart
+    send(arm, Ok);
+    x = 1 - x;
+    rotate(800, 0, 0, 85); # should be 90 but robot slighlty oversteer
+    try moveCart(800, 0, 90, 550);
+    catch MotionError(fraction) => {
+        moveCart(800, 550*fraction, 90, -fraction*550);
+        rotate(800, 0, 90, -85);
+        goto choice;
+    }
+    send(arm, Ok);
+    receive(arm, idle) { case Ok() => skip; }
+    try moveCart(800, 550, 90, -550);
+    catch MotionError(fraction) => {
+        send(arm, Error);
+        moveCart(800, 550*(1-fraction), 90, 550*(1-fraction));
+        receive(arm, idle) { case Ok() => skip; }
+        moveCart(800, 550, 90, -550);
+        rotate(800, 0, 90, -85);
+        goto choice;
+    }
+    send(arm, Ok);
+    rotate(800, 0, 90, -85); # should be 90 but robot slighlty oversteer
+    try moveCart(800, 0, 0, -800);
+    catch MotionError(fraction) => {
+        moveCart(800*(1-fraction), 0, 0,  800*fraction);
+        rotate(800, 0, 90, -85);
+        moveCart(800, 550, 90, -550);
+        send(arm, Error);
+        receive(arm, idle) {
+            case Check() => send(arm, Error); }
+        moveCart(800, 550, 90, -550);
+        rotate(800, 0, 90, -85);
+        goto choice;
+    }
+    receive(arm, idle) {
+        case Check() =>
+            send(arm, Ok);
+    }
+}
+send(crane, Ok);
+send(franka, Done);
+send(arm, Done); # arm forward to cart

@@ -1,0 +1,20 @@
+move0: receive(crane, idle) { case Ok() => skip; }
+try moveCart(0, 0, 0, 1500);
+catch MotionError(fraction) => {
+    moveCart(1500*fraction, 0, 0, -1500*fraction); # go back (only the carrier moves so no need to synchronize yet)
+    send(crane, Error); }
+send(crane, Ok);
+send(franka, Ok);
+receive(franka, idle) {
+    case Ok() => skip;
+    case Error() => {
+        moveCart(1500*fraction, 0, 0, -1500*fraction);
+        send(crane, Error); } }
+send(crane, Ok);
+checkpoint(1);
+move1: try moveCart(1500, 0, 0, -1500);
+catch MotionError(fraction) => {
+    moveCart(1500*(1-fraction), 0, 0, 1500*fraction); # go back (only the carrier moves so no need to synchronize)
+    goto move1; } # retry
+send(crane, Ok);
+send(franka, Ok);

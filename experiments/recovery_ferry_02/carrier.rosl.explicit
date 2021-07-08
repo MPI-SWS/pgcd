@@ -1,0 +1,29 @@
+start: receive(crane, idle) { case Ok() => skip; }
+try moveCart(0, 0, 0, 1500);
+catch MotionError(fraction) => {
+    send(franka, Error);
+    moveCart(1500*fraction, 0, 0, -1550*fraction);
+    send(crane, Error);
+    goto start;
+}
+send(crane, Ok);
+send(franka, Ok);
+receive(franka, idle) {
+    case Ok() => {
+        try moveCart(1500, 0, 0, -1500);
+        catch MotionError(fraction) => { # no checkpoint so rollback all the way, yay!
+            moveCart(1500*(1-fraction), 0, 0, 1500*(1-fraction));
+            send(franka, Error);
+            receive(franka, idle) { case Ok => skip; } # got the object back
+            moveCart(1500, 0, 0, -1500);
+            send(crane, Error);
+            goto start;
+        }
+        send(crane, Ok);
+        send(franka, Ok);
+    }
+    caser Error() => {
+        moveCart(1500, 0, 0, -1500);
+        send(crane, Error);
+        goto start;
+}   }

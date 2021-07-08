@@ -1,0 +1,24 @@
+start: moveObject(180, 0, 110, 0, 160, 175);
+send(franka, Check);
+receive(franka, idle) {
+    case Ok() => skip;
+    case Error => {
+        moveObject(0, 160, 175, 180, 0, 110);
+        send(franka, Ok);
+        goto start;
+}   }
+send(carrier, Ok);
+receive(carrier, idle) {
+    case Ok() => skip;
+    case Error => {
+        moveObject(0, 160, 175, 180, 0, 110);
+        send(franka, Ok);
+        goto start;
+}   }
+receive(carrier, idle) {
+    case Ok() => skip;
+    case Error => {
+        moveObject(0, 160, 175, 180, 0, 110);
+        send(franka, Ok);
+        goto start;
+}   }

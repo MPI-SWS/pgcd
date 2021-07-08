@@ -1,0 +1,54 @@
+receive(carrier, idle) { case Ok() => skip; }
+checkpoint(1);
+nDone = 0;
+while (nDone < 2) {
+    receive(carrier, idle) {
+        case Ok() => {
+            nDone = 0;
+            chosen: receive(carrier, idle) { case Ok() => skip; }
+            rotate(0,0,0,0,270,190);
+            closeGripper();
+            rotate(0,270,190,0,0,0);
+            send(cart, Ok);
+            send(carrier, Ok);
+            receive(cart, idle) { case Ok() => skip; }
+            receive(carrier, idle) {
+                case Ok() => {
+                    rotate(0,0,0,90,270,190);
+                    openGripper();
+                    rotate(90,270,190,0,0,0);
+                    send(cart, Ok);
+                    receive(cart, idle){ case Ok() => skip; }
+                    send(carrier, check);
+                    receive(carrier, idle){
+                        case Ok() =>
+                            nDone = 1;
+                        case Error() => {
+                            send(cart, Error);
+                            receive(cart, idle){ case Ok() => skip; }
+                            rotate(0,0,0,90,270,190);
+                            closeGripper();
+                            rotate(90,270,190,0,0,0);
+                            send(cart, Ok);
+                            receive(cart, idle){ case Ok() => skip; }
+                            rotate(0,0,0,0,270,190);
+                            openGripper();
+                            rotate(0,270,190,0,0,0);
+                        }
+                    }
+                }
+                case Error() => {
+                    send(cart, Error);
+                    receive(cart, idle) { case Ok() => skip; }
+                    rotate(0,0,0,0,270,190);
+                    openGripper();
+                    rotate(0,270,190,0,0,0);
+                    send(carrier, Ok);
+                }
+            }
+        }
+        case Done() =>
+            nDone = nDone + 1;
+    }
+}
+send(cart, Done);
