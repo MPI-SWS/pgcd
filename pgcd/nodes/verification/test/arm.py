@@ -11,9 +11,10 @@ import verification.spec.conf as conf
 # model for a generic arm as 3 linkage connected by revolute actuators
 class Arm(Process):
 
-    def __init__(self, name, parent, index = 0, a_ref = 0, b_ref = 0, c_ref = 0):
+    def __init__(self, name, parent, index = 0,
+                 a_ref = 0, b_ref = 0, c_ref = 0): #TODO use degree or radian as a parameter
         super().__init__(name, parent, index)
-        # default dimensions
+        # default dimensions (m, rad)
         self.baseHeight = 0.23
         self.baseRadius = 0.13
         self.upperArmLength = 0.22
