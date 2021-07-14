@@ -11,8 +11,12 @@ import verification.utils.transition
 # model for a 3-axis cartesian motion platform
 class Crane(Process):
 
-    def __init__(self, name, parent, index = 0):
+    def __init__(self, name, parent, index = 0, useMm = True):
         super().__init__(name, parent, index)
+        if useMm:
+            self.coeff = 0.001
+        else:
+            self.coeff = 1.0
         # variables
         self._x = symbols(name + '_x')
         self._y = symbols(name + '_y')
@@ -21,6 +25,9 @@ class Crane(Process):
         self.maxX = 0.2
         self.maxY = 0.2
         self.maxZ = 0.2
+        self.homeX = 0.09
+        self.homeY = 0.11
+        self.homeZ = 0.0
         self.baseHeigth = 0.3
         self.yOffset = 0.05
         self.zOffset = 0.05
@@ -203,15 +210,15 @@ class CraneHome(CraneMP):
         return [self._component._x, self._component._y, self._component._z]
 
     def duration(self):
-        return DurationSpec(1, 2, False)
+        return DurationSpec(5, 30, False)
 
     def preG(self):
         return S.true
 
     def postG(self):
-        x = Eq(self._component._x, 90)
-        y = Eq(self._component._y, 110)
-        z = Eq(self._component._z, 0)
+        x = Eq(self._component._x, self._component.homeX)
+        y = Eq(self._component._y, self._component.homeY)
+        z = Eq(self._component._z, self._component.homeZ)
         return And(x, y, z)
 
     def invG(self):
@@ -234,15 +241,15 @@ class CraneMoveTo(CraneMP):
 
     def __init__(self, name, component, x, y, z):
         super().__init__(name, component)
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = self._component.coeff * x
+        self.y = self._component.coeff * y
+        self.z = self._component.coeff * z
 
     def modifies(self):
         return [self._component._x, self._component._y, self._component._z]
 
     def duration(self):
-        return DurationSpec(0, 3, False)
+        return DurationSpec(0, 20, False)
 
     def preG(self):
         return S.true
@@ -273,13 +280,13 @@ class CraneMoveToX(CraneMP):
 
     def __init__(self, name, component, x):
         super().__init__(name, component)
-        self.x = x
+        self.x = self._component.coeff * x
 
     def modifies(self):
         return [self._component._x]
 
     def duration(self):
-        return DurationSpec(0, 1, False)
+        return DurationSpec(0, 20, False)
 
     def preG(self):
         return S.true
@@ -307,13 +314,13 @@ class CraneMoveToY(CraneMP):
 
     def __init__(self, name, component, y):
         super().__init__(name, component)
-        self.y = y
+        self.y = self._component.coeff * y
 
     def modifies(self):
         return [self._component._y]
 
     def duration(self):
-        return DurationSpec(0, 1, False)
+        return DurationSpec(0, 20, False)
 
     def preG(self):
         return S.true
@@ -341,13 +348,13 @@ class CraneMoveToZ(CraneMP):
 
     def __init__(self, name, component, z):
         super().__init__(name, component)
-        self.z = z
+        self.z = self._component.coeff * z
 
     def modifies(self):
         return [self._component._z]
 
     def duration(self):
-        return DurationSpec(0, 2, False)
+        return DurationSpec(0, 20, False)
 
     def preG(self):
         return S.true
@@ -375,14 +382,14 @@ class CraneMoveToXY(CraneMP):
 
     def __init__(self, name, component, x, y):
         super().__init__(name, component)
-        self.x = x
-        self.y = y
+        self.x = self._component.coeff * x
+        self.y = self._component.coeff * y
 
     def modifies(self):
         return [self._component._x, self._component._y]
 
     def duration(self):
-        return DurationSpec(0, 2, False)
+        return DurationSpec(0, 20, False)
 
     def preG(self):
         return S.true
@@ -448,30 +455,30 @@ class CraneMoveObject(CraneMP):
 
     def __init__(self, name, component, x0, y0, z0, x1, y1, z1):
         super().__init__(name, component)
-        self.x0 = x0
-        self.x0 = x0
-        self.y0 = y0
-        self.z1 = z1
-        self.y1 = y1
-        self.z1 = z1
+        self.x0 = self._component.coeff * x0
+        self.y0 = self._component.coeff * y0
+        self.z0 = self._component.coeff * z0
+        self.x1 = self._component.coeff * x1
+        self.y1 = self._component.coeff * y1
+        self.z1 = self._component.coeff * z1
 
     def modifies(self):
         return [self._component._x, self._component._y, self._component._z]
 
     def duration(self):
-        return DurationSpec(0, 5, False)
+        return DurationSpec(20, 60, False)
 
     def preG(self):
-        x = Eq(self._component._x, 0)
-        y = Eq(self._component._y, 0)
-        z = Eq(self._component._z, 0)
+        x = Eq(self._component._x, self._component.homeX)
+        y = Eq(self._component._y, self._component.homeY)
+        z = Eq(self._component._z, self._component.homeZ)
         return And(x, y, z)
         return S.true
 
     def postG(self):
-        x = Eq(self._component._x, 0)
-        y = Eq(self._component._y, 0)
-        z = Eq(self._component._z, 0)
+        x = Eq(self._component._x, self._component.homeX)
+        y = Eq(self._component._y, self._component.homeY)
+        z = Eq(self._component._z, self._component.homeZ)
         return And(x, y, z)
 
     def invG(self):

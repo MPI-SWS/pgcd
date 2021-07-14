@@ -1,17 +1,17 @@
-from utils.geometry import *
+from verification.utils.geometry import *
+from verification.spec.component import World
 from cart import Cart
 from cart import CartSquare
 from arm import Arm
 from mpmath import mp
-from experiments_setups import World
 
 
 def xp2_world():
     w = World(  (0, 0, 0, 0),
                 (1.15, 0, 0, mp.pi) )
-    cart = Cart("Cart", w, 0)
-    arm = Arm("Arm", cart)
-    carrier = CartSquare("Carrier", w, 1)
+    cart = Cart("Cart", w, 0, useMmDegree = False)
+    arm = Arm("Arm", cart, useDegree = False)
+    carrier = CartSquare("Carrier", w, 1, useMmDegree = False)
     return w
 
 #TODO contract with mounting point cstr

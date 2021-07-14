@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # this path is relative to the test folder, not this folder
-export PYTHONPATH=$PYTHONPATH:.:..:../..:../choreography:
+export PYTHONPATH=$PYTHONPATH:.:../..
 # echo PYTHONPATH is $PYTHONPATH
 
 if ! command -v dreal &> /dev/null

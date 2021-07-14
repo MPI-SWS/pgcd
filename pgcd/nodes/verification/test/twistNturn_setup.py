@@ -1,8 +1,8 @@
-from spec.component import Cube
-from spec.contract import StaticContract
-from spec.time import DurationSpec
-from utils.geometry import *
-from experiments_setups import World
+from verification.spec.component import Cube
+from verification.spec.contract import StaticContract
+from verification.spec.time import DurationSpec
+from verification.utils.geometry import *
+from verification.spec.component import World
 from cart import *
 from arm import *
 from sympy import symbols, Eq, And, S
@@ -10,9 +10,9 @@ from mpmath import mp
 
 def progTwistAndTurnWorld():
     w = World( (0,0,0,0), (0.5, 0, 0, mp.pi) )
-    cart = Cart("Cart", w, 0)
-    arm = Arm("Arm", cart)
-    carrier = CartSquare("Carrier", w, 1)
+    cart = Cart("Cart", w, 0, useMmDegree = False)
+    arm = Arm("Arm", cart, useDegree = False)
+    carrier = CartSquare("Carrier", w, 1, useMmDegree = False)
     return w
 
 def progTwistAndTurnArm():

@@ -1,6 +1,6 @@
 # replace the variables with vectors in the spec
-from ast_chor import *
-from utils.vectorizer import *
+from verification.choreography.ast_chor import *
+from verification.utils.vectorizer import *
 
 def vectorize(choreography, world):
     '''replace variables by vectors in the world's frame'''

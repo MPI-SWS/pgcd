@@ -1,17 +1,17 @@
-from spec.env import *
-import spec.conf 
-from compatibility import *
-from projection import Projection
+from verification.spec.env import *
+import verification.spec.conf as conf
+from verification.choreography.compatibility import *
+from verification.choreography.projection import Projection
+import verification.choreography.vectorize
+from verification.spec.component import World
 from arm import Arm
 from static_process import *
-from vectorize import *
-from experiments_setups import World
 
 import unittest
 
 def choreo():
     return ''' fixed =
-        def start = (p1: Wait(1), p2: Wait(1)); x0
+        def start = (p1: wait(1), p2: wait(1)); x0
             x0 = end
         in [ true ] start
     '''
@@ -19,11 +19,11 @@ def choreo():
 class ArmTest(unittest.TestCase):
 
 #   def setUp(self):
-#       self.defaultConf = spec.conf.enableMPincludeFPCheck
-#       spec.conf.enableMPincludeFPCheck = False
+#       self.defaultConf = conf.enableMPincludeFPCheck
+#       conf.enableMPincludeFPCheck = False
 
 #   def tearDown(self):
-#       spec.conf.enableMPincludeFPCheck = self.defaultConf
+#       conf.enableMPincludeFPCheck = self.defaultConf
 
     def check(self, P1, P2):
         w = World()
@@ -32,9 +32,8 @@ class ArmTest(unittest.TestCase):
         env = Env(w, [])
         ch = choreo()
         visitor = Projection()
-        visitor.execute(ch, env)
-        chor = visitor.choreography
-        vectorize(chor, w)
+        chor = visitor.parse(ch, env)
+        verification.choreography.vectorize.vectorize(chor, w)
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()
         checker.generateTotalGuardsChecks()

@@ -2,7 +2,7 @@ from sympy import *
 from abc import ABC, abstractmethod
 from verification.spec.time import *
 from verification.utils.vc import *
-import verification.spec.conf
+import verification.spec.conf as conf
 
 
 #TODO in the long term we should get rid of this, and instead, update the contract with the extra info
@@ -33,7 +33,7 @@ def findLeastAncestorFrame(components):
         children = p.allProcesses() #aslo contains p
         if components.issubset(children):
             return p.frame()
-    return spec.conf.worldFrame
+    return conf.worldFrame
 
 class AssumeGuaranteeContract(ABC):
 
@@ -140,7 +140,7 @@ class AssumeGuaranteeContract(ABC):
         # has at least one component
         vcs.append( VC(prefix + "components", [sympify(len(self.components()) > 0)], True) )
         # valid duration
-        if verification.spec.conf.enableDurationCheck:
+        if conf.enableDurationCheck:
             vcs.append(VC(prefix + "duration", [sympify(self.duration().valid())], True))
         # pre
         vcs.append( VC(prefix + "preA",   [And(self.preA(), extra.pre, extra.always)], True) )
@@ -152,23 +152,23 @@ class AssumeGuaranteeContract(ABC):
         vcs.append( VC(prefix + "postA",  [And(self.postA(), extra.post, extra.always)], True) )
         vcs.append( VC(prefix + "postG",  [And(self.postG(), extra.post, extra.always)], True) )
         # post err (if exists)
-        assert((self.postErrA == None) == (self.postErrG == None))
-        assert((self.postErrA == None) == (self.postErrFP == None))
-        assert((self.postErrA == None) or (self.postErrA().free_symbols.isdisjoint(self.postErrG().free_symbols)))
-        if self.postErrA != None:
+        assert((self.postErrA() == None) == (self.postErrG() == None))
+        assert((self.postErrA() == None) or (self.postErrA().free_symbols.isdisjoint(self.postErrG().free_symbols)))
+        if self.postErrA() != None:
             vcs.append( VC(prefix + "postErrA",  [And(self.postErrA(), extra.always)], True) ) #extra.post_err ?
             vcs.append( VC(prefix + "postErrA ⇒ invA",  [And(self.deTimifyFormula(self.invA()), self.deTimifyFormula(extra.inv), Not(self.postErrA()), extra.always)], False) ) #extra.post_err ?
-        if self.postErrG != None:
+        if self.postErrG() != None:
             vcs.append( VC(prefix + "postErrG",  [And(self.postErrG(), extra.always)], True) ) #extra.post_err ?
             vcs.append( VC(prefix + "postErrG ⇒ invG",  [And(self.deTimifyFormula(self.invG()), self.deTimifyFormula(extra.inv), Not(self.postErrG()), extra.always)], False) ) #extra.post_err ?
-        if self.postErrFP != None:
+        px, py, pz = symbols('inFpX inFpY inFpZ')
+        frame = self.frame()
+        point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
+        assert((self.postErrA() == None) == (self.postErrFP(point) == None))
+        if self.postErrFP(point) != None:
             # for the footprint
-            px, py, pz = symbols('inFpX inFpY inFpZ')
-            frame = self.frame()
-            point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-            pointDomain = And(px >= verification.spec.conf.minX, px <= verification.spec.conf.maxX,
-                              py >= verification.spec.conf.minY, py <= verification.spec.conf.maxY,
-                              pz >= verification.spec.conf.minZ, pz <= verification.spec.conf.maxZ)
+            pointDomain = And(px >= conf.minX, px <= conf.maxX,
+                              py >= conf.minY, py <= conf.maxY,
+                              pz >= conf.minZ, pz <= conf.maxZ)
             inv = And(pointDomain,
                       self.deTimifyFormula(self.invA()),
                       self.deTimifyFormula(self.invG()),
@@ -188,21 +188,21 @@ class AssumeGuaranteeContract(ABC):
         px, py, pz = symbols('inFpX inFpY inFpZ')
         frame = self.frame()
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= verification.spec.conf.minX, px <= verification.spec.conf.maxX,
-                          py >= verification.spec.conf.minY, py <= verification.spec.conf.maxY,
-                          pz >= verification.spec.conf.minZ, pz <= verification.spec.conf.maxZ)
+        pointDomain = And(px >= conf.minX, px <= conf.maxX,
+                          py >= conf.minY, py <= conf.maxY,
+                          pz >= conf.minZ, pz <= conf.maxZ)
         # no quantification over time for the moment
         assert(self.isInvTimeInvariant())
         assert(contract.isInvTimeInvariant())
         vcs = []
         vcs.append(     VC(prefix + "components", [sympify(self.components() == contract.components())], True) )
-        if verification.spec.conf.enableDurationCheck:
+        if conf.enableDurationCheck:
             vcs.append( VC(prefix + "duration", [sympify(self.duration().implements(contract.duration()))], True) )
         #pre
         preExtra = And(extra.pre, extra.always)
         vcs.append( VC(prefix + "preA",   [And(preExtra, contract.preA(), Not(self.preA()))]) ) # contract.A ⇒ self.A
         vcs.append( VC(prefix + "preG",   [And(preExtra, self.preG(), Not(contract.preG()))]) ) # self.G ⇒ contract.G
-        if verification.spec.conf.enableFPCheck:
+        if conf.enableFPCheck:
             preHypothesis = And(preExtra,
                                 self.preG(),        # strengthened by preG
                                 contract.preA())    # also strengthen by assumptions as the frame shift may depends on the assumption
@@ -211,7 +211,7 @@ class AssumeGuaranteeContract(ABC):
         invExtra = And(extra.always, contract.deTimifyFormula(self.deTimifyFormula(extra.inv)))
         vcs.append( VC(prefix + "invA",   [And(invExtra, contract.deTimifyFormula(contract.invA()), Not(self.deTimifyFormula(self.invA())))]) )
         vcs.append( VC(prefix + "invG",   [And(invExtra, self.deTimifyFormula(self.invG()), Not(contract.deTimifyFormula(contract.invG())))]) )
-        if verification.spec.conf.enableFPCheck:
+        if conf.enableFPCheck:
             invHypothesis = And(invExtra,
                                 self.deTimifyFormula(self.invG()),
                                 contract.deTimifyFormula(contract.invA()))
@@ -220,17 +220,17 @@ class AssumeGuaranteeContract(ABC):
         postExtra = And(extra.post, extra.always)
         vcs.append( VC(prefix + "postA",  [And(postExtra, contract.postA(), Not(self.postA()))]) )
         vcs.append( VC(prefix + "postG",  [And(postExtra, self.postG(), Not(contract.postG()))]) )
-        if verification.spec.conf.enableFPCheck:
+        if conf.enableFPCheck:
             postHypothesis = And(postExtra,
                                  self.postG(),
                                  contract.postA())
             vcs.append( VC(prefix + "postFP " + str(frame), [And(postHypothesis, pointDomain, self.postFP(point), Not(contract.postFP(point)))]) )
         # post err
-        if self.postErrA != None:
+        if self.postErrA() != None:
             postErrExtra = extra.always # extra.post_err ?
             vcs.append( VC(prefix + "postErrA",  [And(postExtra, contract.postErrA(), Not(self.postErrA()))]) )
             vcs.append( VC(prefix + "postErrG",  [And(postExtra, self.postErrG(), Not(contract.postErrG()))]) )
-            if verification.spec.conf.enableFPCheck:
+            if conf.enableFPCheck:
                 postHypothesis = And(postExtra,
                                      self.postErrG(),
                                      contract.postErrA())
@@ -242,9 +242,9 @@ class AssumeGuaranteeContract(ABC):
         prefix = self.name + " and " + contract.name + " collision-freedom: "
         px, py, pz = symbols('inFpX inFpY inFpZ')
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= verification.spec.conf.minX, px <= verification.spec.conf.maxX,
-                          py >= verification.spec.conf.minY, py <= verification.spec.conf.maxY,
-                          pz >= verification.spec.conf.minZ, pz <= verification.spec.conf.maxZ)
+        pointDomain = And(px >= conf.minX, px <= conf.maxX,
+                          py >= conf.minY, py <= conf.maxY,
+                          pz >= conf.minZ, pz <= conf.maxZ)
         connectionCstrs = S.true
         for k,v in connection.items():
             connectionCstrs = And(connectionCstrs ,Eq(k,v))
@@ -296,9 +296,9 @@ class AssumeGuaranteeContract(ABC):
         prefix = self.name + " and " + obstacle.name() + " collision-freedom: "
         px, py, pz = symbols('inFpX inFpY inFpZ')
         point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-        pointDomain = And(px >= verification.spec.conf.minX, px <= verification.spec.conf.maxX,
-                          py >= verification.spec.conf.minY, py <= verification.spec.conf.maxY,
-                          pz >= verification.spec.conf.minZ, pz <= verification.spec.conf.maxZ)
+        pointDomain = And(px >= conf.minX, px <= conf.maxX,
+                          py >= conf.minY, py <= conf.maxY,
+                          pz >= conf.minZ, pz <= conf.maxZ)
         vcs = []
         #pre
         pre = And(pointDomain,
@@ -434,7 +434,7 @@ class ComposedContract(AssumeGuaranteeContract):
     def wellFormed(self, extra = ExtraInfo()):
         # this assumes that the children are well formed!
         vcs = super().wellFormed(extra)
-        if spec.conf.enableFPCheck:
+        if conf.enableFPCheck:
             vcs.extend(self._contract1.checkCollision(self._contract2, self._connection, self.frame(), extra))
         return vcs
 
@@ -489,7 +489,7 @@ class StaticContract(FpContract):
 
     def __init__(self, name, components, a, g, fp, duration = DurationSpec(1, 1, False)):
         super().__init__(name,
-                         components, verification.spec.conf.worldFrame, #right now the frontend assume fp are in the world frame
+                         components, conf.worldFrame, #right now the frontend assume fp are in the world frame
                          Symbol('fpx'), Symbol('fpy'), Symbol('fpz'), fp,
                          duration)
         self._assumption = a

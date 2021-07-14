@@ -1,5 +1,5 @@
-from ast_chor import *
-from utils.fixed_point import *
+from verification.choreography.ast_chor import *
+from verification.utils.fixed_point import *
 from copy import copy
 import logging
 

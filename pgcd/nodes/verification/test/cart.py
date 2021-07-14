@@ -12,8 +12,14 @@ import verification.utils.transition
 # cart
 class Cart(Process):
 
-    def __init__(self, name, parent, index = 0):
+    def __init__(self, name, parent, index = 0, useMmDegree = False):
         super().__init__(name, parent, index)
+        if useMmDegree:
+            self.lengthCoeff = 0.001
+            self.angleCoeff = mp.pi() / 180.0
+        else:
+            self.lengthCoeff = 1.0
+            self.angleCoeff = 1.0
         # dimensions
         self.height = 0.08
         self.radius = 0.30
@@ -34,7 +40,7 @@ class Cart(Process):
         wait(self)
         moveCart(self)
         strafeCart(self)
-        SetAngleCart(self)
+        setAngleCart(self)
         swipe(self)
 
     def position(self):
@@ -65,8 +71,8 @@ class Cart(Process):
 #the 2nd cart of a cube 0.18 wide, 0.17 long, 0.16 high
 class CartSquare(Cart):
 
-    def __init__(self, name, parent, index = 0):
-        super().__init__(name, parent, index)
+    def __init__(self, name, parent, index = 0, useMmDegree = False):
+        super().__init__(name, parent, index, useMmDegree)
         # dimensions
         self.height = 0.16
         self.width = 0.18
@@ -140,8 +146,6 @@ class CartMove(CartMotionPrimitive):
     def __init__(self, name, component, src, dst, orientation = None):
         super().__init__(name, component)
         self._frame = self._component.frame()
-        self._radius = component.radius
-        self._height = component.height
         self._src = src
         self._dst = dst
         self._theta = orientation
@@ -247,7 +251,7 @@ class CartWait(CartMotionPrimitive):
     def invG(self):
         return S.true
 
-class SetAngleCart(MotionPrimitiveFactory):
+class setAngleCart(MotionPrimitiveFactory):
 
     def __init__(self, component):
         super().__init__(component)
@@ -269,7 +273,7 @@ class CartSetAngle(CartMotionPrimitive):
     def __init__(self, name, component, angle, angleFrom = None, dt = None):
         super().__init__(name, component)
         self.var = self._component._theta
-        self.angle = angle
+        self.angle = self._component.angleCoeff * angle
         if dt is None:
             self._dMin = 0
             self._dMax = 1
@@ -286,7 +290,8 @@ class CartSetAngle(CartMotionPrimitive):
 
     def preG(self):
         if self.af != None:
-            return And(self.var - self.err <= self.af, self.var <= self.af + self.err)
+            af = self._component.angleCoeff * self.af
+            return And(self.var - self.err <= af, self.var <= af + self.err)
         else:
             return S.true
 
@@ -294,7 +299,8 @@ class CartSetAngle(CartMotionPrimitive):
         if self.af != None:
             t = timeSymbol()
             dt = self.duration().max
-            return And( t >= 0, t <= dt, Eq(self.var, verification.utils.transition.linear(t, self.af, self.angle, dt)))
+            af = self._component.angleCoeff * self.af
+            return And( t >= 0, t <= dt, Eq(self.var, verification.utils.transition.linear(t, af, self.angle, dt)))
         else:
             return S.true
 
@@ -341,19 +347,17 @@ class CartMoveDirection(CartMotionPrimitive):
     def __init__(self, name, component, x, y, t, x1, y1, dt = None):
         super().__init__(name, component)
         self._frame = self._component.frame()
-        self.x = x
-        self.y = y
-        self.t = t
-        self.x1 = x1
-        self.y1 = y1
+        self.x = self._component.lengthCoeff * x
+        self.y = self._component.lengthCoeff * y
+        self.t = self._component.angleCoeff * t
+        self.x1 = self._component.lengthCoeff * x1
+        self.y1 = self._component.lengthCoeff * y1
         if dt is None:
             self._dMin = 3
             self._dMax = 10
         else:
             self._dMin = dt
             self._dMax = dt
-        self._radius = component.radius
-        self._height = component.height
 
     def _srcFrame(self):
         return self._frame.locate_new("src", self._frame.i * self.x + self._frame.j * self.y)
@@ -405,11 +409,11 @@ class CartSwipe(CartMotionPrimitive):
     def __init__(self, name, component, x, y, t, radius, angle, time = DurationSpec(0, 1, False)):
         super().__init__(name, component)
         self._frame = self._component.frame()
-        self.x = x
-        self.y = y
-        self.t = t
-        self.r = radius
-        self.a = angle
+        self.x = self._component.lengthCoeff * x
+        self.y = self._component.lengthCoeff * y
+        self.t = self._component.angleCoeff * t
+        self.r = self._component.lengthCoeff * radius
+        self.a = self._component.angleCoeff * angle
         self.d = time
 
     def modifies(self):

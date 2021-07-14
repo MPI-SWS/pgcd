@@ -12,8 +12,13 @@ import verification.spec.conf as conf
 class Arm(Process):
 
     def __init__(self, name, parent, index = 0,
-                 a_ref = 0, b_ref = 0, c_ref = 0): #TODO use degree or radian as a parameter
+                 a_ref = 0, b_ref = 0, c_ref = 0,
+                 useDegree = True):
         super().__init__(name, parent, index)
+        if useDegree:
+            self.coeff = mp.pi() / 180.0
+        else:
+            self.coeff = 1.0
         # default dimensions (m, rad)
         self.baseHeight = 0.23
         self.baseRadius = 0.13
@@ -25,9 +30,9 @@ class Arm(Process):
         self.maxAngleAB =  13*mp.pi()/18
         self.minAngleAB = -13*mp.pi()/18
         # where if the 0 compared to the neutra joint position
-        self.a_ref = a_ref
-        self.b_ref = b_ref
-        self.c_ref = c_ref
+        self.a_ref = self.coeff * a_ref
+        self.b_ref = self.coeff * b_ref
+        self.c_ref = self.coeff * c_ref
         #TODO angular speed
         # variables
         self._a = symbols(name + '_a') # rotation along the Y-axis (upper arm to lower arm)
@@ -552,8 +557,8 @@ class ArmSetAngle(ArmMP):
     def __init__(self, name, component, var, angle1, angle2, dt = None):
         super().__init__(name, component)
         self.var = var
-        self.angle1 = angle1
-        self.angle2 = angle2
+        self.angle1 = self._component.coeff * angle1
+        self.angle2 = self._component.coeff * angle2
         if dt is None:
             self._dMin = 0
             self._dMax = 1
@@ -625,13 +630,13 @@ class ArmSetAllAngles(ArmMP):
     def __init__(self, name, component, angle1a, angle2a, angle3a, angle1b, angle2b, angle3b,
                  delta = 0.0, dt = DurationSpec(0, 1, False), smooth = True):
         super().__init__(name, component)
-        self.angle1a = angle1a
-        self.angle2a = angle2a
-        self.angle3a = angle3a
-        self.angle1b = angle1b
-        self.angle2b = angle2b
-        self.angle3b = angle3b
-        self.delta   = delta
+        self.angle1a = self._component.coeff * angle1a
+        self.angle2a = self._component.coeff * angle2a
+        self.angle3a = self._component.coeff * angle3a
+        self.angle1b = self._component.coeff * angle1b
+        self.angle2b = self._component.coeff * angle2b
+        self.angle3b = self._component.coeff * angle3b
+        self.delta   = self._component.coeff * delta
         self.dt = dt
         self.smooth = smooth
 

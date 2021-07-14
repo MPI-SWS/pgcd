@@ -1,15 +1,15 @@
-from spec.contract import FpContract
-from spec.env import *
-import spec.conf
-from compatibility import *
-from utils.geometry import *
+from verification.spec.contract import FpContract
+from verification.spec.env import *
+import verification.spec.conf as conf
+from verification.choreography.compatibility import *
+from verification.utils.geometry import *
+from verification.choreography.refinement import *
+from verification.choreography.vectorize import *
+from verification.spec.component import World
+from verification.choreography.projection import Projection
 from static_process import CubeProcess
-from refinement import *
-from vectorize import *
 from mpmath import mp
-from experiments_setups import World
 from copy import deepcopy
-from choreography.projection import Projection
 import interpreter.parser as parser
 import time
 
@@ -29,7 +29,7 @@ def world():
 class Xless(FpContract):
     
     def __init__(self, component, expr):
-        super().__init__("Xless", {component}, spec.conf.worldFrame,
+        super().__init__("Xless", {component}, conf.worldFrame,
                           Symbol('x'), Symbol('y'), Symbol('z'),
                           Symbol('x') < expr)
 
@@ -37,17 +37,17 @@ class Xless(FpContract):
 class Xmore(FpContract):
     
     def __init__(self, component, expr):
-        super().__init__("Xmore", {component}, spec.conf.worldFrame,
+        super().__init__("Xmore", {component}, conf.worldFrame,
                           Symbol('x'), Symbol('y'), Symbol('z'),
                           Symbol('x') > expr)
 
 def choreo1():
     return ''' test =
-        def start = (producer: Wait(1), sensor: Wait(1)); x0
+        def start = (producer: wait(1), sensor: wait(1)); x0
             x0 = @Xmore(sensor, -0.4) x1 || # sensor
                  @Xless(producer, -0.6) x2  # producer
-            x1 = (sensor: Wait(1)) ; x3
-            x2 = (producer: Wait(1)) ; x4
+            x1 = (sensor: wait(1)) ; x3
+            x2 = (producer: wait(1)) ; x4
             x3 || x4 = x5
             x5 = end
         in [ true ] start
@@ -55,14 +55,14 @@ def choreo1():
 
 def code_sensor():
     return '''
-Wait(1);
-Wait(1);
+wait(1);
+wait(1);
     '''
 
 def code_producer():
     return '''
-Wait(1);
-Wait(1);
+wait(1);
+wait(1);
     '''
 
 
@@ -77,8 +77,7 @@ class ContractParsingTest(unittest.TestCase):
                   "producer": code_producer()}
         start = time.time()
         visitor = Projection()
-        visitor.execute(ch, env)
-        chor = visitor.choreography
+        chor = visitor.parse(ch, env)
         vectorize(chor, w)
         end = time.time()
         print("Syntactic checks:", end - start)

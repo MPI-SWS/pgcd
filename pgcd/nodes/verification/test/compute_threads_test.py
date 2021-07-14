@@ -26,7 +26,7 @@ class ComputeThreadsTests(unittest.TestCase):
         self.assertEqual(state_to_tracker['start'].processes, {"arm", "franka", "carrier", "sensor", "producer"})
         self.assertEqual(state_to_tracker['x5'].processes, {"arm", "franka", "carrier", "sensor"})
         self.assertEqual(state_to_tracker['x10a'].processes, {"producer"})
-        self.assertEqual(state_to_tracker['x13d2'].processes, {"arm"})
+        self.assertEqual(state_to_tracker['x13d2a'].processes, {"arm"})
 
 
 if __name__ == '__main__':

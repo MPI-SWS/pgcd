@@ -1,5 +1,5 @@
 import sympy as sp
-from experiments_setups import World
+from verification.spec.component import World
 from mpmath import mp
 from cart import *
 from arm import *
@@ -22,7 +22,7 @@ def progHandoverArm():
 def progHandoverCart():
     return '''
     B0: MoveCart(0, 0, 0, 0.3);
-    B1: receive(Carrier, Idle ){ 
+    B1: receive(Carrier, Idle ){
         case OK() => skip;
     }
     send( Arm, OK, 1.0 );

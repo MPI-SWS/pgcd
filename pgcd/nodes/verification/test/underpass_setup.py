@@ -1,5 +1,5 @@
 import sympy as sp
-from experiments_setups import World
+from verification.spec.component import World
 from mpmath import mp
 from cart import *
 from arm import *
@@ -15,9 +15,9 @@ def xp1_world():
                      (-1.1, 0.09, 0, 0), # carrier: aligned with the right side
                      (0,0,0, 0),         # pillar
                      (0,0,0, 0) )        # bridge
-    cart    = Cart("Cart", w, 0)
-    arm     = Arm("Arm", cart)           # on top the cart: it is also rotated by 90 degrees
-    carrier = CartSquare("Carrier", w, 1)
+    cart    = Cart("Cart", w, 0, useMmDegree = False)
+    arm     = Arm("Arm", cart, useDegree = False) # on top the cart: it is also rotated by 90 degrees
+    carrier = CartSquare("Carrier", w, 1, useMmDegree = False)
     pillar  = Cube( -0.5, 0.5, 0, mp.pi/4, 0.1, 0.3, 0.2, w, 2)
     bridge  = Cube( -0.5, 0.5, 0.2, mp.pi/4, 0.3, 0.03, 0.1, w, 3)
     return w

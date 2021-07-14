@@ -1,19 +1,19 @@
-import spec.conf
-from sympy import *
+import verification.spec.conf as conf
+from sympy import S
 from sympy.vector import CoordSys3D
-from spec.component import *
-from spec.motion import *
-from spec.time import *
-from spec.env import Env
-from utils.geometry import *
+from verification.spec.component import *
+from verification.spec.motion import *
+from verification.spec.time import *
+from verification.spec.env import Env
+from verification.utils.geometry import *
+from verification.choreography.compatibility import *
+from verification.choreography.refinement import *
+from verification.choreography.projection import Projection
+import verification.choreography.vectorize
 from cart import *
 from arm import *
 from mpmath import mp
-from choreography.compatibility import *
-from choreography.refinement import *
-from choreography.vectorize import *
 from copy import deepcopy
-from choreography.projection import Projection
 import interpreter.parser as parser
 import time
 
@@ -26,7 +26,7 @@ class DummyProcess(Process):
 
     def __init__(self, name, parent, index):
         super().__init__(name, parent, index)
-        Idle(self)
+        idle(self)
 
     def frame(self):
         return self._parent.frame()
@@ -43,27 +43,27 @@ class DummyProcess(Process):
 
 def cartAndArmWorld():
     w = World()
-    c = Cart("C", w)
-    a = Arm("A", c)
+    c = Cart("C", w, useMmDegree = False)
+    a = Arm("A", c, useDegree = False)
     return w
 
 def armsHandoverWorld():
     w = World( (-0.28,0,0,0), (0.28,0,0,mp.pi) )
-    a1 = Arm("A1", w, 0)
-    a2 = Arm("A2", w, 1)
+    a1 = Arm("A1", w, 0, useDegree = False)
+    a2 = Arm("A2", w, 1, useDegree = False)
     return w
 
 def binSortingWorld():
     w = World( (0,0,0,mp.pi/2), (0.3,0,0,-mp.pi/2) )
-    a1 = Arm("A", w, 0)
-    a2 = Arm("B", w, 1)
+    a1 = Arm("A", w, 0, useDegree = False)
+    a2 = Arm("B", w, 1, useDegree = False)
     return w
 
 def ferryWorld():
     w = World( (-1,-0.5,0,mp.pi/2), (1,-0.5,0,mp.pi/2) )
-    a1 = Arm("A1", w, 0)
-    a2 = Arm("A2", w, 1)
-    c = Cart("C", w, 2)
+    a1 = Arm("A1", w, 0, useDegree = False)
+    a2 = Arm("A2", w, 1, useDegree = False)
+    c = Cart("C", w, 2, useMmDegree = False)
     return w
 
 
@@ -78,14 +78,14 @@ def mkDummyWorld(*cmpNames):
 class XpTestHarness(unittest.TestCase):
 
     def setUp(self):
-        self.defaultConf = spec.conf.enableMPincludeFPCheck
-        spec.conf.enableMPincludeFPCheck = False
-        self.defaultPrecision = spec.conf.dRealPrecision
-        spec.conf.dRealPrecision = 0.01
+        self.defaultConf = conf.enableMPincludeFPCheck
+        conf.enableMPincludeFPCheck = False
+        self.defaultPrecision = conf.dRealPrecision
+        conf.dRealPrecision = 0.01
 
     def tearDown(self):
-        spec.conf.enableMPincludeFPCheck = self.defaultConf
-        spec.conf.dRealPrecision = self.defaultPrecision
+        conf.enableMPincludeFPCheck = self.defaultConf
+        conf.dRealPrecision = self.defaultPrecision
 
 
     def check(self, ch, w, contracts, progs):
@@ -95,7 +95,7 @@ class XpTestHarness(unittest.TestCase):
         visitor = Projection()
         chor = visitor.parse(ch, env)
         log.debug("parsed\n%s", chor)
-        vectorize(chor, w)
+        verification.choreography.vectorize.vectorize(chor, w)
         end = time.time()
         log.info("Syntactic checks: %s", end - start)
         start = end

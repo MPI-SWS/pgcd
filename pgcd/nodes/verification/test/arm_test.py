@@ -1,12 +1,12 @@
-from spec.env import *
-import spec.conf
-from compatibility import *
-from projection import Projection
-from arm import Arm
-from static_process import PointProcess, FpProcess
-from vectorize import *
+from verification.spec.env import *
+import verification.spec.conf as conf
+from verification.spec.component import World
+from verification.choreography.compatibility import *
+from verification.choreography.projection import Projection
+from verification.choreography.vectorize import *
 from mpmath import mp
-from experiments_setups import World
+from static_process import PointProcess, FpProcess
+from arm import Arm
 
 import unittest
 
@@ -16,14 +16,14 @@ def world(x, y, z, a, b, c):
     w = World(  (    0,     0,    0,       0), # arm
                 (    0,     0,    0,       0)) # point
     #arm   = Arm("arm", w, 0, -2.2689280275926285, 2.2689280275926285, 0) #folded toward the back
-    arm   = Arm("arm", w, 0, a, b, c)
+    arm   = Arm("arm", w, 0, a, b, c, useDegree = False)
     point = PointProcess("point", x, y, z, w, 1)
     return w
 
 
 def choreo1():
     return ''' fixed =
-        def start = (arm: Wait(1), point: Wait(1)); x0
+        def start = (arm: wait(1), point: wait(1)); x0
             x0 = end
         in [ (arm_a == 0) && (arm_b == 0) && (arm_c == 0) ] start
     '''
@@ -34,32 +34,32 @@ def choreo2(a_lb, a_ub, b_lb, b_ub, c_lb, c_ub):
     c = "(arm_c >= "+str(c_lb)+") && (arm_c <= "+str(c_ub)+")"
     init = a + " && " + b + " && " + c
     return ''' bounds =
-        def start = (arm: Wait(1), point: Wait(1)); x0
+        def start = (arm: wait(1), point: wait(1)); x0
             x0 = end
         in [ ''' + init + " ] start"
 
 def code():
     return '''
-Wait(1);
+wait(1);
     '''
 
 class ArmTest(unittest.TestCase):
 
     def setUp(self):
-        self.defaultConf = spec.conf.enableMPincludeFPCheck
-        self.defaultPrecision = spec.conf.dRealPrecision
-        spec.conf.enableMPincludeFPCheck = False
-        spec.conf.dRealPrecision = 0.01
+        self.defaultConf = conf.enableMPincludeFPCheck
+        self.defaultPrecision = conf.dRealPrecision
+        conf.enableMPincludeFPCheck = False
+        conf.dRealPrecision = 0.01
 
     def tearDown(self):
-        spec.conf.enableMPincludeFPCheck = self.defaultConf
-        spec.conf.dRealPrecision = self.defaultPrecision
+        conf.enableMPincludeFPCheck = self.defaultConf
+        conf.dRealPrecision = self.defaultPrecision
 
     def check0(self, ch, w):
         env = Env(w, [])
         visitor = Projection()
-        visitor.execute(ch, env)
-        chor = visitor.choreography
+        chor = visitor.parse(ch, env)
+        visitor.choreography
         vectorize(chor, w)
         checker = CompatibilityCheck(chor, w)
         checker.localChoiceChecks()

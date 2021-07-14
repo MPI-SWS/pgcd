@@ -1,5 +1,7 @@
 from verification.choreography.ast_chor import *
 from verification.utils.fixed_point import *
+import verification.spec.component
+import verification.spec.env
 import copy
 import logging
 

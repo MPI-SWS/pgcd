@@ -1,12 +1,12 @@
-from compatibility import *
-from utils.geometry import *
-from static_process import CubeProcess
-from refinement import *
-from vectorize import *
+from verification.choreography.compatibility import *
+from verification.utils.geometry import *
+from verification.choreography.refinement import *
+from verification.choreography.vectorize import *
+from verification.spec.component import World
+from verification.choreography.projection import Projection
 from mpmath import mp
-from experiments_setups import World
+from static_process import CubeProcess
 from copy import deepcopy
-from choreography.projection import Projection
 import interpreter.parser as parser
 import time
 from experiments_setups import XpTestHarness
@@ -25,11 +25,11 @@ def world():
 
 def choreo1():
     return ''' Sorting =
-        def start = (producer: Wait(1), sensor: Wait(1)); x0
+        def start = (producer: wait(1), sensor: wait(1)); x0
             x0 = { fpx > -0.4 } x1 || # sensor
                  { fpx < -0.6 } x2    # producer
-            x1 = (sensor: Wait(1)) ; x3
-            x2 = (producer: Wait(1)) ; x4
+            x1 = (sensor: wait(1)) ; x3
+            x2 = (producer: wait(1)) ; x4
             x3 || x4 = x5
             x5 = end
         in [ true ] start
@@ -37,14 +37,14 @@ def choreo1():
 
 def code_sensor():
     return '''
-Wait(1);
-Wait(1);
+wait(1);
+wait(1);
     '''
 
 def code_producer():
     return '''
-Wait(1);
-Wait(1);
+wait(1);
+wait(1);
     '''
 
 

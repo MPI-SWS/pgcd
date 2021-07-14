@@ -1,7 +1,7 @@
 from verification.utils.DrealInterface import DrealInterface
 from sympy import *
 from sympy.logic.boolalg import to_nnf
-import verification.spec.conf
+import verification.spec.conf as conf
 import logging
 
 log = logging.getLogger("VC")
@@ -62,9 +62,9 @@ class VC:
             # look at the free symbols in other cstr
             # look in the bound cstr for var not needed var are sat
             # send the other cstr to the solver
-            dr = DrealInterface(precision = spec.conf.dRealPrecision,
+            dr = DrealInterface(precision = conf.dRealPrecision,
                                 timeout = timeout,
-                                jobs = spec.conf.dRealJobs)
+                                jobs = conf.dRealJobs)
             res, model = dr.run(formula)
             self.model = model
             return res
@@ -75,7 +75,7 @@ class VC:
     def modelStr(self):
         return "\n".join( str(k) + " = " + str (v) for k,v in self.model.items() )
 
-    def discharge(self, timeout = verification.spec.conf.dRealTimeout):
+    def discharge(self, timeout = conf.dRealTimeout):
         log.debug("VC: %s (%s)", self.title, "sat" if self.sat else "unsat")
         for f in self.formulas:
             #f2 = to_cnf(f)

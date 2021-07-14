@@ -5,16 +5,16 @@ from handover_setup import *
 
 def xp2_choreo_1():
     return ''' Handover =
-        def x0 = (Cart: MoveCart(0, 0, 0, 0.3, 5), Arm: Idle(), Carrier: MoveCart(0, 0, 0, 0.5, 5) ) ; x1
+        def x0 = (Cart: moveCart(0, 0, 0, 0.3, 5), Arm: idle(), Carrier: moveCart(0, 0, 0, 0.5, 5) ) ; x1
             x1 = Carrier -> Cart: OK(); x2
             x2 = Cart -> Arm: OK(); x3
-            x3 = (Cart: Idle(), Arm: SetAngleCantilever(-2.2689280275926285, 2.0943951023931953), Carrier: Idle() ) ; x4
-            x4 = (Cart: Idle(), Arm: SetAngleAnchorPoint(2.2689280275926285, -0.3490658503988659), Carrier: Idle() ) ; x5
-            x5 = (Cart: Idle(), Arm: Grip(9.5), Carrier: Idle() ) ; x6
-            x6 = (Cart: Idle(), Arm: RetractArm(0,2.0943951023931953,-0.3490658503988659), Carrier: Idle() ) ; x7
+            x3 = (Cart: idle(), Arm: setAngleCantilever(-2.2689280275926285, 2.0943951023931953), Carrier: idle() ) ; x4
+            x4 = (Cart: idle(), Arm: setAngleAnchorPoint(2.2689280275926285, -0.3490658503988659), Carrier: idle() ) ; x5
+            x5 = (Cart: idle(), Arm: Grip(9.5), Carrier: idle() ) ; x6
+            x6 = (Cart: idle(), Arm: retractArm(0,2.0943951023931953,-0.3490658503988659), Carrier: idle() ) ; x7
             x7 = Arm -> Cart: OK(); x8
             x8 = Cart -> Carrier: OK(); x9
-            x9 = (Cart: MoveCart(0.3, 0, 0, -0.3, 5), Arm: Idle(), Carrier: MoveCart(0.5, 0, 0, -0.5, 5) ) ; x10
+            x9 = (Cart: moveCart(0.3, 0, 0, -0.3, 5), Arm: idle(), Carrier: moveCart(0.5, 0, 0, -0.5, 5) ) ; x10
             x10 = end
         in [  (Cart_theta == 0) && (Cart_x == 0) && (Cart_y == 0) &&
               (Carrier_theta == 0) && (Carrier_x == 0) && (Carrier_y == 0) &&

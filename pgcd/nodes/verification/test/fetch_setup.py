@@ -1,5 +1,5 @@
 import sympy as sp
-from experiments_setups import World
+from verification.spec.component import World
 from mpmath import mp
 from cart import *
 from arm import *

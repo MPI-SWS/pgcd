@@ -1,13 +1,11 @@
-
-import spec.conf
-from compatibility import *
-from utils.geometry import *
+from verification.choreography.compatibility import *
+from verification.utils.geometry import *
+from verification.choreography.refinement import *
+import verification.choreography.vectorize
+from verification.choreography.projection import Projection
+from verification.spec.component import World
 from cart import Cart
-from refinement import *
-from vectorize import *
-from experiments_setups import World
 from copy import deepcopy
-from choreography.projection import Projection
 import interpreter.parser as parser
 import time
 
@@ -36,9 +34,9 @@ class XpLaneParametricTest(unittest.TestCase):
         s = "Lane =\ndef x0 = "
         for j in range(1, m+1):
             s += '('
-            s += ', '.join("Cart" + str(i) + ": MoveCart(0, 0, 0, 0.5, 5)" for i in range(0, n))
+            s += ', '.join("Cart" + str(i) + ": moveCart(0, 0, 0, 0.5, 5)" for i in range(0, n))
             s += ') ; x'+str(2*j-1)+'\n  x'+str(2*j-1)+' = ('
-            s += ', '.join("Cart" + str(i) + ": MoveCart(0.5, 0, 0,-0.5, 5)" for i in range(0, n))
+            s += ', '.join("Cart" + str(i) + ": moveCart(0.5, 0, 0,-0.5, 5)" for i in range(0, n))
             s += ') ; x'+str(2*j)+'\n  x'+str(2*j)+' = '
         s += 'end\nin [ '
         s += ' &&\n    '.join( "(Cart"+str(i)+"_x == 0) && (Cart"+str(i)+"_y == 0) && (Cart"+str(i)+"_theta == 0)" for i in range(0, n))
@@ -53,8 +51,8 @@ class XpLaneParametricTest(unittest.TestCase):
         s += "\n"
         for i in range(0, n):
             for j in range(0, m):
-                s += "  x_"+str(i)+"_"+str(2*j  )+" = (Cart"+str(i)+": MoveCart(0, 0, 0, 0.5, 5)) ; x_"+str(i)+"_"+str(2*j+1)+"\n"
-                s += "  x_"+str(i)+"_"+str(2*j+1)+" = (Cart"+str(i)+": MoveCart(0.5, 0, 0,-0.5, 5)) ; x_"+str(i)+"_"+str(2*j+2)+"\n"
+                s += "  x_"+str(i)+"_"+str(2*j  )+" = (Cart"+str(i)+": moveCart(0, 0, 0, 0.5, 5)) ; x_"+str(i)+"_"+str(2*j+1)+"\n"
+                s += "  x_"+str(i)+"_"+str(2*j+1)+" = (Cart"+str(i)+": moveCart(0.5, 0, 0,-0.5, 5)) ; x_"+str(i)+"_"+str(2*j+2)+"\n"
         s += '  '
         s += ' || '.join("x_"+str(i)+"_"+str(2*m) for i in range(0, n))
         s += ' = x1\n  x1 = end\nin [ '
@@ -79,9 +77,8 @@ class XpLaneParametricTest(unittest.TestCase):
         start = time.time()
         start0 = start
         visitor = Projection()
-        visitor.execute(ch, w)
-        chor = visitor.choreography
-        vectorize(chor, w)
+        chor = visitor.parse(ch, w)
+        verification.choreography.vectorize.vectorize(chor, w)
         end = time.time()
         time_syntax = end - start
         if not printCSV:

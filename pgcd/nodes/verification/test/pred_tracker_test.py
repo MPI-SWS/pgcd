@@ -1,5 +1,5 @@
 import experiments_setups
-from compatibility import *
+from verification.choreography.compatibility import *
 from sympy import *
 
 import unittest

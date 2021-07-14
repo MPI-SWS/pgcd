@@ -154,10 +154,10 @@ class ChoreographyCheck:
             return
 
         elif isinstance(node, End): #TODO no supported for the moment
-            self.traverse_graph(node.end_state[0], visited, process, causality)
             return
         
         elif isinstance(node, Checkpoint):
+            self.traverse_graph(node.end_state[0], visited, process, causality)
             return
 
         self.check_no_disconnected_parts(visited)

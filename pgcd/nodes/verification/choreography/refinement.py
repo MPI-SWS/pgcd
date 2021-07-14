@@ -1,11 +1,11 @@
-from parser_chor import *
-from ast_chor import *
-from ast_proj import *
+from verification.choreography.parser_chor import *
+from verification.choreography.ast_chor import *
+from verification.choreography.ast_proj import *
 import interpreter.ast_inter as ast_inter
 from sympy import *
-from utils.DrealInterface import DrealInterface
-from utils.vc import VC
-from utils.cfa import CFA
+from verification.utils.DrealInterface import DrealInterface
+from verification.utils.vc import VC
+from verification.utils.cfa import CFA
 from copy import *
 import logging
 

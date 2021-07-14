@@ -1,9 +1,9 @@
 import unittest
-from choreography.threads import ThreadChecks
-from choreography.parser_chor import ChoreographyParser
-from choreography.minimal_sender import UniqueMinimalSender
-from choreography.synchronizability import *
-from spec.env import Env
+from verification.choreography.threads import ThreadChecks
+from verification.choreography.parser_chor import ChoreographyParser
+from verification.choreography.minimal_sender import UniqueMinimalSender
+from verification.choreography.synchronizability import *
+from verification.spec.env import Env
 import experiments_setups
 import xp_fetch_02_test
 import xp_sorting_test

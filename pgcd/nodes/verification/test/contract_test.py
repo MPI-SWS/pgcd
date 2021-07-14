@@ -1,8 +1,9 @@
 import unittest
-from spec.contract import *
-from spec.time import timifyFormula
-from experiments_setups import World, DummyProcess
-from utils.geometry import cube
+from verification.spec.contract import *
+from verification.spec.time import timifyFormula
+from verification.spec.component import World
+from experiments_setups import DummyProcess
+from verification.utils.geometry import cube
 
 #TODO contract, vaccuous, refinement, composition, etc.
 
