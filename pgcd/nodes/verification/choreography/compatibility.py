@@ -1,5 +1,5 @@
 from verification.spec.time import deTimifyFormula
-import verification.spec.conf
+import verification.spec.conf as conf
 from verification.choreography.ast_chor import *
 from sympy import *
 from sympy.logic.boolalg import to_dnf, to_cnf, simplify_logic
@@ -147,7 +147,7 @@ class CompatibilityCheck:
     def generateCompatibilityChecks(self):
         assert(self.predComputed)
         obstacles = self.chor.world.obstacles()
-        if spec.conf.enableProcessAbstractionCheck:
+        if conf.enableProcessAbstractionCheck:
             self.checkProcessAbstraction()
         for node in self.state_to_node.values():
             log.debug("generateCompatibilityChecks for node %s", node)

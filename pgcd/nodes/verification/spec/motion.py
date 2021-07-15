@@ -2,7 +2,7 @@ from sympy import *
 from abc import ABC, abstractmethod
 from verification.spec.time import timifyVar
 from verification.spec.contract import *
-import verification.spec.conf
+import verification.spec.conf as conf
 
 # Some motion primitives have parameters, we represent that with a factory.
 # Given some concrete value for the parameters we get a motion primitive.
@@ -46,15 +46,15 @@ class MotionPrimitive(AssumeGuaranteeContract):
 
     def wellFormed(self, extra = ExtraInfo()):
         vcs = super().wellFormed(extra)
-        if spec.conf.enableFPCheck and spec.conf.enableMPincludeFPCheck:
+        if conf.enableFPCheck and conf.enableMPincludeFPCheck:
             # checks that the components FP is in the motion primitive MP
             prefix = self.name + " well-formed: contains component FP "
             px, py, pz = symbols('inFpX inFpY inFpZ')
             frame = self.frame()
             point = frame.origin.locate_new("inFp", px * frame.i + py * frame.j + pz * frame.k )
-            pointDomain = And(px >= spec.conf.minX, px <= spec.conf.maxX,
-                              py >= spec.conf.minY, py <= spec.conf.maxY,
-                              pz >= spec.conf.minZ, pz <= spec.conf.maxZ)
+            pointDomain = And(px >= conf.minX, px <= conf.maxX,
+                              py >= conf.minY, py <= conf.maxY,
+                              pz >= conf.minZ, pz <= conf.maxZ)
             #pre
             pre = And(pointDomain,
                       self._component.invariantG(),
