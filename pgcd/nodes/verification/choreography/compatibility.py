@@ -12,11 +12,27 @@ import functools
 
 log = logging.getLogger("CompatibilityChecks")
 
-def choiceAt(node, process_set):
+def choiceAt(node, process_set, choreography):
+    # (1) check the predicate: all free var must belong to the same process
     allGuards = { v for gs in node.guarded_states for v in gs.expression.free_symbols }
     choiceCandidates = [ p for p in process_set if any([ v in allGuards for v in p.variables() ]) ]
     if len(choiceCandidates) == 0:
-        raise Exception("choice cannot be traced back to any process: " + str(allGuards))
+        # (2) next op is a send with the same sender accross all branches
+        senders = set()
+        for s in node.end_state:
+            node2 = choreography.getNode(s)
+            if node2.isMessage():
+                senders.add(node2.sender)
+        if len(senders) == 1:
+            sender = senders.pop()
+            for p in process_set:
+                if p.name() == sender:
+                    return p
+            raise Exception("choice find: " + sender)
+        elif len(senders) > 1:
+            raise Exception("choice can be traced back to more than one process: " + str(senders))
+        else:
+            raise Exception("choice cannot be traced back to any process: " + str(allGuards))
     elif len(choiceCandidates) > 1:
         raise Exception("choice can be traced back to more than one process: " + str(allGuards) + " " + str(choiceCandidates))
     else:
@@ -214,7 +230,7 @@ class CompatibilityCheck:
     def localChoiceChecks(self):
         for node in self.state_to_node.values():
             if isinstance(node, GuardedChoice):
-                choiceAt(node, self.processes)
+                choiceAt(node, self.processes, self.chor)
 
     def generateTotalGuardsChecks(self):
         for node in self.state_to_node.values():

@@ -628,7 +628,7 @@ class rotate(MotionPrimitiveFactory):
 class ArmSetAllAngles(ArmMP):
 
     def __init__(self, name, component, angle1a, angle2a, angle3a, angle1b, angle2b, angle3b,
-                 delta = 0.0, dt = DurationSpec(0, 1, False), smooth = True):
+                 delta = 0.0, dt = DurationSpec(5, 10, False), smooth = True):
         super().__init__(name, component)
         self.angle1a = self._component.coeff * angle1a
         self.angle2a = self._component.coeff * angle2a

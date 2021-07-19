@@ -27,7 +27,8 @@ def removeIndirections(choreography, state_to_node):
     substitution = {}
     # first scan to figure out what to remove
     for node in state_to_node.values():
-        if isinstance(node, Indirection):
+        if isinstance(node, Indirection) or \
+           (isinstance(node, ExternalChoice) and len(node.end_state) == 1):
             assert len(node.start_state) == 1 and len(node.end_state) == 1
             src = node.start_state[0]
             trg = node.end_state[0]
@@ -64,6 +65,7 @@ def removeMerge(choreography, state_to_node):
                             pre.guarded_states[i].id = post
     removeUnreachable(choreography, state_to_node)
 
+# TODO should have a proper merge! not complete anymre with checkpoint
 def minimize(choreography, state_to_node):
     removeMerge(choreography, state_to_node)
     #states that can be similar
@@ -134,13 +136,14 @@ def minimize(choreography, state_to_node):
         if not state in visited:
             visited.add(state)
             node = state_to_node[state]
+            #print(state, type(node))
             for i,e in enumerate(node.end_state):
                 r = findRep(e)
                 frontier.add(r)
                 node.end_state[i] = r
                 if isinstance(node, GuardedChoice):
                     node.guarded_states[i].id = r
-            if isinstance(node, GuardedChoice):
+            if node.isChoice():
                 toRemove = {}
                 for i in range(0, len(node.guarded_states)):
                     for j in range(0, i):
@@ -150,6 +153,12 @@ def minimize(choreography, state_to_node):
                             break
                 node.guarded_states = [ gs for i,gs in enumerate(node.guarded_states) if not i in toRemove ]
                 node.end_state = [gs.id for gs in node.guarded_states]
+            elif node.isCheckpoint():
+                for s in compatible[state]:
+                    node1 = state_to_node[s]
+                    node.id.update(node1.id)
+                node.end_state = list(set(node.end_state))
             else:
                 node.end_state = list(set(node.end_state))
+    removeIndirections(choreography, state_to_node)
     removeUnreachable(choreography, state_to_node)

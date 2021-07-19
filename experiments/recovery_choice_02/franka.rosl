@@ -11,9 +11,9 @@ receive(carrier, idle) {
                    0.960601, 0.101824, -0.042593, -2.81301, 0.031016, 2.885839, 1.677218 );
         openGripper(0.03);
         homePos(0.960601, 0.101824, -0.042593, -2.81301, 0.031016, 2.885839, 1.677218);
+        receive(carrier, idle) { case Done() => skip; }
     }
     case Done() => {
         skip;
     }
 }
-receive(carrier, idle) { case Ok() => skip; }

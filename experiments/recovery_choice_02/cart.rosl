@@ -6,6 +6,7 @@ receive(arm, idle) {
         send(arm, Ok);
         receive(arm, idle) { case Ok() => skip; }
         moveCart(0, 0, 0,  150);
+        send(carrier, Ok);
     }
     case Done() =>
         skip;

@@ -335,4 +335,8 @@ class Checkpoint(AstNode):
         self.ids = ids
 
     def __str__(self):
-        return 'checkpoint(' + (', '.join([str(i) for i in self.ids])) + ")" 
+        string = ''
+        if self._label != None:
+            string += self._label + ": "
+        string += 'checkpoint(' + (', '.join([str(i) for i in self.ids])) + ")" 
+        return string

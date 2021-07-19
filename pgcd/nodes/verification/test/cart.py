@@ -39,6 +39,7 @@ class Cart(Process):
         idle(self)
         wait(self)
         moveCart(self)
+        rotate(self)
         strafeCart(self)
         setAngleCart(self)
         swipe(self)
@@ -268,6 +269,18 @@ class setAngleCart(MotionPrimitiveFactory):
         else:
             return CartSetAngle(self.name(), self._component, args[1], angleFrom = args[0], dt = args[2])
 
+class rotate(MotionPrimitiveFactory):
+
+    def __init__(self, component):
+        super().__init__(component)
+
+    def parameters(self):
+        return ['x', 'y', 't', 'delta']
+
+    def setParameters(self, args):
+        assert(len(args) == 4)
+        return CartSetAngle(self.name(), self._component, args[2] + args[3], angleFrom = args[2])
+
 class CartSetAngle(CartMotionPrimitive):
 
     def __init__(self, name, component, angle, angleFrom = None, dt = None):
@@ -276,7 +289,7 @@ class CartSetAngle(CartMotionPrimitive):
         self.angle = self._component.angleCoeff * angle
         if dt is None:
             self._dMin = 0
-            self._dMax = 1
+            self._dMax = 10
         else:
             self._dMin = dt
             self._dMax = dt
@@ -352,8 +365,8 @@ class CartMoveDirection(CartMotionPrimitive):
         self.t = self._component.angleCoeff * t
         self.x1 = self._component.lengthCoeff * x1
         self.y1 = self._component.lengthCoeff * y1
-        if dt is None:
-            self._dMin = 3
+        if dt is None: # TODO function of distance
+            self._dMin = 5
             self._dMax = 10
         else:
             self._dMin = dt

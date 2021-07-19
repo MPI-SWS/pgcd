@@ -74,8 +74,8 @@ class ChoreographyLexer:
 
     def t_ID(self, t):
         r'[A-Za-z_][\w_]*'
-        if re.match(r'(true|false)', str(t.value)):
-            t.value = (t.value == 'true')
+        if re.match(r'(true|false|True|False)', str(t.value)):
+            t.value = (t.value == 'true') or (t.value == 'True')
             t.type = 'BCONST'
         else:
             t.type = self.reserved_map.get(t.value, "ID")

@@ -1,4 +1,5 @@
 from verification.choreography.ast_chor import *
+from verification.choreography.compatibility import choiceAt
 from sympy import *
 from copy import *
 
@@ -35,7 +36,7 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
             chor_proj.statements.append(n2)
 
         elif isinstance(node, GuardedChoice):
-            if all([set(g.expression.free_symbols) <= set(process.variables()) for g in node.guarded_states]):
+            if choiceAt(node, choreography.world.allProcesses(), choreography) == process:
                 chor_proj.statements.append(node)
             else:
                 chor_proj.statements.append(ExternalChoice(node.start_state, [x.id for x in node.guarded_states]))
@@ -49,6 +50,9 @@ def CreateProjectionFromChoreography(choreography, projection_name, process):
             for s in node.start_state:
                 if process.name() in choreography.getProcessesNamesAt(s):
                     chor_proj.statements.append(Indirection([s], node.end_state))
+
+        elif isinstance(node, Checkpoint):
+            chor_proj.statements.append(Checkpoint(node.start_state, node.end_state, {node.id}))
 
         else:
             chor_proj.statements.append(copy(node))

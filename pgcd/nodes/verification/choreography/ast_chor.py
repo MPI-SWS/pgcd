@@ -47,6 +47,12 @@ class Choreography():
                 state_to_node[pre] = s
         return state_to_node
 
+    def getNode(self, stateName):
+        for s in self.statements:
+            if stateName in s.start_state:
+                return s
+        raise KeyError(stateName + " not found.")
+
     def getProcessNames(self):
         procs = set()
         for s in self.statements:
@@ -349,7 +355,7 @@ class Checkpoint(DistributedStateNode):
         self.id = id
 
     def __str__(self):
-        return ''.join(self.start_state) + ' = checkpoint('+str(self.id)+').' + ''.join(self.end_state)
+        return ''.join(self.start_state) + ' = checkpoint('+str(self.id)+'); ' + ''.join(self.end_state)
 
     def accept(self, visitor):
         visitor.visit(self)

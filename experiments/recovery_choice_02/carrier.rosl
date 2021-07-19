@@ -6,7 +6,7 @@ send(cart, Ok);
 x = 0;
 if (x == 0) { # toward franka
     send(arm, Done);
-    checkpoint(1);
+    checkpoint(2);
     x = 1 - x;
     moveCart(800, 0, 0, 700);
     send(franka, Ok);
@@ -14,8 +14,7 @@ if (x == 0) { # toward franka
     moveCart(1500, 0, 0, -1500);
 } else { # toward cart
     send(arm, Ok);
-    checkpoint(2);
-    send(franka, Done);
+    checkpoint(1);
     x = 1 - x;
     rotate(800, 0, 0, 85); # should be 90 but robot slighlty oversteer
     moveCart(800, 0, 90, 550);
@@ -24,8 +23,9 @@ if (x == 0) { # toward franka
     moveCart(800, 550, 90, -550);
     rotate(800, 0, 90, -85); # should be 90 but robot slighlty oversteer
     moveCart(800, 0, 0, -800);
+    receive(carrier, idle) { case Ok() => skip; }
 }
 send(crane, Ok);
-send(franka, Ok);
+send(franka, Done);
 send(arm, Ok);
 send(cart, Ok);

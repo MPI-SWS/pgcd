@@ -83,7 +83,7 @@ class ChoreographyCheck:
     def choice_at(self, node):
         if self.chor.world != None:
             # the proper way
-            p = choiceAt(node, self.chor.world.allProcesses())
+            p = choiceAt(node, self.chor.world.allProcesses(), self.chor)
             return p.name()
         else:
             # poor man's version

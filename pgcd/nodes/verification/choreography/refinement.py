@@ -58,7 +58,7 @@ class Refinement(CFA):
                 #TODO check the args
                 #print("1")
                 res = self.sameMpName(statment.value, node.motions[0].mp_name) and self._refines(self.nextStatement(statmentL), node.end_state[0])
-                log.debug("%s %s %s\t%s\t%s", "compatible" if res else "not compatible", statmentL, nodeL, '\t', statment.value, '\t', node.motions[0].mp_name)
+                log.debug("%s %s %s\t%s\t%s" % ("compatible" if res else "not compatible", statmentL, nodeL, str(statment.value), node.motions[0].mp_name))
                 return res
             else:
                 return False
@@ -138,7 +138,7 @@ class Refinement(CFA):
             return isinstance(node, End)
         elif isinstance(statment, ast_inter.Checkpoint):
             return isinstance(node, Checkpoint) and \
-                   node.id in statment.ids and \
+                   node.id == statment.ids and \
                    self._refines(self.nextStatement(statmentL), node.end_state[0])
         else:
             raise Exception("unexpected " + str(type(statment)) + ": " + str(statment))
